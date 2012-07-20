@@ -11,6 +11,7 @@
 #include "wifi_debug.h"
 #include "audio.h"
 #include "network.h"
+#include "t_rh.h"
 
 motor_ctrl_t opt;
 
@@ -62,6 +63,12 @@ int prase_packet(int opcode, u8 *buf)
 			break;
 		case 251:
 			deal_bat_info();
+			break;
+		case 20:
+			start_measure();
+			break;
+		case 21:
+			enable_t_rh_sent();
 			break;
 		default:
 			//printf(">>>opcode = %d\n", opcode);

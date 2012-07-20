@@ -6,6 +6,10 @@
 
 menu "Miscellaneous I2C Chip support"
 
+config SENSORS_SHT20
+	tristate "temperature and relative humidity"
+	depends on EXPERIMENTAL
+
 config DS1682
 	tristate "Dallas DS1682 Total Elapsed Time Recorder with Alarm"
 	depends on EXPERIMENTAL
