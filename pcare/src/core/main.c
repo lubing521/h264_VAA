@@ -43,10 +43,8 @@ int main()
 #endif
     while(1)
     {
-    printf(">>>>>>>>>up in while(1) network<<<<<<<<<<\n");
+        printf(">>>>>>>>>Waiting For Client<<<<<<<<<<\n");
 	    network();
-    printf(">>>>>>>>>down in while(1) network<<<<<<<<<<\n");
     }
-    printf(">>>>>>>>>exit while(1) network<<<<<<<<<<\n");
 	return 0;
 }

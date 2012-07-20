@@ -513,7 +513,7 @@ void control_stepper_motor(u8 param1)
 		int j,k;
 		j = STEPPER_DELAY;
 		k = STEPPER_LIMIT;
-		printf("i:%d;%s\n",i,__func__);
+		//printf("i:%d;%s\n",i,__func__);
 		switch(i)
 		{
 				case 0:
@@ -550,7 +550,7 @@ void operate_stepper_motor(u8 param1)
 		i = param1;
 		j = STEPPER_DELAY;
 		k = STEPPER_LIMIT;
-		printf("i:%d;%s\n",i,__func__);
+		//printf("i:%d;%s\n",i,__func__);
 		switch(i)
 		{
 				case 0:
@@ -624,7 +624,7 @@ void stepper_up(int param)
 		k = 1;
 		j = param;
 		upflag = 1;
-		printf("%s\n",__func__);
+		//printf("%s\n",__func__);
 		while(k)
 		{
 				count_m1++;
@@ -664,7 +664,7 @@ void stepper_upstop(void)
 		upflag = 0;
 		stepper_motor_up_flag[0] = 0;
 		stepper_motor_down_flag[0] = 0;
-		printf("%s;upflag:%d\n",__func__,upflag);
+		//printf("%s;upflag:%d\n",__func__,upflag);
 		ioctl(stepper_motor_fd,3,&i);
 }
 
@@ -675,7 +675,7 @@ void stepper_down(int param)
 		k = 1;
 		j = param;
 		downflag = 1;
-		printf("%s\n",__func__);
+		//printf("%s\n",__func__);
 		while(k)
 		{
 				count_m1--;
@@ -715,7 +715,7 @@ void stepper_downstop(void)
 		downflag = 0;
 		stepper_motor_up_flag[0] = 0;
 		stepper_motor_down_flag[0] = 0;
-		printf("%s;downflag:%d\n",__func__,downflag);
+		//printf("%s;downflag:%d\n",__func__,downflag);
 		ioctl(stepper_motor_fd,3,&i);
 }
 
@@ -727,7 +727,7 @@ void stepper_right(int param)
 		k = 1;
 		j = param;
 		rightflag = 1;
-		printf("%s\n",__func__);
+		//printf("%s\n",__func__);
 		while(k)
 		{
 				count_m2++;
@@ -767,7 +767,7 @@ void stepper_rightstop(void)
 		rightflag = 0;
 		stepper_motor_left_flag[0] = 0;
 		stepper_motor_right_flag[0] = 0;
-		printf("%s;rightflag:%d\n",__func__,rightflag);
+		//printf("%s;rightflag:%d\n",__func__,rightflag);
 		ioctl(stepper_motor_fd,5,&i);
 }
 
@@ -778,7 +778,7 @@ void stepper_left(int param)
 		k = 1;
 		j = param;
 		leftflag = 1;
-		printf("%s\n",__func__);
+		//printf("%s\n",__func__);
 		while(k)
 		{
 				count_m2--;
@@ -806,7 +806,7 @@ void stepper_left(int param)
 				}
 				if (leftflag == 0)
 				{
-						printf("we will set k = 0\n");
+						//printf("we will set k = 0\n");
 						k = 0;
 				}
 		}
@@ -819,7 +819,7 @@ void stepper_leftstop(void)
 		stepper_motor_left_flag[0] = 0;
 		stepper_motor_right_flag[0] = 0;
 		ioctl(stepper_motor_fd,5,&i);
-		printf("%s;%d\n",__func__,leftflag);
+		//printf("%s;%d\n",__func__,leftflag);
 }
 
 /*****************************camera in mid***************************************/

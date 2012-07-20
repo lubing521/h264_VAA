@@ -268,7 +268,7 @@ static void step_timer_func(unsigned long arg)
 
 static irqreturn_t stepper_up_irq(int irq, void *handle)
 {
-		printk("FUNC:%s\n",__func__);
+		stepper_dbg("FUNC:%s\n",__func__);
 		unsigned long  ret;
 		SEP0611_INT_DISABLE(SEP0611_TOY_STEP_UP_DET_INTSRC);
 		sep0611_gpio_clrirq(SEP0611_TOY_STEP_UP_DET);
@@ -280,7 +280,7 @@ static irqreturn_t stepper_up_irq(int irq, void *handle)
 
 static irqreturn_t stepper_down_irq(int irq)
 {
-		printk("FUNC:%s\n",__func__);
+		stepper_dbg("FUNC:%s\n",__func__);
 		unsigned long ret;
 		SEP0611_INT_DISABLE(SEP0611_TOY_STEP_DOWN_DET_INTSRC);
 		sep0611_gpio_clrirq(SEP0611_TOY_STEP_DOWN_DET);	
@@ -291,7 +291,7 @@ static irqreturn_t stepper_down_irq(int irq)
 }
 static irqreturn_t stepper_left_irq(int irq, void *handle)
 {
-		printk("FUNC:%s\n",__func__);
+		stepper_dbg("FUNC:%s\n",__func__);
 		unsigned long  ret;
 		SEP0611_INT_DISABLE(SEP0611_TOY_STEP_LEFT_DET_INTSRC);
 		sep0611_gpio_clrirq(SEP0611_TOY_STEP_LEFT_DET);
@@ -303,7 +303,7 @@ static irqreturn_t stepper_left_irq(int irq, void *handle)
 
 static irqreturn_t stepper_right_irq(int irq)
 {
-		printk("FUNC:%s\n",__func__);
+		stepper_dbg("FUNC:%s\n",__func__);
 		unsigned long ret;
 		SEP0611_INT_DISABLE(SEP0611_TOY_STEP_RIGHT_DET_INTSRC);
 		sep0611_gpio_clrirq(SEP0611_TOY_STEP_RIGHT_DET);	
