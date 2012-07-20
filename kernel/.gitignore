@@ -1,0 +1,113 @@
+#
+# NOTE! Don't add files that are generated in specific
+# subdirectories here. Add them in the ".gitignore" file
+# in that subdirectory instead.
+#
+# NOTE! Please use 'git ls-files -i --exclude-standard'
+# command after changing this file, to see if there are
+# any tracked files which get ignored after the change.
+#
+# Normal rules
+#
+.*
+*.o
+*.o.*
+*.a
+*.s
+*.ko
+*.so
+*.so.dbg
+*.mod.c
+*.i
+*.lst
+*.symtypes
+*.order
+modules.builtin
+*.elf
+*.bin
+*.gz
+*.bz2
+*.lzma
+*.lzo
+*.patch
+*.gcno
+*.rom
+*.gzip
+vmlinux
+
+#
+# Top-level generic files
+#
+/tags
+/TAGS
+/linux
+/vmlinux
+/vmlinuz
+/System.map
+/Module.markers
+/Module.symvers
+/.config
+/.config.old
+/.version
+
+#
+# git files that we don't want to ignore even it they are dot-files
+#
+!.gitignore
+!.mailmap
+
+
+#
+# Generated include files
+#
+include/config
+include/linux/version.h
+include/generated
+arch/unicore/boot/Image
+arch/unicore/boot/compressed/vmlinux.lds
+arch/unicore/boot/uImage
+arch/unicore/boot/zImage
+arch/unicore/include/asm/bitsperlong.h
+arch/unicore/include/asm/cputime.h
+arch/unicore/include/asm/emergency-restart.h
+arch/unicore/include/asm/errno.h
+arch/unicore/include/asm/fcntl.h
+arch/unicore/include/asm/ioctl.h
+arch/unicore/include/asm/irq_regs.h
+arch/unicore/include/asm/kdebug.h
+arch/unicore/include/asm/local.h
+arch/unicore/include/asm/percpu.h
+arch/unicore/include/asm/poll.h
+arch/unicore/include/asm/resource.h
+arch/unicore/include/asm/sections.h
+arch/unicore/include/asm/siginfo.h
+arch/unicore/include/asm/topology.h
+arch/unicore/kernel/vmlinux.lds
+include/asm-unicore/asm-offsets.h
+include/linux/bounds.h
+include/linux/compile.h
+include/linux/autoconf.h
+include/asm
+include/linux/utsrelease.h
+
+# stgit generated dirs
+patches-*
+
+# quilt's files
+patches
+series
+
+# cscope files
+cscope.*
+ncscope.*
+
+# gnu global files
+GPATH
+GRTAGS
+GSYMS
+GTAGS
+
+*.orig
+*~
+\#*#
+make.sh

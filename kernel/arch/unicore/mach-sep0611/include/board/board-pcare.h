@@ -1,0 +1,96 @@
+ /* linux/arch/unicore/mach-sep0611/include/board/board-toy.h
+ *
+ * Copyright (c) 2009-2011 SEUIC
+ *  cgm <chenguangming@wxseuic.com>
+ *
+ * Southeast University ASIC SoC support
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * Modifications:
+ *  05-31-2011	cgm initial version
+ *  03-19-2012	cgm modified for wificar
+ *
+ */
+
+#ifndef __ASM_BOARD_PCARE_H
+#define __ASM_BOARD_PCARE_H
+
+#include <mach/regs-gpio.h>
+
+//#define SEP0611_DDR_PWREN		SEP0611_AO0
+//#define SEP0611_DEVICE_IO		SEP0611_AO1
+//#define SEP0611_HOLD_POWER		SEP0611_AO2
+//
+//#define SEP0611_ETH_CMD			SEP0611_GPA10
+//
+#define SEP0611_OTG_DRV			SEP0611_GPF5
+//
+//#define SEP0611_VBUS_IN_SEL		SEP0611_GPC7
+//#define SEP0611_HID_VAL			SEP0611_GPC6
+//#define SEP0611_CHG_EN			SEP0611_GPC14
+//
+//#define SEP0611_ETH_RST_		SEP0611_GPD0
+//#define SEP0611_USB_DE_SEL		SEP0611_GPD2
+//#define SEP0611_VCORE_CTL		SEP0611_GPD3
+//#define SEP0611_ETH_EN			SEP0611_GPD4
+//#define SEP0611_HDMI_EN			SEP0611_GPD5
+//#define SEP0611_HDMI_RST		SEP0611_GPD6
+//#define SEP0611_LCD_EN			SEP0611_GPD7
+//#define SEP0611_NAND_WP_		SEP0611_GPD8
+//#define SEP0611_USB5V_EN		SEP0611_GPD9
+//
+//#define SEP0611_LCD_MODE		SEP0611_GPE8
+//#define SEP0611_LCD_RST			SEP0611_GPE9
+//#define SEP0611_WIFI_RST		SEP0611_GPE10
+//#define SEP0611_WIFI_EN			SEP0611_GPE11
+//#define SEP0611_DC5V_DETC		SEP0611_GPE12
+//#define SEP0611_LCD_BL_EN		SEP0611_GPE13
+//#define SEP0611_HVBUS_ON		SEP0611_GPE14
+//
+#define SEP0611_AUDIO_EN		SEP0611_GPI13
+#define SEP0611_SPK_CTL			SEP0611_GPI14 //SPK_EN
+//
+//#define SEP0611_OTG_VBUS_ON		SEP0611_GPF16
+#define SEP0611_IR_LED          SEP0611_GPF2
+#define SEP0611_PT_IN1          SEP0611_GPF14
+#define SEP0611_PT_IN2          SEP0611_GPF13
+#define SEP0611_PT_IN3          SEP0611_GPF12
+#define SEP0611_PT_IN4          SEP0611_GPF11
+#define SEP0611_PT_IN5          SEP0611_GPF10
+#define SEP0611_PT_IN6          SEP0611_GPF9
+#define SEP0611_PT_IN7          SEP0611_GPF8
+#define SEP0611_PT_IN8          SEP0611_GPF7
+//
+//#define SEP0611_HDMI_INT		SEP0611_GPI4
+//#define SEP0611_ETH_INT			SEP0611_GPI6
+//#define SEP0611_GSENSOR_INT		SEP0611_GPI7
+//#define SEP0611_POWER_OK		SEP0611_GPI8
+//#define SEP0611_CHG_OK		SEP0611_GPI9
+#define SEP0611_PHY_RST			SEP0611_GPF0 //ULPI_nRST
+//#define SEP0611_ALT_BY		SEP0611_GPI12
+//#define SEP0611_CONVST_			SEP0611_GPI13
+#define SEP0611_LED_1            SEP0611_GPF17
+#define SEP0611_LED_STATUE      SEP0611_GPF19
+//
+//#define SEP0611_HDMI_INTSRC		INTSRC_EXT4
+//#define SEP0611_ETH_INTSRC		INTSRC_EXT6
+//#define SEP0611_GSENSOR_INTSRC	INTSRC_EXT7
+//
+//#define SEP0611_USB_OTG_DET		SEP0611_GPI7
+//#define SEP0611_USB_OTG_DET_INTSRC	INTSRC_EXT5
+//
+
+#define SEP0611_TOY_STEP_UP_DET 		    SEP0611_GPI7
+#define SEP0611_TOY_STEP_UP_DET_INTSRC	    INTSRC_EXT7
+#define SEP0611_TOY_STEP_DOWN_DET   	    SEP0611_GPI6
+#define SEP0611_TOY_STEP_DOWN_DET_INTSRC	INTSRC_EXT6           
+#define SEP0611_TOY_STEP_LEFT_DET		    SEP0611_GPI8
+#define SEP0611_TOY_STEP_LEFT_DET_INTSRC	INTSRC_EXT8
+#define SEP0611_TOY_STEP_RIGHT_DET	        SEP0611_GPI9
+#define SEP0611_TOY_STEP_RIGHT_DET_INTSRC	INTSRC_EXT9
+#define SEP0611_CH37X_INT		SEP0611_GPI11 //SPI_USB_INT
+#define SEP0611_CH37X_INTSRC	INTSRC_EXT11
+#endif /* __ASM_BOARD_TOY_H */

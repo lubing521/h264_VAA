@@ -1,0 +1,8 @@
+#Set search library path
+export LD_LIBRARY_PATH=/lib
+#Set user path
+export PATH=/bin:/sbin
+
+echo =================================================
+echo ============= Wificar console ===================
+echo =================================================

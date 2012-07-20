@@ -1,0 +1,7 @@
+#
+# TPM device configuration
+#
+
+menuconfig SEP_GPS
+	tristate "SEP GPS Support"
+	default y

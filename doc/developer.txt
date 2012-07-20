@@ -1,0 +1,28 @@
+the source tree:
+├── apk
+├── camera_config
+├── doc
+├── kernel
+├── libjpeg
+├── luvcview
+├── mplayer
+├── oprofile
+├── ramdisk
+├── tools
+├── u-boot
+├── usb_utils
+└── wificar
+
+apk, the apk's source code;
+camera_config, tool which set some parameter of camera;
+doc, documents;
+kernel, Linux kerner code;
+libjpeg, transplanted libjpeg.so to encode yuv420 to jpg;
+luvcview, transplanted luvcview;
+mplayer, transplanted mplayer to just play mp3;
+oprofile, transplanted oprofile tools;
+ramdisk, the root filesystem;
+tools, some tools such as scripts and apks;
+u-boot, transplanted u-boot;
+usb_utils, transplanted usb utils the lsusb;
+wificar, the application run on the device.

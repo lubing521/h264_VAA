@@ -1,0 +1,33 @@
+#
+# ADC drivers
+#
+comment "Analog to digital convertors"
+
+config MAX1363
+	tristate "MAXIM max1363 ADC driver"
+	depends on I2C
+	help
+	  Say yes here to build support for many MAXIM i2c analog to digital
+	  convertors (ADC). (max1361, max1362, max1363, max1364, max1136,
+	  max1136, max1137, max1138, max1139, max1236, max1237, max11238,
+	  max1239) Provides direct access via sysfs.
+	  
+config AD799X
+	tristate "Analog Devices AD799x ADC driver"
+	depends on I2C
+	select IIO_TRIGGER if IIO_RING_BUFFER
+	select AD799X_RING_BUFFER
+	help
+	  Say yes here to build support for Analog Devices:
+	  ad7991, ad7995, ad7999, ad7992, ad7993, ad7994, ad7997, ad7998
+	  i2c analog to digital convertors (ADC). Provides direct access
+	  via sysfs.
+
+config AD799X_RING_BUFFER
+	bool "Analog Devices AD799x: use ring buffer"
+	depends on AD799X
+	select IIO_RING_BUFFER
+	select IIO_SW_RING
+	help
+	  Say yes here to include ring buffer support in the AD799X
+	  ADC driver.

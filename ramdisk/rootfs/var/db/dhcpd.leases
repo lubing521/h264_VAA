@@ -1,0 +1,15 @@
+# The format of this file is documented in the dhcpd.leases(5) manual page.
+# This lease file was written by isc-dhcp-4.1-ESV-R3
+
+lease 192.168.1.1 {
+  starts 4 1970/01/01 00:03:09;
+  ends 5 1970/01/02 00:03:09;
+  tstp 5 1970/01/02 00:03:09;
+  cltt 4 1970/01/01 00:03:09;
+  binding state active;
+  next binding state free;
+  hardware ethernet 18:87:96:e3:55:09;
+  client-hostname "Android_358967042490084";
+}
+server-duid "\000\001\000\001\307\222\276\337\000\340L\246\001\302";
+

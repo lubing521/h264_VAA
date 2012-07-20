@@ -1,0 +1,44 @@
+#! /bin/sh
+
+/bin/echo
+/bin/echo "**********************************************"
+/bin/echo "   SEP6200 unicore Linux-2.6.32 SDK     "
+/bin/echo "**********************************************"
+
+echo "# mount all..........."
+/bin/mount -a
+
+echo "# Starting mdev........."
+/sbin/mdev -s
+
+#Set search library path
+export LD_LIBRARY_PATH=/lib
+#Set user path
+export PATH=/bin:/sbin
+
+mkdir /dev/snd
+/bin/mknod /dev/snd/timer c 116 33
+/bin/mknod /dev/snd/pcmC0D0p c 116 16
+/bin/mknod /dev/snd/pcmC0D0c c 116 24
+/bin/mknod /dev/snd/controlC0 c 116 0
+/bin/mknod /dev/snd/hwC0D0 c 116 4
+/bin/mknod /dev/snd/seq c 116 1
+
+mknod /dev/dsp c 14 3
+chmod 666 /dev/dsp
+
+/bin/mkdir /dev/pts -p
+mount /dev/pts
+
+cd /etc/dropbear
+/sbin/dropbearkey -t rsa -f dropbear_rsa_host_key
+/sbin/dropbear -p 22
+
+#echo 4 > /proc/sys/kernel/printk
+#
+/home/toy/camera_config.sh
+/home/toy/aptest.sh
+#/home/toy/leds.sh&
+/home/toy/pcare.sh&
+
+cd /

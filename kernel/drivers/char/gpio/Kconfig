@@ -1,0 +1,6 @@
+menu "sep0611 GPIO char support"
+
+config SEP0611_GPIO
+	tristate "sep0611 general gpio driver"
+
+endmenu

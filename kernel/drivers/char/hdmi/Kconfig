@@ -1,0 +1,4 @@
+#Add by lixiang 20110531 13:55
+config SEP_HDMI
+        tristate "Cat6613 hdmi driver"
+        default y

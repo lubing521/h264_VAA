@@ -1,0 +1,25 @@
+Oprofile可以用于函数级别的性能分析，此包的适用环境为SEP6200平台，根据文件系统的不同，可能并不相同
+
+1. 确认内核支持Oprofile，若支持Oprofile，linux启动过程中会打印以下字符产
+oprofile: hardware counters not available
+oprofile: using timer interrupt.
+
+2. 确认你的文件系统有最基本的linux环境，比如/bin/目录下有mount、sh、grep等命令
+
+3. 确保你的文件系统有足够的剩余空间，合适的挂载点。因为oprofile可能要往var目录下写入很多数据，如果是ramdisk环境的话，可能会空间不足。最好能将此包解压到一个非ramdisk的目录下，这样setup.sh脚本会做相应处理
+
+4. 在此目录下执行source ./setup.sh完成脚本运行。不要用直接用./setup.sh执行此脚本,原因是./setup.sh不会影响环境变量
+
+5. 执行opcontrol --init，opcontrol --reset
+
+6. 如果不需要profile内核态数据，执行opcontrol --start --no-vmlinux，如果需要profile内核数据，需要有内核的vmlinux文件，执行方法是opcontrol --start --vmlinux=PATH_OF_YOUR_VMLINUX --kernel-range=A,B 其中A、B可以通过命令grep " _text" /proc/kallsyms 以及 grep " _etext" /proc/kallsyms获得，注意前面要有0x
+比如opcontrol --start --vmlinux=/vmlinux --kernel-range=0xc002a000,0xc038a000
+
+7. 开启你需要profile的程序
+
+8. 需要profile的程序执行完毕之后，使用opcontrol --stop停止profile
+
+9. 执行opcontrol --dump
+
+10. 执行opreport查看动态库级别的oprofile数据，opreport -l --session-dir=/data/first 查看函数级别的oprofile数据
+

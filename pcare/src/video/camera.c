@@ -1,0 +1,126 @@
+/*
+ * camera.c
+ *  get pictures from the usb camera module PAP7501
+ *  chenguangming@wxseuic.com
+ */
+
+#include <stdio.h>
+#include <pthread.h>
+#include <fcntl.h>              /* low-level i/o */
+#include <unistd.h>
+#include <errno.h>
+#include <unistd.h>
+#include <semaphore.h>
+
+#include "camera.h"
+#include "v4l2.h"
+#include "types.h"
+
+#define CAMERA_DEV "/dev/video0"
+
+static pthread_t camera_ntid;
+static int camera_fd;
+static int camera_stop = 0;
+sem_t start_camera;
+
+/*
+ * the camera thread entry
+ */
+static void *camera_thread(void *args)
+{
+	int fd = camera_fd;
+    struct timeval tv;
+    fd_set fds;
+    int r;
+    
+    frame_t pict;
+    pict.data = NULL;
+    pict.length = 0;
+
+	sem_wait(&start_camera);
+
+    start_capturing (fd);
+    
+    for (;;) {
+        FD_ZERO (&fds);
+        FD_SET (fd, &fds);
+
+        /* Timeout. */
+        tv.tv_sec = 2;
+        tv.tv_usec = 0;
+
+        r = select (fd + 1, &fds, NULL, NULL, &tv);
+
+        if (-1 == r) {
+            if (EINTR == errno)
+                continue;
+            return NULL;
+        }
+
+        if (0 == r) {
+            fprintf (stderr, "select timeout\n");
+            return NULL;
+        }
+       
+		if(r = get_frame(fd, &pict)){
+			send_picture(pict.data, pict.length);
+			r = put_frame(fd);
+			if(r<0)
+				printf("pr = %d\n", r);
+		}
+		else
+			printf("r = %d\n", r);
+        
+		if(camera_stop)
+			pthread_exit(0);
+    }
+    
+    stop_capturing (fd);
+
+	return 0;
+}
+
+/*
+ * init the camera module, called by the main thread
+ */
+int init_camera(void)
+{
+	int fd;
+	int ret;
+	fd = open_device (CAMERA_DEV);
+    
+    if(fd < 0){
+    	printf("open camera failed\n");
+    	goto fail1;
+    }
+    
+    camera_fd = fd;
+
+    init_device (camera_fd, 320, 240, 30);
+    sem_init(&start_camera, 0, 0);
+    ret = pthread_create(&camera_ntid, NULL, camera_thread, NULL);
+    if(ret < 0){
+    	printf("create camera thread failed\n");
+    	goto fail1;
+    }
+    
+    return 0;
+	
+fail2:
+	uninit_device();
+fail1:
+	close_device(fd);
+	return -1;
+}
+
+/*
+ * close the camera, called by the other thread, don't call it in camera thread
+ */
+int close_camera(void)
+{
+	camera_stop = 1;
+	pthread_join(camera_ntid, NULL);
+	uninit_device();
+	close_device(camera_fd);
+    sem_destroy(&start_camera);
+}
