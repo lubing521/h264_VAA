@@ -2,6 +2,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include "protocal.h"
+#include "Types.h"
 
 unsigned int tem_integer;
 unsigned int tem_decimal;
@@ -50,14 +52,6 @@ void start_measure()
 	get_rh();
 	return;
 }
-
-void enable_t_rh_sent()
-{
-	struct command *command20;
-}
-
-
-
 
 
 

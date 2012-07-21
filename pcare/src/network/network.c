@@ -29,13 +29,17 @@
 #include "audio.h"
 #include "utils.h"
 #include "wifi_debug.h"
-
+#include "t_rh.h"
 /* ---------------------------------------------------------- */
 
 #define SERVER_PORT 80
 #define BACKLOG 	10
 
 #define MAX_LEN 	1024*10		/* 10kb */
+
+extern unsigned int tem_integer;
+extern unsigned int tem_decimal;
+extern unsigned int rh;
 
 int can_send = 0;				/* if AVcommand ID is same user<->camera, can_send = 1, allow send file */
 int data_ID  = 7501;			/* AVdata command text[23:26] data connetion ID */
@@ -136,6 +140,33 @@ void deal_bat_info()
 free_buf:
 	free(command252);
 }
+
+/*
+ *enable temperature and relative humidity sent
+ */
+void enable_t_rh_sent()
+{
+    int tem_rh_fd = AVcommand_fd;
+    struct command *command21;
+    struct tem_rh_data *tem_rh_data;
+    command21 = malloc(sizeof(struct command21)+3);
+	memcpy(command21->protocol_head, str_ctl, 4);
+    tem_rh_data->tem_integer = (u8)tem_integer;
+    tem_rh_data->tem_decimal = (u8)tem_decimal;
+    tem_rh_data->rh = (u8)rh;
+    command21->text[0] = *tem_rh_data;
+    command21->opcode = 21; 
+    command21->text_len = 3;
+    if (send(tem_rh_fd, command21, 26, 0)) == -1{ 
+        perror("send");
+        close(tem_rh_fd);
+		printf("========%s,%u========\n",__FILE__,__LINE__);
+        exit(0);
+    }   
+    free(command21);
+    command21 = NULL;
+
+}                           
 
 /*
  * enable audio_send(void)
@@ -398,6 +429,8 @@ void set_opcode_connection(u32 client_fd)
 		text_dbg("buf[%d] = %d\n", i, buffer[i]);
 	};
 #endif
+
+	
 	/* ------------------------------------------- */
 #ifdef WIFI_CAR_V3
 	/* TODO send login response to user by command 1, contains v1, v2, v3, v4 */

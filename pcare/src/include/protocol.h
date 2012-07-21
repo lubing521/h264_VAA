@@ -219,7 +219,7 @@ struct tem_rh_data{
 	u8 tem_integer;
 	u8 tem_decimal;
 	u8 rh;
-}__attribute__((packer));
+}__attribute__((packed));
 
 /* TODO */
 /*
