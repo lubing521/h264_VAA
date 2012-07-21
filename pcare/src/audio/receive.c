@@ -117,8 +117,8 @@ void deal_runtime_play(void *arg)
 	 */
 	int file_size = *(int *)arg;
 	
-	if (init_mp3decoder(file_size) != 0)
-		return ;
+	//if (init_mp3decoder(file_size) != 0)
+	//	return ;
 	
 	/* TODO (FIX ME)
 	 * !!! sem_post(&runtime_recv) may not be called in mp3-decoder.c(file source)
@@ -145,6 +145,7 @@ static int talk_playback(u32 client_fd)
 
 	oss_close_flag++;
 	
+    printf("in talk_playback>>>>>>>>>>\n");
 	if (!oss_open_flag) {
 		/* open audio(oss) device for playbacking */
 		oss_fd = open(OSS_AUDIO_DEV, O_RDWR);
@@ -285,6 +286,7 @@ static int runtime_playback(u32 client_fd)
 	/* TODO (FIX ME)
 	 * tmp use talk_playback() func
 	 */
+    printf("in runtime_playback\n");
 	int error_flag, read_len;
 	u8 size_buf[8];
 	long *p_file_size, file_size, read_left;

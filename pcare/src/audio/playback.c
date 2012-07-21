@@ -53,12 +53,20 @@ int playback_buf(u8 *play_buf, int len)
 	int rc;
 	int left_len = len;
 	u8* buf = play_buf;
-	
+#if 0	
+    int tmp;
+    for(tmp=0;tmp<100;tmp++)
+    {
+        printf("play_buf[%d]=%d   ",tmp,play_buf[tmp]);
+    }
+    printf("\n");
+#endif
 	if ((oss_fd < 0) | play_buf == NULL)
 		return 0;
 	
 	/* TODO (FIX ME) */
 	rc = write(oss_fd, buf, left_len);
+    //printf("playback_buf>>>>>> rc= %d,left_len=%d\n",rc,left_len);
 	if (rc < 0)
 		perror("oss write error!\n");
 	if (rc != left_len)

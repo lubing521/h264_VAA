@@ -13,19 +13,20 @@
 /* for alsa configuration */
 #define AUDIO_DEV 		"plughw:0,0"
 #define PLAYBACK_DEV 	"plughw:0,0"
-#define AUDIO_RATE 		8000
-//#define AUDIO_RATE 		44100
+//#define AUDIO_RATE 		8000
+#define AUDIO_RATE 		44100
+//88200
 #define AUDIO_BIT		16
-#define AUDIO_CHANNELS 	1
-//#define AUDIO_CHANNELS 	2
+//#define AUDIO_CHANNELS 	1
+#define AUDIO_CHANNELS 	2
 
 #define ENABLE_VIDEO
 #define ENABLE_AUDIO					/* enable audio */
 #define ENABLE_CAPTURE_AUDIO				/* enable usb audio, must be enable ENABLE_AUDIO together */
 
 /* TODO (FIX ME) : next tow macros can not be defined as 1 at the same time */
-#define ENABLE_RUNTIME_PLAYBACK 1		/* 1 : means playback music data from cellphone (runtime); 0 : means disable */
-#define ENABLE_TALK_PLAYBACK 	0		/* 1 : means playback record data from cellphone; 0 : means disable */
+#define ENABLE_RUNTIME_PLAYBACK 0		/* 1 : means playback music data from cellphone (runtime); 0 : means disable */
+#define ENABLE_TALK_PLAYBACK 	1		/* 1 : means playback record data from cellphone; 0 : means disable */
 
 /* max read buf */
 #define MAX_READ_LEN 	1024*4			/* TODO (FIX ME) 4kb */
