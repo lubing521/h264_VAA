@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.32.9
-# Fri Jul 13 14:43:03 2012
+# Sun Jul 22 17:50:44 2012
 #
 CONFIG_UNICORE=y
 CONFIG_GENERIC_GPIO=y
@@ -671,6 +671,7 @@ CONFIG_I2C_SEP0611=y
 #
 # Miscellaneous I2C Chip support
 #
+CONFIG_SENSORS_SHT20=y
 # CONFIG_DS1682 is not set
 # CONFIG_SENSORS_TSL2550 is not set
 # CONFIG_SENSORS_PCA963X is not set
