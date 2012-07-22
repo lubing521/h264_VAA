@@ -1,0 +1,62 @@
+prase_pkt.o: prase_pkt.c \
+ /usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/stdio.h \
+ /usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/features.h \
+ /usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/sys/cdefs.h \
+ /usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/bits/wordsize.h \
+ /usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/gnu/stubs.h \
+ /usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/include/stddef.h \
+ /usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/bits/types.h \
+ /usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/bits/typesizes.h \
+ /usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/libio.h \
+ /usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/_G_config.h \
+ /usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/wchar.h \
+ /usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/include/stdarg.h \
+ /usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/bits/stdio_lim.h \
+ /usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/bits/sys_errlist.h \
+ ../../src/include/motor.h ../../src/include/types.h prase_pkt.h \
+ ../../src/include/types.h wifi_debug.h ../../src/include/audio.h \
+ ../../src/include/network.h ../../src/include/t_rh.h
+
+/usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/stdio.h:
+
+/usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/features.h:
+
+/usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/sys/cdefs.h:
+
+/usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/bits/wordsize.h:
+
+/usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/gnu/stubs.h:
+
+/usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/include/stddef.h:
+
+/usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/bits/types.h:
+
+/usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/bits/typesizes.h:
+
+/usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/libio.h:
+
+/usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/_G_config.h:
+
+/usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/wchar.h:
+
+/usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/include/stdarg.h:
+
+/usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/bits/stdio_lim.h:
+
+/usr/unicore/gnu-toolchain-unicore/uc4-1.0-beta-hard-RHELAS5/lib/gcc/unicore32-linux/4.4.2/../../../../unicore32-linux/sys-include/bits/sys_errlist.h:
+
+../../src/include/motor.h:
+
+../../src/include/types.h:
+
+prase_pkt.h:
+
+../../src/include/types.h:
+
+wifi_debug.h:
+
+../../src/include/audio.h:
+
+../../src/include/network.h:
+
+../../src/include/t_rh.h:

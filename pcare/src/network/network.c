@@ -20,7 +20,7 @@
 #include <signal.h>
 
 #include "types.h"
-#include "protocol.h"
+#include "protocol.h" 
 #include "network.h"
 #include "rw.h"
 #include "prase_pkt.h"
@@ -149,23 +149,24 @@ void enable_t_rh_sent()
     int tem_rh_fd = AVcommand_fd;
     struct command *command21;
     struct tem_rh_data *tem_rh_data;
-    command21 = malloc(sizeof(struct command21)+3);
-	memcpy(command21->protocol_head, str_ctl, 4);
+    command21 = malloc(sizeof(struct command)+3);
+    memcpy(command21->protocol_head, str_ctl, 4);
     tem_rh_data->tem_integer = (u8)tem_integer;
     tem_rh_data->tem_decimal = (u8)tem_decimal;
     tem_rh_data->rh = (u8)rh;
-    command21->text[0] = *tem_rh_data;
+    command21->text[0].tem_rh_data = *tem_rh_data;
     command21->opcode = 21; 
     command21->text_len = 3;
-    if (send(tem_rh_fd, command21, 26, 0)) == -1{ 
-        perror("send");
+    printf("tem_integer is %d,tem_decimal is %d,rh is %d\n",tem_integer,tem_decimal,rh);
+    if (send(tem_rh_fd, command21, 26, 0) == -1){ 
+	perror("send");
         close(tem_rh_fd);
 		printf("========%s,%u========\n",__FILE__,__LINE__);
         exit(0);
     }   
     free(command21);
     command21 = NULL;
-
+    return;
 }                           
 
 /*

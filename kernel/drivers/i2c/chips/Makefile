@@ -15,6 +15,7 @@ obj-$(CONFIG_SENSORS_PCA963X)	+= pca963x.o
 obj-$(CONFIG_SENSORS_TSL2550)	+= tsl2550.o
 obj-$(CONFIG_GSENSOR_MMA7660)	+= mma7660.o
 obj-$(CONFIG_SENSORS_SHT20)     += sht20.o
+#obj-m += sht20.o
 
 ifeq ($(CONFIG_I2C_DEBUG_CHIP),y)
 EXTRA_CFLAGS += -DDEBUG

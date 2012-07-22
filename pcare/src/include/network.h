@@ -8,6 +8,7 @@
 #define __NETWORK_H
 
 void network(void);
+void enable_t_rh_sent(void);
 
 #endif
 

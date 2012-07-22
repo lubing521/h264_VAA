@@ -116,6 +116,9 @@ static struct i2c_board_info __initdata sep0611_i2c1_board_info[]  = {
 	[0] = {
 		I2C_BOARD_INFO("CS3700", 0x1A),
 	},
+	[1] = {
+		I2C_BOARD_INFO("sht20", 0x40),
+	},
 };
 
 static struct resource sep0611_ch37x_resource[] = {

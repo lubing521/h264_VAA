@@ -215,7 +215,7 @@ struct alarm_notify {
 /* ------------------------------------------------------ */
 
 /*temperature and relative humidity data*/
-struct tem_rh_data{
+struct tem_rh_data {
 	u8 tem_integer;
 	u8 tem_decimal;
 	u8 rh;
@@ -292,7 +292,7 @@ union context {
 	struct video_start_resp video_start_resp;
 	struct video_start_resp talk_start_resp;
 	struct fetch_battery_power_resp fetch_battery_power_resp;
-	struct tem_rh_data;
+	struct tem_rh_data tem_rh_data;
 	/* AVdata protocols */
 	struct video_data video_data;
 	struct audio_data audio_data;

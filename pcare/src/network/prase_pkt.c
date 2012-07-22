@@ -14,7 +14,8 @@
 #include "t_rh.h"
 
 motor_ctrl_t opt;
-
+extern int start_measure();
+extern void enable_t_rh_sent();
 /* prase opcode command text */
 int prase_packet(int opcode, u8 *buf)
 {
@@ -66,10 +67,9 @@ int prase_packet(int opcode, u8 *buf)
 			break;
 		case 20:
 			start_measure();
-			break;
-		case 21:
 			enable_t_rh_sent();
 			break;
+		
 		default:
 			//printf(">>>opcode = %d\n", opcode);
 			printf("Unsupported opcode from user!\n");
