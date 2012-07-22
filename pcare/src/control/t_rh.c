@@ -12,7 +12,7 @@ unsigned int rh;
 
 int get_tem()
 {
-	unsigned char buf[10];
+	unsigned char buf[10]={0};
 	char *name = "/sys/devices/platform/sep0611-i2c.1/i2c-1/1-0040/tem";
 	int fd,size;
 	int tem0;
@@ -32,7 +32,7 @@ int get_tem()
 
 int get_rh()
 {
-	unsigned char buf[10];
+	unsigned char buf[10]={0};
 	char *name = "/sys/devices/platform/sep0611-i2c.1/i2c-1/1-0040/rh";
 	int fd,size;
 	int rh0;
