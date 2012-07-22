@@ -33,10 +33,10 @@ static adpcm_state_t adpcm_state_curr, adpcm_state_next;
 void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 {
 	int status, arg;
-	
+	printf("rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
 	/* set audio bit */
 	arg = bit;
-	status = ioctl(oss_fd, SOUND_PCM_WRITE_BITS, &arg);
+	status = ioctl(fd, SOUND_PCM_WRITE_BITS, &arg);
 	if (status == -1)
 		perror("SOUND_PCM_WRITE_BITS ioctl failed");
 	if (arg != bit)
@@ -44,7 +44,7 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
     
     /* set audio channels */
 	arg = channels;	
-	status = ioctl(oss_fd, SOUND_PCM_WRITE_CHANNELS, &arg);
+	status = ioctl(fd, SOUND_PCM_WRITE_CHANNELS, &arg);
 	if (status == -1)
 		perror("SOUND_PCM_WRITE_CHANNELS ioctl failed");
 	if (arg != channels)
@@ -52,7 +52,7 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 	
 	/* set audio rate */
 	arg	= rate;
-	status = ioctl(oss_fd, SOUND_PCM_WRITE_RATE, &arg);
+	status = ioctl(fd, SOUND_PCM_WRITE_RATE, &arg);
 	if (status == -1)
 		perror("SOUND_PCM_WRITE_WRITE ioctl failed");
 	if (arg != rate)
@@ -87,14 +87,14 @@ static int store_audio_data(void)
 	record_oss_data(pcm_data_buf, oss_buf_size);
 	
 	//fprintf(stderr, "*");
-
+#if 1
 	/* convert pcm to adpcm */
 	adpcm_coder((short *)pcm_data_buf, (char *)audio_data, oss_buf_size, &adpcm_state_next);
 
 	memcpy((u8 *)(audio_data + data_buf_size), (u8 *)(&adpcm_state_curr), 3);
 
 	adpcm_state_curr = adpcm_state_next;
-
+#endif
 }
 
 /*
@@ -103,11 +103,13 @@ static int store_audio_data(void)
 static void read_audio_frame()
 {
 	printf(">>>Start capturing audio data ...\n");
+    set_oss_record_config(oss_fd,RECORD_RATE,RECORD_CHANNELS,RECORD_BIT);
 	
 	while (capture_on) {
 
 		store_audio_data();
 
+		//send_audio_data(pcm_data_buf, oss_buf_size);
 		send_audio_data(audio_data, data_buf_size);
 
 	};

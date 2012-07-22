@@ -13,12 +13,12 @@
 /* for alsa configuration */
 #define AUDIO_DEV 		"plughw:0,0"
 #define PLAYBACK_DEV 	"plughw:0,0"
-//#define AUDIO_RATE 		8000
+#define RECORD_RATE 		8000
 #define AUDIO_RATE 		44100
-//88200
 #define AUDIO_BIT		16
-//#define AUDIO_CHANNELS 	1
-#define AUDIO_CHANNELS 	2
+#define RECORD_BIT      16
+#define AUDIO_CHANNELS 	1
+#define RECORD_CHANNELS 1
 
 #define ENABLE_VIDEO
 #define ENABLE_AUDIO					/* enable audio */
@@ -80,6 +80,7 @@ int playback_buf(u8 *play_buf, int len);
 /* set oss configuration */
 void set_oss_play_config(int fd, unsigned rate, u16 channels, int bit);
 void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit);
+extern unsigned un_OSS_RATE[];
 
 /* --------------------------------------------------------- */
 

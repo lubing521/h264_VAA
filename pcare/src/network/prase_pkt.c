@@ -11,7 +11,7 @@
 #include "wifi_debug.h"
 #include "audio.h"
 #include "network.h"
-#include "t_rh.h"
+//#include "t_rh.h"
 
 motor_ctrl_t opt;
 extern int start_measure();
@@ -69,7 +69,6 @@ int prase_packet(int opcode, u8 *buf)
 			start_measure();
 			enable_t_rh_sent();
 			break;
-		
 		default:
 			//printf(">>>opcode = %d\n", opcode);
 			printf("Unsupported opcode from user!\n");

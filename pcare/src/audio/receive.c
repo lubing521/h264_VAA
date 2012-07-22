@@ -51,6 +51,10 @@ extern int oss_open_flag, oss_close_flag, oss_fd;
 void init_receive(void)
 {
 	/* do nothing, just for compile */
+#ifdef USE_FMT_ADPCM
+    adpcm_state.valprev = 0;
+    adpcm_state.index = 0;
+#endif
 }
 
 /* --------------------------------------------------------- */
@@ -103,7 +107,11 @@ void deal_talk_play(void *arg)
 		}
 	}
 	
-	pthread_exit(NULL);
+#ifdef USE_FMT_ADPCM
+    adpcm_state.valprev = 0;
+    adpcm_state.index = 0;
+#endif	
+    pthread_exit(NULL);
 }
 
 /*
@@ -141,56 +149,77 @@ void deal_runtime_play(void *arg)
  */
 static int talk_playback(u32 client_fd)
 {
-	int error_flag, read_len;
-
-	oss_close_flag++;
-	
+    int error_flag, read_len;
+    oss_close_flag++;
     printf("in talk_playback>>>>>>>>>>\n");
-	if (!oss_open_flag) {
-		/* open audio(oss) device for playbacking */
-		oss_fd = open(OSS_AUDIO_DEV, O_RDWR);
-		if (oss_fd < 0) {
-			fprintf(stderr, "Open audio(oss) device failed!\n");
-			return -1;
-		}
-		
-		oss_open_flag = 1;
-		
-		/* set oss configuration */
-		set_oss_play_config(oss_fd, AUDIO_RATE, AUDIO_CHANNELS, AUDIO_BIT);
-		
-		printf(">>>Open playback audio device\n");
-	}
-	
-	/* semaphore double buffer */
-	sem_init(&write_play_buf0, 0, 0);			/* read socket to buffer */
-	sem_init(&write_play_buf1, 0, 0);
-	sem_init(&read_play_buf0, 0, 0);			/* read from buffer to alsa driver */
-	sem_init(&read_play_buf1, 0, 0);
-	/* for first use of double buffer */
-	sem_post(&write_play_buf0);
-	sem_post(&write_play_buf1);
-	
-	/*
-	 * TODO (FIX ME)
-	 * create a thread for playbacking recording data from cellphone
-	 */
-	error_flag = pthread_create(&talk_playback_td, NULL, deal_talk_play, NULL);
-	if (error_flag < 0) {
-		printf("Create talk playback thread faild!\n");
-		return -1;
-	}
-	
+    u8 size_buf[8];
+    u8 oss_config_buf[3];
+    unsigned rate,channels,bit;
+    long *p_file_size, file_size;
+    //, read_left;
+    /* receive file size from cellphone */
+    if (recv(client_fd, size_buf, 8, 0) == -1) {
+        perror("recv");
+        close(client_fd);
+        exit(0);
+    }
+    p_file_size = (u32 *)size_buf;
+    file_size = *p_file_size;
+    printf(">>>receive file size : %d字节\n", file_size);
+    if (recv(client_fd, oss_config_buf, 3, 0) == -1) {
+        perror("recv");
+        close(client_fd);
+        exit(0);
+    }
+    rate=un_OSS_RATE[oss_config_buf[0]];
+    channels=oss_config_buf[1];
+    bit=oss_config_buf[2];
+    printf("rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
+    if (!oss_open_flag) {
+        /* open audio(oss) device for playbacking */
+        oss_fd = open(OSS_AUDIO_DEV, O_RDWR);
+        if (oss_fd < 0) {
+            fprintf(stderr, "Open audio(oss) device failed!\n");
+            return -1;
+        }
+
+        oss_open_flag = 1;
+
+        /* set oss configuration */
+        set_oss_play_config(oss_fd, rate,AUDIO_CHANNELS, bit);
+
+        printf(">>>Open playback audio device\n");
+    }
+
+    /* semaphore double buffer */
+    sem_init(&write_play_buf0, 0, 0);			/* read socket to buffer */
+    sem_init(&write_play_buf1, 0, 0);
+    sem_init(&read_play_buf0, 0, 0);			/* read from buffer to alsa driver */
+    sem_init(&read_play_buf1, 0, 0);
+    /* for first use of double buffer */
+    sem_post(&write_play_buf0);
+    sem_post(&write_play_buf1);
+
+    /*
+     * TODO (FIX ME)
+     * create a thread for playbacking recording data from cellphone
+     */
+    error_flag = pthread_create(&talk_playback_td, NULL, deal_talk_play, NULL);
+    if (error_flag < 0) {
+        printf("Create talk playback thread faild!\n");
+        return -1;
+    }
+
 #ifdef USE_FMT_ADPCM
-	read_len = ADPCM_MAX_READ_LEN;
+    read_len = ADPCM_MAX_READ_LEN;
 #else
-	read_len = MAX_READ_LEN;
+    read_len = MAX_READ_LEN;
 #endif
 
-	/* read socket until cellphone's recording stop, under the semaphore mechanism (sem_t play_buf0 \ play_buf1) */
-	while (playback_on) {
-		/* buffer_0 */
-		sem_wait(&write_play_buf0);
+    /* read socket until cellphone's recording stop, under the semaphore mechanism (sem_t play_buf0 \ play_buf1) */
+    while (playback_on) {
+        /* buffer_0 */
+        sem_wait(&write_play_buf0);
 #ifdef USE_FMT_ADPCM
 		/* TODO (FIX ME)
 		 * if not use readall method, we may use another method to fill the buffer all
@@ -306,6 +335,7 @@ static int runtime_playback(u32 client_fd)
 #else
 	file_size = 3785422;
 #endif
+    
 	/* --------------------------------------------------------- */
 	/* TODO move here */
 	if (!oss_open_flag) {

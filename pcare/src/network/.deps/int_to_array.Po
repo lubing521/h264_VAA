@@ -1,5 +1,0 @@
-int_to_array.o: int_to_array.c int_to_array.h ../../src/include/types.h
-
-int_to_array.h:
-
-../../src/include/types.h:

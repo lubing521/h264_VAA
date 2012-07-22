@@ -340,7 +340,7 @@ int send_audio_data(u8 *audio_buf, u32 data_len)
 		exit(0);
 	}
 	/* ------------------------------------------- */
-	//printf("audio_data_size = %d\n", data_len);
+	printf("audio_data_size = %d\n", data_len);
 	send(audio_data_fd, (void *)audio_buf, data_len + 3, 0);
 
 	pthread_mutex_unlock(&AVsocket_mutex);
