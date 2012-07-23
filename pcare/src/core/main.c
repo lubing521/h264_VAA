@@ -11,9 +11,11 @@
 #include "camera.h"
 #include "audio.h"
 #include "utils.h"
+//#include "led.h"
 
 int main()
 {
+    //led_flash_on();
 #if 1
 #ifdef ENABLE_VIDEO	
 	if (init_camera() < 0)

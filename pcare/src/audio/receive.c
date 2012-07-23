@@ -154,9 +154,8 @@ static int talk_playback(u32 client_fd)
     printf("in talk_playback>>>>>>>>>>\n");
     u8 size_buf[8];
     u8 oss_config_buf[3];
-    unsigned rate,channels,bit;
-    long *p_file_size, file_size;
-    //, read_left;
+    unsigned rate,channels,bit,ispk;
+    long *p_file_size, file_size,read_left;
     /* receive file size from cellphone */
     if (recv(client_fd, size_buf, 8, 0) == -1) {
         perror("recv");
@@ -165,8 +164,9 @@ static int talk_playback(u32 client_fd)
     }
     p_file_size = (u32 *)size_buf;
     file_size = *p_file_size;
+    read_left = file_size;
     printf(">>>receive file size : %d字节\n", file_size);
-    if (recv(client_fd, oss_config_buf, 3, 0) == -1) {
+    if (recv(client_fd, oss_config_buf, 4, 0) == -1) {
         perror("recv");
         close(client_fd);
         exit(0);
@@ -174,7 +174,8 @@ static int talk_playback(u32 client_fd)
     rate=un_OSS_RATE[oss_config_buf[0]];
     channels=oss_config_buf[1];
     bit=oss_config_buf[2];
-    printf("rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
+    ispk=oss_config_buf[3];
+    printf("rate is %d,channels is %d,bit is %d,ispk is %d\n",rate,channels,bit,ispk);
     if (!oss_open_flag) {
         /* open audio(oss) device for playbacking */
         oss_fd = open(OSS_AUDIO_DEV, O_RDWR);
@@ -217,7 +218,8 @@ static int talk_playback(u32 client_fd)
 #endif
 
     /* read socket until cellphone's recording stop, under the semaphore mechanism (sem_t play_buf0 \ play_buf1) */
-    while (playback_on) {
+    //while (playback_on) {
+	while (playback_on & (read_left > 0)) {
         /* buffer_0 */
         sem_wait(&write_play_buf0);
 #ifdef USE_FMT_ADPCM
@@ -228,6 +230,8 @@ static int talk_playback(u32 client_fd)
 		error_flag = read_all(client_fd, play_buf0, &read_len);
 		if (error_flag < 0)
 			return -1;
+        else
+            printf(".");
 		if (read_len != ADPCM_MAX_READ_LEN)
 			printf("###error read (adpcm): %dB###\n", error_flag);	
 #else
@@ -256,9 +260,11 @@ static int talk_playback(u32 client_fd)
 			if (error_flag < 0)
 				return -1;
 #endif
-			sem_post(&read_play_buf1);		
-			//fprintf(stderr, ".");
-		}
+            if(!ispk)
+                read_left -= read_len;
+            sem_post(&read_play_buf1);		
+            //fprintf(stderr, ".");
+        }
 	}
 }
 

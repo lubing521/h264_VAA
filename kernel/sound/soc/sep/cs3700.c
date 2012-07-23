@@ -510,6 +510,7 @@ static int cs3700_set_audio_output(struct snd_soc_codec *codec)
 }
 
 static int cs3700_set_audio_input(struct snd_soc_codec *codec)
+//static int cs3700_set_audio_input(struct snd_soc_codec *codec,unsigned int rate )
 {
 	alsa_dbg("%s\n", __func__);
 
@@ -542,6 +543,7 @@ static int cs3700_set_audio_input(struct snd_soc_codec *codec)
 
 	cs3700_write_reg(0x06, 0x0100);				//slave mode;BCLK in; SYSCLK=FLLout;
 	cs3700_write_reg(0x07, 0x0000);				//
+	//cs3700_write_reg(0x07, rate);				//
 	cs3700_write_reg(0x08, 0x0000);				//ADC input
 
 	cs3700_write_reg(0x0A, 0x0020);				//256*Fs;

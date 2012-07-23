@@ -87,7 +87,7 @@ static int store_audio_data(void)
 	record_oss_data(pcm_data_buf, oss_buf_size);
 	
 	//fprintf(stderr, "*");
-#if 1
+#if 0
 	/* convert pcm to adpcm */
 	adpcm_coder((short *)pcm_data_buf, (char *)audio_data, oss_buf_size, &adpcm_state_next);
 
@@ -109,8 +109,8 @@ static void read_audio_frame()
 
 		store_audio_data();
 
-		//send_audio_data(pcm_data_buf, oss_buf_size);
-		send_audio_data(audio_data, data_buf_size);
+		send_audio_data(pcm_data_buf, oss_buf_size);
+		//send_audio_data(audio_data, data_buf_size);
 
 	};
 }
