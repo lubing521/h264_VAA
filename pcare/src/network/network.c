@@ -30,6 +30,7 @@
 #include "utils.h"
 #include "wifi_debug.h"
 #include "t_rh.h"
+//#include "led.h"
 /* ---------------------------------------------------------- */
 
 #define SERVER_PORT 80
@@ -157,7 +158,7 @@ void enable_t_rh_sent()
     tem_rh_data->rh = (u8)rh;
     command21->opcode = 21; 
     command21->text_len = 3;
-    printf("tem_integer is %d,tem_decimal is %d,rh is %d\n",tem_integer,tem_decimal,rh);
+    //printf("tem_integer is %d,tem_decimal is %d,rh is %d\n",tem_integer,tem_decimal,rh);
     if (send(tem_rh_fd, command21, 26, 0) == -1){ 
 	perror("send");
         close(tem_rh_fd);
@@ -340,7 +341,7 @@ int send_audio_data(u8 *audio_buf, u32 data_len)
 		exit(0);
 	}
 	/* ------------------------------------------- */
-	printf("audio_data_size = %d\n", data_len);
+	//printf("audio_data_size = %d\n", data_len);
 	send(audio_data_fd, (void *)audio_buf, data_len + 3, 0);
 
 	pthread_mutex_unlock(&AVsocket_mutex);
@@ -763,6 +764,9 @@ void network(void)
 		}
 
 		printf("server: got connection from %s,,,,%d\n", inet_ntoa(client_addr.sin_addr),client_fd);
+
+        //led_flash_off();
+        //led_on();
 
 		/* TODO(FIX ME): disable the Nagle (TCP No Delay) algorithm */
 		setsockopt(*client_fd, IPPROTO_TCP, TCP_NODELAY, (char *)&nagle_flag, sizeof(nagle_flag));
