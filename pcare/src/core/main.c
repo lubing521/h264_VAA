@@ -11,11 +11,17 @@
 #include "camera.h"
 #include "audio.h"
 #include "utils.h"
-//#include "led.h"
-
+#include "led_control.h"
+#include <pthread.h>
+extern int led_flag;
+pthread_t led_flash_id;
 int main()
 {
-    //led_flash_on();
+    int ret;
+    led_flag=1;
+	ret = pthread_create(&led_flash_id,NULL,(void *)led_flash,NULL); 
+    if (ret != 0)
+           printf("create led_flash thread error\n");
 #if 1
 #ifdef ENABLE_VIDEO	
 	if (init_camera() < 0)

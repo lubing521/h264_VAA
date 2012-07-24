@@ -30,7 +30,7 @@
 #include "utils.h"
 #include "wifi_debug.h"
 #include "t_rh.h"
-//#include "led.h"
+#include "led_control.h"
 /* ---------------------------------------------------------- */
 
 #define SERVER_PORT 80
@@ -41,6 +41,7 @@
 extern unsigned int tem_integer;
 extern unsigned int tem_decimal;
 extern unsigned int rh;
+extern int led_flag;
 
 int can_send = 0;				/* if AVcommand ID is same user<->camera, can_send = 1, allow send file */
 int data_ID  = 7501;			/* AVdata command text[23:26] data connetion ID */
@@ -765,8 +766,6 @@ void network(void)
 
 		printf("server: got connection from %s,,,,%d\n", inet_ntoa(client_addr.sin_addr),client_fd);
 
-        //led_flash_off();
-        //led_on();
 
 		/* TODO(FIX ME): disable the Nagle (TCP No Delay) algorithm */
 		setsockopt(*client_fd, IPPROTO_TCP, TCP_NODELAY, (char *)&nagle_flag, sizeof(nagle_flag));
@@ -776,10 +775,12 @@ void network(void)
 			flag = 2;
 			AVcommand_fd = *client_fd;
 			/* ----------------------------------------------------------------- */
-			
-			/* TODO keep connection ever 1 minute */
-			command255 = malloc(sizeof(struct command));
-			memcpy(command255->protocol_head, str_ctl, 4);
+
+            led_flag = 0;
+            led_on();
+            /* TODO keep connection ever 1 minute */
+            command255 = malloc(sizeof(struct command));
+            memcpy(command255->protocol_head, str_ctl, 4);
 			
 			/* ----------------------------------------------------------------- */
 			if(pthread_create(&th1, NULL, deal_opcode_request, client_fd) != 0) {
