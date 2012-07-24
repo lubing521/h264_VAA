@@ -38,9 +38,9 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 	arg = bit;
 	status = ioctl(fd, SOUND_PCM_WRITE_BITS, &arg);
 	if (status == -1)
-		perror("SOUND_PCM_WRITE_BITS ioctl failed");
+		printf("SOUND_PCM_WRITE_BITS ioctl failed");
 	if (arg != bit)
-    	perror("unable to set sample size");
+    	printf("unable to set sample size");
     
     /* set audio channels */
 	arg = channels;	
@@ -54,9 +54,9 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 	arg	= rate;
 	status = ioctl(fd, SOUND_PCM_WRITE_RATE, &arg);
 	if (status == -1)
-		perror("SOUND_PCM_WRITE_WRITE ioctl failed");
+		printf("SOUND_PCM_WRITE_WRITE ioctl failed");
 	if (arg != rate)
-		perror("unable to set number of rate");
+		printf("unable to set number of rate");
 }
 
 /* ------------------------------------------------------------------------------ */

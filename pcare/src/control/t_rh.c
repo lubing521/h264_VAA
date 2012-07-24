@@ -19,7 +19,6 @@ int get_tem()
 	float tem1;
 	fd = open(name ,O_RDONLY);
 	size = read(fd, buf, 5);
-	printf("%s\n",buf);
 	tem0 = atoi(buf);
 	tem1 = ((float)tem0)/65536*175.72-46.85;
 	tem_integer = ((int)tem1);
@@ -39,7 +38,6 @@ int get_rh()
 	float rh1;
 	fd = open(name , O_RDONLY);
 	size = read(fd, buf, 5);
-	printf("%s\n",buf);
 	rh0 = atoi(buf);
 	rh1 = ((float)rh0)/65536*125-6;
 	rh = ((int)rh1);

@@ -629,9 +629,8 @@ void stepper_up(int param)
 		{
 				count_m1++;
 				ioctl(stepper_motor_fd,6,&stepper_motor_up_flag[0]);
-				ioctl(stepper_motor_fd,8,&stepper_motor_down_flag[0]);
 				//printf("%s;upflag:%d;stepper_motor_up_flag[0]:%d;stepper_motor_down_flag[0]:%d\n",__func__,upflag,stepper_motor_up_flag[0],stepper_motor_down_flag[0]);
-				if ((stepper_motor_up_flag[0] == 0) && (stepper_motor_down_flag[0] == 1))
+				if (stepper_motor_up_flag[0] == 1)
 				{
 						printf("up in place;\n");
 						/* UP IN PLACE */
@@ -663,7 +662,6 @@ void stepper_upstop(void)
 		u8 i;
 		upflag = 0;
 		stepper_motor_up_flag[0] = 0;
-		stepper_motor_down_flag[0] = 0;
 		//printf("%s;upflag:%d\n",__func__,upflag);
 		ioctl(stepper_motor_fd,3,&i);
 }
@@ -679,10 +677,9 @@ void stepper_down(int param)
 		while(k)
 		{
 				count_m1--;
-				ioctl(stepper_motor_fd,6,&stepper_motor_up_flag[0]);
 				ioctl(stepper_motor_fd,8,&stepper_motor_down_flag[0]);
 				//printf("%s;downflag:%d;stepper_motor_up_flag[0]:%d;stepper_motor_down_flag[0]:%d\n",__func__,upflag,stepper_motor_up_flag[0],stepper_motor_down_flag[0]);
-				if ((stepper_motor_up_flag[0] == 1) && (stepper_motor_down_flag[0] == 0))
+				if (stepper_motor_down_flag[0] == 1)
 				{	
 						/* DOWN IN PLACE */
 						printf("down in place!\n");
@@ -696,7 +693,7 @@ void stepper_down(int param)
 					{
 						for (i=0;i<8;i++)
 						{
-								ioctl(stepper_motor_fd,1,&sm_phase[i]);
+								ioctl(stepper_motor_fd,21,&sm_phase[i]);
 								usleep(2*j);
 						}
 					}
@@ -713,7 +710,6 @@ void stepper_downstop(void)
 {
 		u8 i;
 		downflag = 0;
-		stepper_motor_up_flag[0] = 0;
 		stepper_motor_down_flag[0] = 0;
 		//printf("%s;downflag:%d\n",__func__,downflag);
 		ioctl(stepper_motor_fd,3,&i);
@@ -731,10 +727,9 @@ void stepper_right(int param)
 		while(k)
 		{
 				count_m2++;
-				ioctl(stepper_motor_fd,9,&stepper_motor_left_flag[0]);
 				ioctl(stepper_motor_fd,10,&stepper_motor_right_flag[0]);
 				//printf("%s;downflag:%d;stepper_motor_left_flag[0]:%d;stepper_motor_right_flag[0]:%d\n",__func__,rightflag,stepper_motor_left_flag[0],stepper_motor_right_flag[0]);
-				if ((stepper_motor_left_flag[0] == 0) && (stepper_motor_right_flag[0] == 1))
+				if (stepper_motor_right_flag[0] == 1)
 				{	
 						/* RIGHT IN PLACE */
 						printf("right in place!\n");
@@ -748,7 +743,7 @@ void stepper_right(int param)
 					{
 						for (i=8;i>0;i--)
 						{
-								ioctl(stepper_motor_fd,4,&sm_phase[i-1]);
+								ioctl(stepper_motor_fd,24,&sm_phase[i-1]);
 								usleep(2*j);
 						}
 					}
@@ -765,7 +760,6 @@ void stepper_rightstop(void)
 {
     u8 i;
 		rightflag = 0;
-		stepper_motor_left_flag[0] = 0;
 		stepper_motor_right_flag[0] = 0;
 		//printf("%s;rightflag:%d\n",__func__,rightflag);
 		ioctl(stepper_motor_fd,5,&i);
@@ -783,9 +777,8 @@ void stepper_left(int param)
 		{
 				count_m2--;
 				ioctl(stepper_motor_fd,9,&stepper_motor_left_flag[0]);
-				ioctl(stepper_motor_fd,10,&stepper_motor_right_flag[0]);
 				//printf("%s;leftflag:%d;stepper_motor_left_flag[0]:%d;stepper_motor_right_flag[0]:%d\n",__func__,leftflag,stepper_motor_left_flag[0],stepper_motor_right_flag[0]);
-				if ((stepper_motor_left_flag[0] == 1) && (stepper_motor_right_flag[0] == 0))
+				if (stepper_motor_left_flag[0] == 1)
 				{
 						printf("left in place;\n");
 						/* left IN PLACE */
@@ -817,7 +810,6 @@ void stepper_leftstop(void)
 		u8 i;
 		leftflag = 0;
 		stepper_motor_left_flag[0] = 0;
-		stepper_motor_right_flag[0] = 0;
 		ioctl(stepper_motor_fd,5,&i);
 		//printf("%s;%d\n",__func__,leftflag);
 }

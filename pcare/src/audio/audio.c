@@ -44,8 +44,7 @@ int enable_capture_audio(void)
 		oss_open_flag = 1;
 		
 		/* set oss configuration */
-		set_oss_record_config(oss_fd, AUDIO_RATE, AUDIO_CHANNELS, AUDIO_BIT);
-		
+        set_oss_record_config(oss_fd,RECORD_RATE,RECORD_CHANNELS,RECORD_BIT);
 		printf(">>>Open capture audio device\n");
 	}
 
