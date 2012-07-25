@@ -94,7 +94,7 @@ FILE *bat_fp;
 int bat_info[20]={0};
 u32 battery_fd;
 
-int picture_fd, audio_data_fd, music_data_fd;
+int picture_fd, audio_data_fd, music_data_fd=-1;
 
 pthread_mutex_t AVsocket_mutex;
 
@@ -199,7 +199,7 @@ void enable_audio_send()
 	struct audio_start_resp *audio_start_resp;
 
 	command9 = malloc(sizeof(struct command) + 6);
-	audio_start_resp = &command1->text[0].audio_start_resp;
+	audio_start_resp = &command9->text[0].audio_start_resp;
 
 	memcpy(command9->protocol_head, str_ctl, 4);
 	command9->opcode = 9;
@@ -220,6 +220,31 @@ void enable_audio_send()
 
 }
 
+/*
+ *stepper motor stop confirm
+ */
+void confirm_stop()
+{
+    int stepper_stop_fd = AVcommand_fd;
+    struct command *command15;
+    struct step_stop_resp *step_stop_resp;
+    command15 = malloc(sizeof(struct command));
+    memcpy(command15->protocol_head, str_ctl, 4);
+    step_stop_resp = &command15->text[0].step_stop_resp;
+    command15->opcode = 15; 
+    command15->text_len = 0;
+    printf("confirm_stop******\n");
+    if (send(stepper_stop_fd, command15, 23, 0) == -1){ 
+        perror("send");
+        close(stepper_stop_fd);
+        printf("========%s,%u========\n",__FILE__,__LINE__);
+        exit(0);
+    }   
+    
+    free(command15);
+    command15 = NULL;
+    return;
+}                           
 /* enable talk data */
 void send_talk_resp()
 {
@@ -229,7 +254,7 @@ void send_talk_resp()
 	struct talk_start_resp *talk_start_resp;
 
 	command12 = malloc(sizeof(struct command) + 6);
-	talk_start_resp = &command1->text[0].talk_start_resp;
+	talk_start_resp = &command12->text[0].talk_start_resp;
 
 	memcpy(command12->protocol_head, str_ctl, 4);
 	command12->opcode = 12;
@@ -437,7 +462,7 @@ void set_opcode_connection(u32 client_fd)
         printf("========%s,%u==========\n",__FILE__,__LINE__);
 		exit(0);
 	}
-
+    //printf("######### n is %d\n",n);
 	buffer[n] = '\0';
 	/* we can do something here to process connection later! */
 	wifi_dbg("---------------------------------------\n");
@@ -634,6 +659,11 @@ void set_opcode_connection(u32 client_fd)
 			exit(0);
 		}
 		//printf("n = %d\n", n);
+		//printf("---------------------------------------\n");
+		//printf("data number = %d\n", n);
+		//printf("buf[0:3] = %s\n", str_tmp);
+		//printf("buf[4] = %d\n", buffer[4]);
+		//printf("---------------------------------------\n");
 		wifi_dbg("---------------------------------------\n");
 		wifi_dbg("data number = %d\n", n);
 		//memcpy(str_tmp, buffer, 4);
@@ -650,6 +680,7 @@ void set_opcode_connection(u32 client_fd)
 			m = 0;
 			while ((m - n) < 0) {
 				offset = m * 25;
+                //printf("m is %d\n",m);
 				m++;
 				/* TODO prase opcode protocols */
 				memcpy(text, buffer + 15 + offset, 4);
@@ -667,6 +698,7 @@ void set_opcode_connection(u32 client_fd)
 			text_len = byteArrayToInt(text, 0, 4);
 			if (( n - 23) > text_len)
 				printf("we have one more protocol to recive!\n");			/* TODO */
+            printf("text_len is %d\n",text_len);
 			memcpy(text, buffer + 23, text_len);
 			if (prase_packet(buffer[4], text) == -1)
 				continue;
@@ -746,6 +778,7 @@ void network(void)
 	int server_fd, *client_fd;
 	struct sockaddr_in server_addr;
 	struct sockaddr_in client_addr;
+    in_addr_t current_client_address =0;
 	int sin_size;
 	int opt = 1;							/* allow server address reuse */
 	int flag = 1;							/* TODO thread flag */
@@ -813,6 +846,14 @@ void network(void)
 		}
 
 		printf("server: got connection from %s,,,,%d\n", inet_ntoa(client_addr.sin_addr),client_fd);
+        if(current_client_address == 0)
+            current_client_address =client_addr.sin_addr.s_addr;
+        else if (current_client_address != client_addr.sin_addr.s_addr)
+        {
+            printf("Rejected !!!! Already a client conected!\n");
+            free(client_fd);
+            continue;
+        }
 
 
 		/* TODO(FIX ME): disable the Nagle (TCP No Delay) algorithm */
@@ -863,12 +904,21 @@ void network(void)
 #endif
 		}
 		else if (flag == 3){
-			flag = 3;
-			music_data_fd = *client_fd;
-			/* TODO just want to erase the no using data int the new socket buffer */
-			clear_recv_buf(music_data_fd);
-			/* when the new socket is connected, then tell the cellphone to start sending file */
-			sem_post(&start_music);
+            flag = 3;
+            // close(music_data_fd);
+            if(music_data_fd != -1)
+            {
+                close(*client_fd);
+                free(client_fd);
+                printf("muisc is working now ! reject request!\n");
+            }
+            else{
+                music_data_fd = *client_fd;
+                /* TODO just want to erase the no using data int the new socket buffer */
+                clear_recv_buf(music_data_fd);
+                /* when the new socket is connected, then tell the cellphone to start sending file */
+                sem_post(&start_music);
+            }
 		}
 	}
 	pthread_join(th1, NULL);
@@ -881,17 +931,3 @@ void network(void)
 	close(picture_fd);
 	close(server_fd);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

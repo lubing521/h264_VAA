@@ -21,6 +21,7 @@
 #include "types.h"
 #include "motor.h"
 #include "motor_driver.h"
+#include "network.h"
 
 #define MOTOR1_V  0xF0
 #define MOTOR2_V  0x0F
@@ -32,7 +33,8 @@
 #define DCM2_RETREAT  1
 #define STEPPER_DELAY 1000
 #define STEPPER_LIMIT 50
-
+#define STEPER_PHASE_UP 225
+#define STEPER_PHASE_LEFT 620
 extern pthread_mutex_t mutex_dc;
 extern pthread_mutex_t mutex_step;
 extern int oflags;
@@ -49,7 +51,12 @@ extern u8 cmd_step[CMD_L][CMD_W];
 /***count_m1 up ++ down --*******
  ***count_m2 right ++ left --****
  ********************************/
-int count_m1,count_m2;
+static int count_m1_up=0;
+static int count_m2_right=0;
+static int count_m1_down=0;
+static int count_m2_left=0;
+static int count_m1=0;
+static int count_m2=0;
 FILE *fp;
 u8 unfull_write_flag = 0;
 u8 read_count = 0;
@@ -627,25 +634,27 @@ void stepper_up(int param)
 		//printf("%s\n",__func__);
 		while(k)
 		{
-				count_m1++;
 				ioctl(stepper_motor_fd,6,&stepper_motor_up_flag[0]);
 				//printf("%s;upflag:%d;stepper_motor_up_flag[0]:%d;stepper_motor_down_flag[0]:%d\n",__func__,upflag,stepper_motor_up_flag[0],stepper_motor_down_flag[0]);
-				if (stepper_motor_up_flag[0] == 1)
+				if (stepper_motor_up_flag[0] == 1||count_m1_up > STEPER_PHASE_UP)
 				{
-						printf("up in place;\n");
+						printf("up in place;count_m1=%d\n",count_m1);
 						/* UP IN PLACE */
 						k = 0;
+                        count_m1_down = 0;
 						ioctl(stepper_motor_fd,3,&k);
 				}
 				else
 				{
 					//printf("upflag:%d\n",upflag);
 					if (upflag)
-					{
-						for (i=8;i>0;i--)
-						{
-								ioctl(stepper_motor_fd,1,&sm_phase[i-1]);
-								usleep(2*j);
+                    {
+                        count_m1_up++;
+                        count_m1_down--;
+                        for (i=8;i>0;i--)
+                        {
+                            ioctl(stepper_motor_fd,1,&sm_phase[i-1]);
+                            usleep(2*j);
 						}
 					}
 				}
@@ -664,6 +673,7 @@ void stepper_upstop(void)
 		stepper_motor_up_flag[0] = 0;
 		//printf("%s;upflag:%d\n",__func__,upflag);
 		ioctl(stepper_motor_fd,3,&i);
+        confirm_stop();
 }
 
 void stepper_down(int param)
@@ -676,21 +686,23 @@ void stepper_down(int param)
 		//printf("%s\n",__func__);
 		while(k)
 		{
-				count_m1--;
 				ioctl(stepper_motor_fd,8,&stepper_motor_down_flag[0]);
 				//printf("%s;downflag:%d;stepper_motor_up_flag[0]:%d;stepper_motor_down_flag[0]:%d\n",__func__,upflag,stepper_motor_up_flag[0],stepper_motor_down_flag[0]);
-				if (stepper_motor_down_flag[0] == 1)
+				if (stepper_motor_down_flag[0] == 1||count_m1_down > STEPER_PHASE_UP)
 				{	
 						/* DOWN IN PLACE */
-						printf("down in place!\n");
+						printf("down in place!count_m1 is %d\n",count_m1);
 						k = 0;
 						ioctl(stepper_motor_fd,3,&k);
+                        count_m1_up = 0;
 				}
 				else
 				{
 					//printf("downflag:%d\n",downflag);
 					if(downflag)
 					{
+                        count_m1_up--;
+                        count_m1_down++;
 						for (i=0;i<8;i++)
 						{
 								ioctl(stepper_motor_fd,21,&sm_phase[i]);
@@ -713,6 +725,7 @@ void stepper_downstop(void)
 		stepper_motor_down_flag[0] = 0;
 		//printf("%s;downflag:%d\n",__func__,downflag);
 		ioctl(stepper_motor_fd,3,&i);
+        confirm_stop();
 }
 
 /*********************use sm_phase for right&left*************************/
@@ -726,21 +739,24 @@ void stepper_right(int param)
 		//printf("%s\n",__func__);
 		while(k)
 		{
-				count_m2++;
 				ioctl(stepper_motor_fd,10,&stepper_motor_right_flag[0]);
 				//printf("%s;downflag:%d;stepper_motor_left_flag[0]:%d;stepper_motor_right_flag[0]:%d\n",__func__,rightflag,stepper_motor_left_flag[0],stepper_motor_right_flag[0]);
-				if (stepper_motor_right_flag[0] == 1)
+				if (stepper_motor_right_flag[0] == 1||count_m2_right > STEPER_PHASE_LEFT)
 				{	
 						/* RIGHT IN PLACE */
-						printf("right in place!\n");
+						printf("right in place!\n count_m2 is %d",count_m2);
 						k = 0;
+                        count_m2=0;
 						ioctl(stepper_motor_fd,5,&k);
+                        count_m2_left = 0;
 				}
 				else
 				{
 					//printf("rightflag:%d\n",rightflag);
 					if(rightflag)
 					{
+				        count_m2_left--;
+                        count_m2_right++;
 						for (i=8;i>0;i--)
 						{
 								ioctl(stepper_motor_fd,24,&sm_phase[i-1]);
@@ -763,6 +779,7 @@ void stepper_rightstop(void)
 		stepper_motor_right_flag[0] = 0;
 		//printf("%s;rightflag:%d\n",__func__,rightflag);
 		ioctl(stepper_motor_fd,5,&i);
+        confirm_stop();
 }
 
 void stepper_left(int param)
@@ -775,21 +792,23 @@ void stepper_left(int param)
 		//printf("%s\n",__func__);
 		while(k)
 		{
-				count_m2--;
 				ioctl(stepper_motor_fd,9,&stepper_motor_left_flag[0]);
 				//printf("%s;leftflag:%d;stepper_motor_left_flag[0]:%d;stepper_motor_right_flag[0]:%d\n",__func__,leftflag,stepper_motor_left_flag[0],stepper_motor_right_flag[0]);
-				if (stepper_motor_left_flag[0] == 1)
+				if (stepper_motor_left_flag[0] == 1||count_m2_left > STEPER_PHASE_LEFT)
 				{
-						printf("left in place;\n");
+						printf("left in place;count_m2 is %d\n",count_m2);
 						/* left IN PLACE */
 						k = 0;
 						ioctl(stepper_motor_fd,5,&k);
+                        count_m2_right = 0;
 				}
 				else
 				{
 					//printf("leftflag:%d\n",leftflag);
 					if (leftflag)
 					{
+				        count_m2_left++;
+                        count_m2_right--;
 						for (i=0;i<8;i++)
 						{
 								ioctl(stepper_motor_fd,4,&sm_phase[i]);
@@ -812,6 +831,7 @@ void stepper_leftstop(void)
 		stepper_motor_left_flag[0] = 0;
 		ioctl(stepper_motor_fd,5,&i);
 		//printf("%s;%d\n",__func__,leftflag);
+        confirm_stop();
 }
 
 /*****************************camera in mid***************************************/
@@ -1048,7 +1068,7 @@ void right_down(param)
 /**************close led**************/
 void out_high(void)
 {
-		printf("%s\n",__func__);
+		//printf("%s\n",__func__);
 		int i = 0;
 		ioctl(dc_motor_fd,6,&i);
 }
@@ -1056,7 +1076,7 @@ void out_high(void)
 /**************open led**************/
 void out_low(void)
 {
-		printf("%s\n",__func__);
+		//printf("%s\n",__func__);
 		int i = 1;
 		ioctl(dc_motor_fd,6,&i);
 }

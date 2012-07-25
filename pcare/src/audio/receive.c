@@ -226,7 +226,7 @@ static int talk_playback(u32 client_fd)
 
     /* read socket until cellphone's recording stop, under the semaphore mechanism (sem_t play_buf0 \ play_buf1) */
     //while (playback_on) {
-	while (playback_on & (read_left > 0)) {
+	while (playback_on && (read_left > 0)) {
         /* buffer_0 */
         sem_wait(&write_play_buf0);
 #ifdef USE_FMT_ADPCM
@@ -461,6 +461,7 @@ free_buf:
 	/* malloc in the main() */
 	//free(arg);
 	close(client_fd);
+    music_data_fd =-1;
 	pthread_exit(NULL);
 }
 
