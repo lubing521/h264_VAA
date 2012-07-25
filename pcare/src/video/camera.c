@@ -15,6 +15,10 @@
 #include "camera.h"
 #include "v4l2.h"
 #include "types.h"
+#ifdef PRINTFPS
+#include <signal.h>
+#include <sys/time.h>
+#endif
 
 #define CAMERA_DEV "/dev/video0"
 
@@ -23,6 +27,35 @@ static int camera_fd;
 static int camera_stop = 0;
 sem_t start_camera;
 
+#ifdef PRINTFPS
+int pic_cnt=0;
+
+void sigalrm_handler(int sig)
+{
+	printf("fps=%d\n", pic_cnt);
+	pic_cnt = 0;
+}
+
+
+int init_timer(void)
+{
+	struct itimerval itv;
+	int ret;
+
+	signal(SIGALRM, sigalrm_handler);
+	itv.it_interval.tv_sec = 1;
+	itv.it_interval.tv_usec = 0;
+	itv.it_value.tv_sec = 1;
+	itv.it_value.tv_usec = 0;
+	
+	ret = setitimer(ITIMER_REAL, &itv, NULL);
+	if ( ret != 0){
+		printf("Set timer error. %s \n", strerror(errno) );
+		return -1;
+	}
+	printf("add timer\n");
+}
+#endif
 /*
  * the camera thread entry
  */
@@ -40,7 +73,9 @@ static void *camera_thread(void *args)
 	sem_wait(&start_camera);
 
     start_capturing (fd);
-    
+#ifdef PRINTFPS
+	init_timer();
+#endif    
     for (;;) {
         FD_ZERO (&fds);
         FD_SET (fd, &fds);
@@ -70,7 +105,7 @@ static void *camera_thread(void *args)
 		}
 		else
 			printf("r = %d\n", r);
-        
+        pic_cnt++;
 		if(camera_stop)
 			pthread_exit(0);
     }

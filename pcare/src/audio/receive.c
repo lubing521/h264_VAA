@@ -150,7 +150,6 @@ void deal_runtime_play(void *arg)
 static int talk_playback(u32 client_fd)
 {
     int error_flag, read_len;
-    oss_close_flag++;
     printf("in talk_playback>>>>>>>>>>\n");
     u8 size_buf[8];
     u8 oss_config_buf[3];
@@ -176,6 +175,7 @@ static int talk_playback(u32 client_fd)
     bit=oss_config_buf[2];
     ispk=oss_config_buf[3];
     printf("rate is %d,channels is %d,bit is %d,ispk is %d\n",rate,channels,bit,ispk);
+    oss_close_flag++;
     if (!oss_open_flag) {
         /* open audio(oss) device for playbacking */
         oss_fd = open(OSS_AUDIO_DEV, O_RDWR);
@@ -187,7 +187,14 @@ static int talk_playback(u32 client_fd)
         oss_open_flag = 1;
 
         /* set oss configuration */
-        set_oss_play_config(oss_fd, rate,AUDIO_CHANNELS, bit);
+        if( set_oss_play_config(oss_fd, rate,AUDIO_CHANNELS, bit) < 0 )
+        {
+            printf("Err: set oss play config failed!\n");
+            close(oss_fd);
+            oss_open_flag= 0;
+            oss_close_flag--;
+            return-1;
+        }
 
         printf(">>>Open playback audio device\n");
     }
@@ -233,7 +240,7 @@ static int talk_playback(u32 client_fd)
         else
             printf(".");
 		if (read_len != ADPCM_MAX_READ_LEN)
-			printf("###error read (adpcm): %dB###\n", error_flag);	
+			printf("###error talk playback read 1 (adpcm): %dB###\n", error_flag);	
 #else
 		error_flag = read_all(client_fd, play_buf0, &read_len);
 		if (error_flag < 0)
@@ -254,7 +261,7 @@ static int talk_playback(u32 client_fd)
 			if (error_flag < 0)
 				return -1;
 			if (read_len != ADPCM_MAX_READ_LEN)
-				printf("###error read (adpcm): %dB###\n", error_flag);
+				printf("###error talk playback read 2 (adpcm): %dB###\n", error_flag);
 #else
 			error_flag = read_all(client_fd, play_buf1, &read_len);
 			if (error_flag < 0)
@@ -344,6 +351,7 @@ static int runtime_playback(u32 client_fd)
     
 	/* --------------------------------------------------------- */
 	/* TODO move here */
+    oss_close_flag++;
 	if (!oss_open_flag) {
 		/* open audio(oss) device for playbacking */
 		oss_fd = open(OSS_AUDIO_DEV, O_RDWR);
@@ -355,7 +363,14 @@ static int runtime_playback(u32 client_fd)
 		oss_open_flag = 1;
 		
 		/* set oss configuration */
-		set_oss_play_config(oss_fd, AUDIO_RATE, AUDIO_CHANNELS, AUDIO_BIT);
+		if( set_oss_play_config(oss_fd, AUDIO_RATE, AUDIO_CHANNELS, AUDIO_BIT) < 0 )
+        {
+            printf("Err: set oss play config failed!\n");
+            close(oss_fd);
+            oss_open_flag = 0;
+            oss_close_flag--;
+            return -1;
+        }
 		
 		printf(">>>Open playback audio device\n");
 	}
@@ -439,6 +454,7 @@ void *deal_FEdata_request(void *arg)
 		printf("File receive connection is error!\n");
 #endif
 
+    stop_playback();
 	printf("<<<out of runtime_recv thread!\n");
 	
 free_buf:

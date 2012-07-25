@@ -98,6 +98,23 @@ int picture_fd, audio_data_fd, music_data_fd;
 
 pthread_mutex_t AVsocket_mutex;
 
+static void keep_alive_timeout(int signo )
+{
+    printf("Err:keep alive timeout!\n");
+    close(AVcommand_fd);
+    exit(0);
+}
+
+static void reset_keep_alive_timer( void )
+{
+    struct itimerval t;
+    t.it_interval.tv_sec = 10;
+    t.it_interval.tv_usec = 0;
+    t.it_value.tv_sec = 10;
+    t.it_value.tv_usec = 0;
+    setitimer(ITIMER_REAL, &t, NULL);
+}
+
 /* ---------------------------------------------------------- */
 /* deal bat info */
 void deal_bat_info()
@@ -359,6 +376,7 @@ void keep_connect(void)
 	command255->opcode = 255;
 	command255->text_len = 0;
 
+    reset_keep_alive_timer();
 	/* write command to client --- keep alive */
 	if ((n = send(client_fd, command255, 23, 0)) == -1) {
 		perror("send");
@@ -690,6 +708,36 @@ free_buf:
 	pthread_exit(NULL);
 }
 
+#if 0
+int pic_cnt=0;
+
+void sigalarm_handler(int sig)
+{
+	printf("fps=%d\n", pic_cnt);
+	pic_cnt = 0;
+}
+
+
+int init_timer(void)
+{
+	struct itimerval itv;
+	int ret;
+
+	signal(SIGALRM, sigalrm_handler);
+	itv.it_interval.tv_sec = 1;
+	itv.it_interval.tv_usec = 0;
+	itv.it_value.tv_sec = 1;
+	itv.it_value.tv_usec = 0;
+	
+	ret = setitimer(ITIMER_REAL, &itv, NULL);
+	if ( ret != 0){
+		printf("Set timer error. %s \n", strerror(errno) );
+		return -1;
+	}
+	printf("add timer\n");
+}
+#endif
+
 /* ------------------------------------------- */
 
 /* TODO wifi main function, later will be called in the main thread in core/main.c */
@@ -782,6 +830,8 @@ void network(void)
             command255 = malloc(sizeof(struct command));
             memcpy(command255->protocol_head, str_ctl, 4);
 			
+            signal(SIGALRM,keep_alive_timeout); 
+            reset_keep_alive_timer();
 			/* ----------------------------------------------------------------- */
 			if(pthread_create(&th1, NULL, deal_opcode_request, client_fd) != 0) {
 				perror("pthread_create");

@@ -112,7 +112,7 @@ static int sep_pwm_open(struct inode *inode, struct file *file)
 	 *****add for led on and off********/	
  	sep0611_gpio_cfgpin(SEP0611_IR_LED,SEP0611_GPIO_IO);
  	sep0611_gpio_dirpin(SEP0611_IR_LED,SEP0611_GPIO_OUT);
-	sep0611_gpio_setpin(SEP0611_IR_LED,HIGH);
+	sep0611_gpio_setpin(SEP0611_IR_LED,LOW);
  	sep0611_gpio_cfgpin(SEP0611_GPF10,SEP0611_GPIO_IO);
  	sep0611_gpio_dirpin(SEP0611_GPF10,SEP0611_GPIO_OUT);
 	sep0611_gpio_setpin(SEP0611_GPF10,LOW);

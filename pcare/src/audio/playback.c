@@ -50,7 +50,7 @@ extern sem_t start_music;
  */
 int playback_buf(u8 *play_buf, int len)
 {
-	int rc;
+	int rc=0;
 	int left_len = len;
 	u8* buf = play_buf;
 #if 0	
@@ -65,7 +65,8 @@ int playback_buf(u8 *play_buf, int len)
 		return 0;
 	
 	/* TODO (FIX ME) */
-	rc = write(oss_fd, buf, left_len);
+   	rc = write(oss_fd, buf, left_len);
+
     //printf("playback_buf>>>>>> rc= %d,left_len=%d\n",rc,left_len);
 	if (rc < 0)
 		perror("oss write error!\n");
@@ -78,7 +79,7 @@ int playback_buf(u8 *play_buf, int len)
 /*
  * set oss configuration
  */
-void set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
+int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
 {
 	int status, arg;
 	
@@ -88,26 +89,45 @@ void set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
 	arg = bit;
 	status = ioctl(oss_fd, SOUND_PCM_WRITE_BITS, &arg);
 	if (status == -1)
+    {
 		perror("SOUND_PCM_WRITE_BITS ioctl failed");
+        return -1;
+    }
 	if (arg != bit)
+    {
     	perror("unable to set sample size");
+        return -2;
+    }
     
     /* set audio channels */
 	arg = channels;	
 	status = ioctl(oss_fd, SOUND_PCM_WRITE_CHANNELS, &arg);
 	if (status == -1)
+    {
 		perror("SOUND_PCM_WRITE_CHANNELS ioctl failed");
+        return -3;
+    }
 	if (arg != channels)
+    {
 		perror("unable to set number of channels");
+        return -4;
+    }
 	
 	/* set audio rate */
 	arg	= rate;
 	status = ioctl(oss_fd, SOUND_PCM_WRITE_RATE, &arg);
 	if (status == -1)
+    {
 		perror("SOUND_PCM_WRITE_WRITE ioctl failed");
+        return -5;
+    }
 	if (arg != rate)
+    {
 		perror("unable to set number of rate");
-		
+        return -6;
+    }
+
+    return 0;
 }
 
 /*
@@ -121,7 +141,13 @@ int parse_wav_header(u8 *buf, u32 fd)
          phdr->num_channels, phdr->sample_rate, phdr->bits_per_sample,
          phdr->audio_format == FORMAT_PCM ? "PCM" : "unknown", phdr->data_sz);
 
-	set_oss_play_config(fd, phdr->sample_rate, phdr->num_channels, phdr->bits_per_sample);
+	if( set_oss_play_config(fd, phdr->sample_rate, phdr->num_channels, phdr->bits_per_sample) < 0 )
+    {
+        printf("Err: set oss play config failed!\n");
+        return -1;
+    }
+
+    return 0;
 }
 
 /*
@@ -158,8 +184,8 @@ void stop_playback()
 	
 	if (oss_close_flag == 0) {
 		close(oss_fd);
-		oss_open_flag = 0;
 		oss_fd = -1;
+	    oss_open_flag = 0;
 		printf("<<<Close playback audio device\n");
 	}
 	

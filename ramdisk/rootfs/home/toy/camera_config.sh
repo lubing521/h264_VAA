@@ -1,7 +1,10 @@
 #! /bin/sh
-
-/home/toy/camera_config Brightness 200
+/home/toy/camera_config Brightness 165
 /home/toy/camera_config Contrast 80
-/home/toy/camera_config Saturation 200
-/home/toy/camera_config Sharpness 10
-/home/toy/camera_config "White Balance Temperature" 5600
+/home/toy/camera_config Saturation 150
+/home/toy/camera_config Hue 0
+/home/toy/camera_config Gamma 65
+/home/toy/camera_config PLF 1
+/home/toy/camera_config WBT 5094
+/home/toy/camera_config Sharpness 9
+/home/toy/camera_config "Backlight Compensation" 4

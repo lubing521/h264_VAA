@@ -78,7 +78,7 @@ int parse_wav_header(u8 *buf, u32 fd);
 int playback_buf(u8 *play_buf, int len);
 
 /* set oss configuration */
-void set_oss_play_config(int fd, unsigned rate, u16 channels, int bit);
+int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit);
 void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit);
 extern unsigned un_OSS_RATE[];
 
