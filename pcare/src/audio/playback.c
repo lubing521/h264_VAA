@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <linux/soundcard.h>		/* for oss  */
 #include <sys/ioctl.h>
+#include <pthread.h>
 #include <semaphore.h>
 #include "types.h"
 #include "audio.h"
@@ -160,15 +161,6 @@ void start_playback()
 {
 	playback_on = 1;
 	
-	sem_wait(&start_music);
-#if 0
-	/* TODO (FIX ME)
-	 * clear AVdata socket recving buffer
-	 */
-	clear_recv_buf();
-#endif
-	/* tell cellphone to start sending file */
-	send_talk_resp();
 	
 	/* TODO (FIX ME)
 	 * we may create a new thread to process the receiving func here
@@ -176,11 +168,13 @@ void start_playback()
 	enable_playback_audio();
 }
 
+static pthread_mutex_t stop_playback_lock = PTHREAD_MUTEX_INITIALIZER;
 /*
  * disable talk playback audio
  */
 void stop_playback()
 {
+    pthread_mutex_lock(&stop_playback_lock);
 	playback_on = 0;
 
     if( oss_fd>0 )
@@ -189,7 +183,8 @@ void stop_playback()
 		oss_fd = 0;
 		printf("<<<Close playback audio device\n");
 	}
-	
+	pthread_mutex_unlock(&stop_playback_lock);
+
 	printf("<<<Stop playback audio ...\n");
 }
 

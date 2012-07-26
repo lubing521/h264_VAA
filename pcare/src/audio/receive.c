@@ -17,6 +17,7 @@
 #include "audio.h"
 #include "rw.h"
 
+extern sem_t start_music;
 #ifdef USE_FMT_ADPCM
 #include "adpcm.h"
 #endif
@@ -76,40 +77,37 @@ void deal_talk_play(void *arg)
     while (playback_on) {
         /* buffer_0 */
         sem_wait(&read_play_buf0);
-#ifdef USE_FMT_ADPCM
         adpcm_decoder(play_buf0, (short *)adpcm_play_buf0, ADPCM_MAX_READ_LEN, &adpcm_state);
         if(playback_buf((u8 *)adpcm_play_buf0, write_len)<0)
         {
+            printf("deal_talk_play thread will exit!adpcm_play_buf0\n");
+            talk_playback_td =-1;
+            sem_post(&write_play_buf0);
+            sem_post(&write_play_buf1);
             pthread_exit(NULL);
         }
         /* TODO (FIX ME) assume the two parames always 0 */
         //memset((u8 *)&adpcm_state, 0, 3);
         //adpcm_state.valprev = 0;
         //adpcm_state.index = 0;
-#else
-        playback_buf(play_buf0, write_len);
-#endif
         sem_post(&write_play_buf0);
-        //fprintf(stderr, "-");
 
         if (playback_on) {
             /* buffer_1 */
             sem_wait(&read_play_buf1);
-#ifdef USE_FMT_ADPCM
             adpcm_decoder(play_buf1, (short *)adpcm_play_buf1, ADPCM_MAX_READ_LEN, &adpcm_state);
             if(playback_buf((u8 *)adpcm_play_buf1, write_len)<0)
             {
+                printf("deal_talk_play thread will exit!adpcm_play_buf1\n");
+                talk_playback_td=-1;
+                sem_post(&write_play_buf1);
                 pthread_exit(NULL);
             }
             /* TODO (FIX ME) assume the two parames always 0 */
             //memset((u8 *)&adpcm_state, 0, 3);
             //adpcm_state.valprev = 0;
             //adpcm_state.index = 0;
-#else
-            playback_buf(play_buf1, write_len);
-#endif
             sem_post(&write_play_buf1);
-            //fprintf(stderr, "-");
         }
     }
 
@@ -117,6 +115,8 @@ void deal_talk_play(void *arg)
     adpcm_state.valprev = 0;
     adpcm_state.index = 0;
 #endif	
+    printf("deal_talk_play thread will exit!\n");
+    talk_playback_td =-1;
     pthread_exit(NULL);
 }
 
@@ -156,7 +156,7 @@ static int talk_playback(u32 client_fd)
     {
         printf("received file error !!\n");
         return -1;
-     }
+    }
     if(oss_fd > 0)
     {
         close(oss_fd);
@@ -207,8 +207,8 @@ static int talk_playback(u32 client_fd)
 
     /* read socket until cellphone's recording stop, under the semaphore mechanism (sem_t play_buf0 \ play_buf1) */
     //while (playback_on) {
-    
-    while (playback_on && (read_left > 0)&&error_num<10) {
+
+    while (playback_on && (read_left > 0)&&error_num<3&&talk_playback_td !=-1) {
         /* buffer_0 */
         sem_wait(&write_play_buf0);
 #ifdef USE_FMT_ADPCM
@@ -314,26 +314,19 @@ void clear_recv_buf(int client_fd)
 void *deal_FEdata_request(void *arg)
 {
     int client_fd;
-#if 0
-    int file_fd;
-    char *file_name = "fhcq.mp3";
-    file_fd = open(file_name, O_RDONLY);
-    if (file_fd < 0) {
-        fprintf(stderr, "file: cannot open '%s'\n", file_name);
-        return -1;
-    }
-    client_fd = file_fd;
-#else
-    //client_fd = audio_data_fd;
+    printf("before wait\n");
+    sem_wait(&start_music);
+    printf("after wait\n");
+    /* tell cellphone to start sending file */
+    send_talk_resp();
     client_fd = music_data_fd;
-#endif
-
     /* seperate mode, free source when thread working is over */
     pthread_detach(pthread_self());
     /* receive talk data frome cellphone */
     if (talk_playback(client_fd) == -1)
         printf("File receive connection is error!\n");
 
+    printf("end talk_playback*************\n");
     stop_playback();
     printf("<<<out of runtime_recv thread!\n");
 
