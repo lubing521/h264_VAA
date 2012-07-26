@@ -28,10 +28,6 @@ int main()
 		return 0;
 #endif
 		
-#ifdef ENABLE_AUDIO
-	if (init_audio() < 0)
-		return 0;
-#endif	
 #endif
 	init_receive();
 	init_motor();

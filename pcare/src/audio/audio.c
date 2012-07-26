@@ -13,15 +13,8 @@ pthread_t audio_capture_td;
 pthread_t audio_playback_td;
 extern int capture_on;
 
-int oss_open_flag, oss_close_flag, oss_fd;
+int oss_fd=0;
 
-int init_audio(void)
-{
-	oss_open_flag = 0;
-	oss_close_flag = 0;
-
-	return 0;
-}
 
 int enable_capture_audio(void)
 {
@@ -30,23 +23,23 @@ int enable_capture_audio(void)
 
 	//printf("%s\n", __func__);
 	
-	oss_close_flag++;
+	if( oss_fd > 0 )
+    {
+        close(oss_fd);
+        oss_fd = 0;
+        printf("audio(oss) already opened! close it!\n");
+    }
 	
-	if (!oss_open_flag) {
-	
-		/* open audio(oss) device for capturing */
-		oss_fd = open(OSS_AUDIO_DEV, O_RDWR);
-		if (oss_fd < 0) {
-			fprintf(stderr, "Open audio(oss) device failed!\n");
-			return -1;
-		}
-
-		oss_open_flag = 1;
-		
-		/* set oss configuration */
-        set_oss_record_config(oss_fd,RECORD_RATE,RECORD_CHANNELS,RECORD_BIT);
-		printf(">>>Open capture audio device\n");
+	/* open audio(oss) device for capturing */
+	oss_fd = open(OSS_AUDIO_DEV, O_RDWR);
+	if (oss_fd < 0) {
+		fprintf(stderr, "Open audio(oss) device failed!\n");
+		return -1;
 	}
+
+	/* set oss configuration */
+    set_oss_record_config(oss_fd,RECORD_RATE,RECORD_CHANNELS,RECORD_BIT);
+    printf(">>>Open capture audio device\n");
 
 	ret = pthread_create(&audio_capture_td, NULL, audio_capture_thread, NULL);
 	if (ret < 0) {

@@ -411,6 +411,30 @@ void keep_connect(void)
 	}
 }
 
+static void read_client( int fd, char *buf, int len )
+{
+    int n;
+    int recv_len = 0;
+    char *p = buf;
+	while ( recv_len != len )
+    {
+            n =recv(fd, p, len-recv_len, 0);
+           if( n <= 0 )
+           {
+			    perror("recv");
+			    close(fd);
+                printf("========%s,%u n=%d==========\n",__FILE__,__LINE__,n);
+		    	exit(0);
+            }
+            else
+            {
+                p += n;
+                recv_len += n;
+             
+            }
+	}
+    return;
+}
 /* ------------------------------------------- */
 
 /* set opcode connection */
@@ -647,71 +671,34 @@ void set_opcode_connection(u32 client_fd)
 	/* ------------------------------------------- */
 
 	/* TODO go on waiting for reading in the while() */
-	while (1) {
-		//memset(buffer, 0, 100);
-		//memset(text, 0, 100);
-
-		/* read command from client */
-		if ((n = recv(client_fd, buffer, 100, 0)) == -1) {
-			perror("recv");
-			close(client_fd);
-        printf("========%s,%u==========\n",__FILE__,__LINE__);
-			exit(0);
-		}
-		//printf("n = %d\n", n);
-		//printf("---------------------------------------\n");
-		//printf("data number = %d\n", n);
-		//printf("buf[0:3] = %s\n", str_tmp);
-		//printf("buf[4] = %d\n", buffer[4]);
-		//printf("---------------------------------------\n");
-		wifi_dbg("---------------------------------------\n");
-		wifi_dbg("data number = %d\n", n);
-		//memcpy(str_tmp, buffer, 4);
-		//str_tmp[4] = '\0';
-		wifi_dbg("buf[0:3] = %s\n", str_tmp);
-		/* we can do something here to process connection later! */
-		wifi_dbg("buf[4] = %d\n", buffer[4]);
-		wifi_dbg("---------------------------------------\n");
-
-		/* -------------------------------------------- */
-		/* process command 250, ctl moto, each command size is 25 */
-		if ( n % 25 == 0) {
-			n /= 25;
-			m = 0;
-			while ((m - n) < 0) {
-				offset = m * 25;
-                //printf("m is %d\n",m);
-				m++;
-				/* TODO prase opcode protocols */
-				memcpy(text, buffer + 15 + offset, 4);
-				//text_len = byteArrayToInt(text, 0, 4);
-				//if (( n - 23) > text_len)
-				//	printf("we have one more protocol to recive!\n");		/* TODO */
-				//memset(text, 0, 100);
-				//memcpy(text, buffer + 23 + offset, text_len);
-				memcpy(text, buffer + 23 + offset, 2);
-				if (prase_packet(buffer[4 + offset], text) == -1)
-					continue;
-			}
-		} else {
-			memcpy(text, buffer + 15, 4);
-			text_len = byteArrayToInt(text, 0, 4);
-			if (( n - 23) > text_len)
-				printf("we have one more protocol to recive!\n");			/* TODO */
-            printf("text_len is %d\n",text_len);
-			memcpy(text, buffer + 23, text_len);
-			if (prase_packet(buffer[4], text) == -1)
-				continue;
-		}
-		/* -------------------------------------------- */
-
-		//for (i = 4; i < n; i++) {
-		//	text_dbg("buf[%d] = %d\n", i, buffer[i]);
-		//};
-		//	wifi_dbg("buf[23] = %d\n", buffer[23]);
-		//	wifi_dbg("buf[24] = %d\n", buffer[24]);
-		//wifi_dbg("---------------------------------------\n");
-	}
+    while (1) {
+        int opcode;
+        int sync_len = strlen(str_ctl);
+        int sync_ok = 0;
+        /* read command from client */
+        do
+        {
+            read_client( client_fd, buffer, sync_len );
+            if(strncmp(buffer,str_ctl,sync_len))
+            {
+                printf("command's head is %lx\nstr_ctl is %s\n",(*(unsigned long *)buffer),str_ctl);
+                clear_recv_buf(client_fd);
+            }
+            else
+                sync_ok = 1;
+        }while(!sync_ok);
+        read_client( client_fd, buffer, 23-sync_len );
+        opcode = buffer[0];
+        text_len = byteArrayToInt(&buffer[11], 0, 4);
+        if( text_len > 200 )
+        {
+            printf("bad text_len!\n");
+            continue;
+        }
+        read_client( client_fd, buffer, text_len );
+        if (prase_packet(opcode, buffer) == -1)
+            continue;
+    }
 }
 
 /* ------------------------------------------- */

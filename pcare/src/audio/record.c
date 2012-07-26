@@ -148,12 +148,10 @@ void stop_capture(void)
 {
 	capture_on = 0;
 
-	oss_close_flag--;
-	
-	if (oss_close_flag == 0) {
+    if( oss_fd > 0 )
+    {
 		close(oss_fd);
-		oss_open_flag = 0;
-		oss_fd = -1;
+		oss_fd = 0;
 		printf("<<<Close capture audio device ...\n");
 	}
 	

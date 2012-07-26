@@ -42,7 +42,7 @@ static struct wav_header hdr;
 
 int playback_on = 0;		/* TODO (FIX ME) now the software on cellphone may not support talk_playback opcode command, we enable first */
 
-extern int oss_open_flag, oss_close_flag, oss_fd;
+extern int oss_fd;
 extern sem_t start_music;
 /* ---------------------------------------------------------- */
 /* 
@@ -69,7 +69,10 @@ int playback_buf(u8 *play_buf, int len)
 
     //printf("playback_buf>>>>>> rc= %d,left_len=%d\n",rc,left_len);
 	if (rc < 0)
-		perror("oss write error!\n");
+    {
+		printf("oss write error!\n");
+        return -1;
+    }
 	if (rc != left_len)
 		printf("###short write error(oss): %dB###\n", rc);
 
@@ -180,12 +183,10 @@ void stop_playback()
 {
 	playback_on = 0;
 
-	oss_close_flag--;
-	
-	if (oss_close_flag == 0) {
+    if( oss_fd>0 )
+    {
 		close(oss_fd);
-		oss_fd = -1;
-	    oss_open_flag = 0;
+		oss_fd = 0;
 		printf("<<<Close playback audio device\n");
 	}
 	
