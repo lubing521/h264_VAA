@@ -26,7 +26,7 @@ int prase_packet(int opcode, u8 *buf)
 			opt.opt_code = 250;
 			opt.param[0] = buf[0];
 			opt.param[1] = buf[1];
-			ctrl_motor(&opt);
+            DispatchMotorOp( &opt );
 			break;
 		case 255:
 			keep_connect();
@@ -35,7 +35,7 @@ int prase_packet(int opcode, u8 *buf)
 			opt.opt_code = 14;
 			opt.param[0] = buf[0];
 			opt.param[1] = 0;
-			ctrl_motor(&opt);
+            DispatchMotorOp( &opt );
 			break;
 		case 8:
 #ifdef ENABLE_CAPTURE_AUDIO

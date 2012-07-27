@@ -1,127 +1,189 @@
-/*
- *  motor.c
- *  control DC and STEPPER motor
- *  zhangjunwei166@163.com
- */
-
-#include <stdlib.h> 
 #include <stdio.h>
-#include <pthread.h>
-#include <fcntl.h>              
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <fcntl.h>             
 #include <unistd.h>
 #include <errno.h>
-#include <unistd.h>
-#include <semaphore.h>
-#include <sys/types.h> 
-#include <sys/stat.h> 
 #include <malloc.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/time.h>
 #include <sys/mman.h>
-#include <signal.h>
+#include <sys/ioctl.h>
+#include <asm/types.h>         
+#include <pthread.h>
+#include <semaphore.h>
 #include "motor_driver.h"
 #include "motor.h"
 #include "types.h"
 
-#define DC_MOTOR_DEV  "/dev/pwm"
-#define STEPPER_MOTOR_DEV  "/dev/steppermotor"
-
-
-int oflags;
-int dc_motor_fd;
-int stepper_motor_fd;
-static pthread_t  id1,id2;
-int record_count;
-int playback_count;
-//sem_t mutex;
-u8 ctrl_motor_flag;
-u8 record_flag,record_full,playback_flag; 
-u8 i,j,m,n;
-u8 r_cmd[R_CMD_L]={0};
-u8 cmd[CMD_L][CMD_W]={0};
-u8 cmd_step[CMD_L][CMD_W]={0};
-u8 k_step;
-
-pthread_mutex_t mutex_dc = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_step = PTHREAD_MUTEX_INITIALIZER;
-/******************************************************/
-/**********************open motors*********************/
-/******************************************************/
-int init_motor(void)
+struct MotorOpBuffer
 {
-	int ret;
-	dc_motor_fd = open(DC_MOTOR_DEV,O_RDWR);
-    if (dc_motor_fd < 0)
-    {
-    	printf("open /dev/pwm failed.\n");
-        return 0;
-    }
-	stepper_motor_fd = open(STEPPER_MOTOR_DEV,O_RDWR);
-    if (stepper_motor_fd < 0)
-    {
-            printf("open /dev/steppermotor failed.\n");
-            return 0;
-    }
-	pthread_mutex_init(&mutex_dc,NULL);
-	pthread_mutex_init(&mutex_step,NULL);
-    ret = pthread_create(&id1,NULL,(void *)operate,NULL);
-    if (ret != 0)
-            printf("create operate thread error\n");
-	/* this thread for control stepper motor */
-	ret = pthread_create(&id2,NULL,(void *)operate_stepper,NULL); 
-    if (ret != 0)
-           printf("create operate_stepper thread error\n");
-	/**********************************************/
-//	signal(SIGIO, stepper_down);
-//	fcntl(stepper_motor_fd, F_SETOWN, getpid());	
-//	oflags = fcntl(stepper_motor_fd, F_GETFL);
-//	fcntl(stepper_motor_fd, F_SETFL, oflags | FASYNC);
-	/***********************************************/
-	return 1; 
+	int cur_op;
+	int next_op;
+    int wanted;
+	sem_t op_arrive;
+	pthread_mutex_t op_lock;
+};
+enum MotorType
+{
+    STEPPER_MOTOR
+};
+
+#define MOTOR_NUM	2
+struct Motor
+{
+	int type;
+	struct MotorOpBuffer	buffer;
+	pthread_t control_thread;
+};
+
+struct MotorManager
+{
+	struct Motor motor[MOTOR_NUM];
+	
+};
+
+struct MotorManager	g_motor_manager;
+
+void InitMotorOpBuffer( struct MotorOpBuffer *p_buffer )
+{
+	// assert( p_buffer != 0 )
+	
+	p_buffer->cur_op = MOTOR_STOP;
+	p_buffer->next_op = MOTOR_NOOP;
+    p_buffer->wanted = 0;
+	sem_init(&p_buffer->op_arrive,0,0);
+	pthread_mutex_init(&p_buffer->op_lock,NULL);
+	
+	return;
 }
 
-/*******************************************************/
-/************the interface of motor control*************/
-/*******************************************************/
-int ctrl_motor(motor_ctrl_t *opt)
+int GetNextOp( int id )
 {
-	int size;
-	ctrl_motor_flag = 1;
-	if (pthread_mutex_lock(&mutex_dc) != 0)
-		perror("pthread_lock mutex_dc");
-//	else
-//		printf("add mutex_dc ok !\n");
-	if (pthread_mutex_lock(&mutex_step) != 0)
-		perror("pthread_lock mutex_step");
-	cmd[i][0] = opt->opt_code;
- 	cmd[i][1] = opt->param[0];
-	cmd[i][2] = opt->param[1];	
-	cmd_step[i][0] = opt->opt_code;
- 	cmd_step[i][1] = opt->param[0];
-	cmd_step[i][2] = opt->param[1];	
-	i++;	
-	if (i >= CMD_L)
-		i = 0;
-	if (pthread_mutex_unlock(&mutex_dc) != 0)
-		perror("pthread_unlock mutex_dc");
-//	else
-//		printf("unlock mutex_dc ok!\n");
-	if (pthread_mutex_unlock(&mutex_step) != 0)
-		perror("pthread_unlock mutex_step");
-	return 1;	
+	// assert( id >= MIN_ID && id <= MAX_ID )
+	int next_op;
+	struct Motor	*p_motor = &g_motor_manager.motor[id];
+	struct MotorOpBuffer	*p_buffer = &p_motor->buffer;
+
+	pthread_mutex_lock(&p_buffer->op_lock);
+	if( p_buffer->next_op == MOTOR_NOOP )
+	{
+		if( p_buffer->cur_op == MOTOR_STOP )
+		{
+            p_buffer->wanted = 1;
+            pthread_mutex_unlock(&p_buffer->op_lock);
+			sem_wait(&p_buffer->op_arrive);
+            pthread_mutex_lock(&p_buffer->op_lock);
+			p_buffer->cur_op = p_buffer->next_op;
+            p_buffer->next_op = MOTOR_NOOP;
+		}
+		
+	}
+	else
+	{
+		p_buffer->cur_op = p_buffer->next_op;
+        p_buffer->next_op = MOTOR_NOOP;
+	}
+	next_op = p_buffer->cur_op;
+	pthread_mutex_unlock(&p_buffer->op_lock);
+	return next_op;
 }
 
-
-/*******************************************************/
-/********************close motors***********************/
-/*******************************************************/
-int close_motor(void)
+void SetNextOp( int id, int next_op )
 {
-	if (dc_motor_fd < 0)
-		printf("this is no need close dc motor\n");
-	else
-		close(dc_motor_fd);
-	if (stepper_motor_fd < 0)
-		printf("this is no need close stepper motor\n");
-	else
-		close(stepper_motor_fd);
-	return 1;
+	// assert( id >= MIN_ID && id <= MAX_ID )
+	struct Motor	*p_motor = &g_motor_manager.motor[id];
+	struct MotorOpBuffer	*p_buffer = &p_motor->buffer;
+	
+	pthread_mutex_lock(&p_buffer->op_lock);
+	p_buffer->next_op = next_op;
+	if( p_buffer->cur_op == MOTOR_STOP )
+	{
+		//int op_wait;
+		//sem_getvalue(&p_buffer->op_arrive,&op_wait);
+		if( p_buffer->wanted )
+		{
+            p_buffer->wanted = 0;
+			sem_post(&p_buffer->op_arrive);
+		}
+	}
+	pthread_mutex_unlock(&p_buffer->op_lock);
+	
+	return;
+}
+
+void InitMotors( )
+{
+    int ret;
+	struct Motor *p_motor = g_motor_manager.motor;
+	p_motor[UPDOWN_SMID].type = STEPPER_MOTOR;
+	InitMotorOpBuffer( &p_motor[UPDOWN_SMID].buffer );
+	ret = pthread_create(&p_motor[UPDOWN_SMID].control_thread,NULL,(void *)stepper_motor_updown,NULL);
+    if (ret != 0)
+    {
+    	printf("create UPDOWN motor control thread error\n");
+    }
+	
+	p_motor[LEFTRIGHT_SMID].type = STEPPER_MOTOR;
+	InitMotorOpBuffer( &p_motor[LEFTRIGHT_SMID].buffer );
+	ret = pthread_create(&p_motor[LEFTRIGHT_SMID].control_thread,NULL,(void *)stepper_motor_leftright,NULL);
+    if (ret != 0)
+    {
+    	printf("create LEFTRIGHT motor control thread error\n");
+    }
+	
+	return;
+}
+
+void DispatchMotorOp( motor_ctrl_t *opt )
+{
+	// assert( opt != NULL )
+	int op_code = opt->param[0];
+	int next_op;
+	switch( op_code )
+	{
+		case 0:	// UP
+		case 6:	// RIGHT
+			next_op = MOTOR_BACKWARD;
+			break;
+		case 2:	// DOWN
+		case 4:	// LEFT
+			next_op = MOTOR_FORWARD;
+			break;
+		case 1:
+		case 3:
+		case 5:
+		case 7:
+			next_op = MOTOR_STOP;
+			break;
+        case 94:
+            out_high();
+            return;
+        case 95:
+            out_low();
+            return;
+		default:
+			printf("Unsupported motor op(%d)!\n", op_code);
+			return;
+	}
+	switch( op_code )
+	{
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+			SetNextOp( UPDOWN_SMID, next_op );
+			break;
+		case 4:
+		case 5:
+		case 6:
+		case 7:
+			SetNextOp( LEFTRIGHT_SMID, next_op );
+			break;
+		default:
+            return;			
+	}
+	return;
 }
