@@ -145,12 +145,12 @@ void DispatchMotorOp( motor_ctrl_t *opt )
 	switch( op_code )
 	{
 		case 0:	// UP
-		case 6:	// RIGHT
-			next_op = MOTOR_BACKWARD;
-			break;
-		case 2:	// DOWN
 		case 4:	// LEFT
 			next_op = MOTOR_FORWARD;
+			break;
+		case 2:	// DOWN
+		case 6:	// RIGHT
+			next_op = MOTOR_BACKWARD;
 			break;
 		case 1:
 		case 3:
