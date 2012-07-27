@@ -65,6 +65,7 @@ void stepper_motor_updown()
             {
                 if(flag_up==flag_up_pre)
                     break;
+                flag_up_pre=flag_up;
                 printf("up in place;\n");
                 count_m1_down = 0;
                 ioctl(stepper_motor_fd,SMUPDOWN_POWER,NULL);
@@ -87,6 +88,7 @@ void stepper_motor_updown()
             {	
                 if(flag_down==flag_down_pre)
                     break;
+                flag_down_pre=flag_down;
                 printf("down in place!\n");
                 count_m1_up = 0;
                 ioctl(stepper_motor_fd,SMUPDOWN_POWER,NULL);
@@ -129,6 +131,7 @@ void stepper_motor_leftright()
             {
                 if(flag_left==flag_left_pre)
                     break;
+                flag_left_pre=flag_left;
                 printf("left in place;\n");
                 count_m2_right = 0;
                 ioctl(stepper_motor_fd,SMLEFTRIGHT_POWER,NULL);
@@ -151,6 +154,7 @@ void stepper_motor_leftright()
             {	
                 if(flag_right==flag_right_pre)
                     break;
+                flag_right_pre=flag_right;
                 printf("right in place!\n");
                 count_m2_left = 0;
                 ioctl(stepper_motor_fd,SMLEFTRIGHT_POWER,NULL);
