@@ -52,60 +52,46 @@ int init_motor(void)
 /******************use sm_phase for up&down********************************/
 void stepper_motor_updown()
 {
-    int i,get_cmd,get_cmd_pre=-1,flag_up=-1,flag_down=-1,flag_up_pre=-1,flag_down_pre=-1;
+    int i,get_cmd,get_cmd_pre=-1,inplace_flag=0;
     while(1)
     {
         get_cmd=GetNextOp(UPDOWN_SMID);
         switch (get_cmd)
         {
         case MOTOR_FORWARD:
+            if(inplace_flag ==1)
+                break;
             get_cmd_pre=get_cmd;
-            ioctl(stepper_motor_fd,SMUPDOWN_UP_IN_PLACE,&stepper_motor_up_flag);
-            flag_up=(stepper_motor_up_flag == 1||count_m1_up > STEPER_PHASE_UP);
-            if (flag_up)
+            if(ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_UP,NULL)<0||count_m1_up > STEPER_PHASE_UP)
             {
-                if(flag_up==flag_up_pre)
-                    break;
-                flag_up_pre=flag_up;
                 printf("up in place;\n");
                 count_m1_down = 0;
+                inplace_flag=1;
                 ioctl(stepper_motor_fd,SMUPDOWN_POWER,NULL);
             }
             else
             {
-                flag_up_pre=flag_up;
+                inplace_flag=0;
                 count_m1_up++;
                 count_m1_down--;
-                for (i=8;i>0;i--)
-                {
-                    ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_UP,&sm_phase[i-1]);
-                    usleep(STEPPER_DELAY);
-                }
             }
             break;
         case MOTOR_BACKWARD:
+            if(inplace_flag == -1)
+                break;
             get_cmd_pre=get_cmd;
-            ioctl(stepper_motor_fd,SMUPDOWN_DOWN_IN_PLACE,&stepper_motor_down_flag);
-            flag_down=(stepper_motor_down_flag == 1||count_m1_down > STEPER_PHASE_UP);
-            if (flag_down)
-            {	
-                if(flag_down==flag_down_pre)
-                    break;
-                flag_down_pre=flag_down;
-                printf("down in place!\n");
+            if(ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_DOWN,NULL)<0||count_m1_down > STEPER_PHASE_UP)
+            {
+                printf("down in place;\n");
                 count_m1_up = 0;
+                inplace_flag=-1;
                 ioctl(stepper_motor_fd,SMUPDOWN_POWER,NULL);
             }
             else
             {
-                flag_down_pre=flag_down;
+                inplace_flag=0;
                 count_m1_up--;
                 count_m1_down++;
-                for (i=0;i<8;i++)
-                {
-                    ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_DOWN,&sm_phase[i]);
-                    usleep(STEPPER_DELAY);
-                }
             }
             break;
         case MOTOR_STOP:
@@ -122,60 +108,46 @@ void stepper_motor_updown()
 }
 void stepper_motor_leftright()
 {
-    int i,get_cmd,get_cmd_pre=-1,flag_left=-1,flag_right=-1,flag_left_pre=-1,flag_right_pre=-1;
+    int i,get_cmd,get_cmd_pre=-1,inplace_flag=0;
     while(1)
     {
         get_cmd=GetNextOp(LEFTRIGHT_SMID);
         switch (get_cmd)
         {
         case MOTOR_FORWARD:
+            if(inplace_flag==1)
+                break;
             get_cmd_pre=get_cmd;
-            ioctl(stepper_motor_fd,SMLEFTRIGHT_LEFT_IN_PLACE,&stepper_motor_left_flag);
-            flag_left=(stepper_motor_left_flag == 1||count_m2_left > STEPER_PHASE_LEFT);
-            if (flag_left)
+            if(ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_RIGHT,NULL)<0||count_m2_left > STEPER_PHASE_LEFT)
             {
-                if(flag_left==flag_left_pre)
-                    break;
-                flag_left_pre=flag_left;
                 printf("left in place;\n");
                 count_m2_right = 0;
+                inplace_flag =1;
                 ioctl(stepper_motor_fd,SMLEFTRIGHT_POWER,NULL);
             }
             else
             {
-                flag_left_pre=flag_left;
+                inplace_flag=0;
                 count_m2_left++;
                 count_m2_right--;
-                for (i=0;i<8;i++)
-                {
-                    ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_LEFT,&sm_phase[i]);
-                    usleep(STEPPER_DELAY);
-                }
             }
             break;
         case MOTOR_BACKWARD:
+            if(inplace_flag==-1)
+                break;
             get_cmd_pre=get_cmd;
-            ioctl(stepper_motor_fd,SMLEFTRIGHT_RIGHT_IN_PLACE,&stepper_motor_right_flag);
-            flag_right=(stepper_motor_right_flag == 1||count_m2_right > STEPER_PHASE_LEFT);
-            if (flag_right)
-            {	
-                if(flag_right==flag_right_pre)
-                    break;
-                flag_right_pre=flag_right;
-                printf("right in place!\n");
+            if(ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_LEFT,NULL)<0||count_m2_right > STEPER_PHASE_LEFT)
+            {
+                printf("right in place;\n");
                 count_m2_left = 0;
+                inplace_flag =-1;
                 ioctl(stepper_motor_fd,SMLEFTRIGHT_POWER,NULL);
             }
             else
             {
-                flag_right_pre=flag_right;
+                inplace_flag=0;
                 count_m2_left--;
                 count_m2_right++;
-                for (i=8;i>0;i--)
-                {
-                    ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_RIGHT,&sm_phase[i-1]);
-                    usleep(STEPPER_DELAY);
-                }
             }
             break;
         case MOTOR_STOP:

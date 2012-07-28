@@ -45,8 +45,8 @@
 #define SM1_MASK  0xFFFFF87F
 #define UP_MASK  0x00000040
 #define DOWN_MASK  0x00000080
-#define RIGHT_MASK  0x0000100
-#define LEFT_MASK  0x00000200
+#define RIGHT_MASK  0x00000200
+#define LEFT_MASK  0x0000100
 #define SM1_SHIFT 7
 #define SM2_MASK  0xFFFF87FF
 #define SM2_SHIFT 11
@@ -57,12 +57,9 @@
 #define SM2_CONFIG_LEFT 4
 #define SM2_CONFIG_RIGHT 24
 #define SM2_POWER 5
-#define SM1_UP_IN_PLACE 6
-#define SM1_DOWN_IN_PLACE 8
-#define SM2_LEFT_IN_PLACE 9
-#define SM2_RIGHT_IN_PLACE 10
 #define LOW  0
 #define HIGH  1
+#define STEPPER_DELAY 1
 
 typedef unsigned long    U32;     /* unsigned 32-bit integer */
 
@@ -74,10 +71,7 @@ typedef volatile U32 *   RP;
     *(RP)(reg)
 
 static void __iomem *base;
-char up_flag = 0;
-char down_flag = 0;
-char left_flag = 0;
-char right_flag = 0;
+U32 sm_phase[]={0x7,0x3,0xB,0x9,0xD,0xC,0xE,0x6}; 
 #define STEP_DET_DELAY msecs_to_jiffies(20)
 
 struct sep_steppermotor_dev{
@@ -150,8 +144,8 @@ static int sep_steppermotor_release(struct inode *inode, struct file *file)
 
 static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
-    int data;
-    u32 DATA,i,reg_gpio_i;
+    int data,i;
+    u32 tmp_reg,reg_gpio_i;
     stepper_dbg("cmd:%d;%s\n",cmd,__func__);
     switch (cmd)
     {
@@ -160,18 +154,16 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             reg_gpio_i = read_reg(GPIO_PORTI_DATA_V);
             if((reg_gpio_i&UP_MASK) == 0)
             {
-                up_flag =1;
-                break;
-            }
-            up_flag = 0;
-            if(get_user(data,(int __user *)arg))
                 return -EFAULT;
-            stepper_dbg("1data is :%d\n",data);
-            DATA = (u32)data;
-            i = read_reg(GPIO_PORTF_DATA_V);
-            i &= SM1_MASK;
-            DATA = i | (DATA << SM1_SHIFT);
-            write_reg(GPIO_PORTF_DATA_V,DATA);
+            }
+            for (i=7;i>=0;i--)
+            {
+                tmp_reg = read_reg(GPIO_PORTF_DATA_V);
+                tmp_reg &= SM1_MASK;
+                tmp_reg = tmp_reg | (sm_phase[i] << SM1_SHIFT);
+                write_reg(GPIO_PORTF_DATA_V,tmp_reg);
+                msleep(STEPPER_DELAY);
+            }
             break;
         }
     case SM1_CONFIG_DOWN:
@@ -179,24 +171,21 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             reg_gpio_i = read_reg(GPIO_PORTI_DATA_V);
             if((reg_gpio_i&DOWN_MASK) == 0)
             {
-                down_flag =1;
-                break;
-            }
-            down_flag = 0;
-            if(get_user(data,(int __user *)arg))
                 return -EFAULT;
-            stepper_dbg("1data is :%d\n",data);
-            DATA = (u32)data;
-            i = read_reg(GPIO_PORTF_DATA_V);
-            i &= SM1_MASK;
-            DATA = i | (DATA << SM1_SHIFT);
-            write_reg(GPIO_PORTF_DATA_V,DATA);
+            }
+            for (i=0;i<8;i++)
+            {
+                tmp_reg = read_reg(GPIO_PORTF_DATA_V);
+                tmp_reg &= SM1_MASK;
+                tmp_reg = tmp_reg | (sm_phase[i] << SM1_SHIFT);
+                write_reg(GPIO_PORTF_DATA_V,tmp_reg);
+                msleep(STEPPER_DELAY);
+            }
             break;
         }
     case SM1_POWER:
         {
             //printk("sm1_stop,set all port in\n");
-            msleep(20);
             sep0611_gpio_setpin(SEP0611_PT_IN1,LOW);
             sep0611_gpio_setpin(SEP0611_PT_IN2,LOW);
             sep0611_gpio_setpin(SEP0611_PT_IN3,LOW);
@@ -208,18 +197,16 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             reg_gpio_i = read_reg(GPIO_PORTI_DATA_V);
             if((reg_gpio_i&LEFT_MASK) == 0)
             {
-                left_flag =1;
-                break;
-            }
-            left_flag =0;
-            if(get_user(data,(int __user *)arg))
                 return -EFAULT;
-            stepper_dbg("2data is :%d\n",data);
-            DATA = (u32)data;	
-            i = read_reg(GPIO_PORTF_DATA_V);
-            i &= SM2_MASK;
-            DATA = i | (DATA << SM2_SHIFT);
-            write_reg(GPIO_PORTF_DATA_V,DATA);
+            }
+            for (i=7;i>=0;i--)
+            {
+                tmp_reg = read_reg(GPIO_PORTF_DATA_V);
+                tmp_reg &= SM2_MASK;
+                tmp_reg = tmp_reg | (sm_phase[i] << SM2_SHIFT);
+                write_reg(GPIO_PORTF_DATA_V,tmp_reg);
+                msleep(STEPPER_DELAY);
+            }
             break;
         }
     case SM2_CONFIG_RIGHT:
@@ -227,55 +214,24 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             reg_gpio_i = read_reg(GPIO_PORTI_DATA_V);
             if((reg_gpio_i&RIGHT_MASK) == 0)
             {
-                right_flag =1;
-                break;
-            }
-            right_flag =0;
-            if(get_user(data,(int __user *)arg))
                 return -EFAULT;
-            stepper_dbg("2data is :%d\n",data);
-            DATA = (u32)data;	
-            i = read_reg(GPIO_PORTF_DATA_V);
-            i &= SM2_MASK;
-            DATA = i | (DATA << SM2_SHIFT);
-            write_reg(GPIO_PORTF_DATA_V,DATA);
+            }
+            for (i=0;i<8;i++)
+            {
+                tmp_reg = read_reg(GPIO_PORTF_DATA_V);
+                tmp_reg &= SM2_MASK;
+                tmp_reg = tmp_reg | (sm_phase[i] << SM2_SHIFT);
+                write_reg(GPIO_PORTF_DATA_V,tmp_reg);
+                msleep(STEPPER_DELAY);
+            }
             break;
         }
     case SM2_POWER:
         {
-            msleep(20);
             sep0611_gpio_setpin(SEP0611_PT_IN5,LOW);
             sep0611_gpio_setpin(SEP0611_PT_IN6,LOW);
             sep0611_gpio_setpin(SEP0611_PT_IN7,LOW);
             sep0611_gpio_setpin(SEP0611_PT_IN8,LOW);
-            break;
-        }
-    case SM1_UP_IN_PLACE:
-        {
-            stepper_dbg("\nup_flag:%d\n",up_flag);
-            if(put_user(up_flag,(int __user *)arg))
-                return -EFAULT;
-            break;
-        }
-    case SM1_DOWN_IN_PLACE:
-        {
-            stepper_dbg("\ndown_flag:%d\n",down_flag);
-            if(put_user(down_flag,(int __user *)arg))
-                return -EFAULT;
-            break;
-        }
-    case SM2_LEFT_IN_PLACE:
-        {
-            stepper_dbg("\nleft_flag:%d\n",left_flag);
-            if(put_user(left_flag,(int __user *)arg))
-                return -EFAULT;
-            break;
-        }
-    case SM2_RIGHT_IN_PLACE:
-        {
-            stepper_dbg("\nright_flag:%d\n",right_flag);
-            if(put_user(right_flag,(int __user *)arg))
-                return -EFAULT;
             break;
         }
     default:
