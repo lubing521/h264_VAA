@@ -60,8 +60,9 @@ void stepper_motor_updown()
         {
         case MOTOR_FORWARD:
             get_cmd_pre=get_cmd;
-            flag_up=ioctl(stepper_motor_fd,SMUPDOWN_UP_IN_PLACE,&stepper_motor_up_flag);
-            if (stepper_motor_up_flag == 1||count_m1_up > STEPER_PHASE_UP)
+            ioctl(stepper_motor_fd,SMUPDOWN_UP_IN_PLACE,&stepper_motor_up_flag);
+            flag_up=(stepper_motor_up_flag == 1||count_m1_up > STEPER_PHASE_UP);
+            if (flag_up)
             {
                 if(flag_up==flag_up_pre)
                     break;
@@ -72,6 +73,7 @@ void stepper_motor_updown()
             }
             else
             {
+                flag_up_pre=flag_up;
                 count_m1_up++;
                 count_m1_down--;
                 for (i=8;i>0;i--)
@@ -83,8 +85,9 @@ void stepper_motor_updown()
             break;
         case MOTOR_BACKWARD:
             get_cmd_pre=get_cmd;
-            flag_down=ioctl(stepper_motor_fd,SMUPDOWN_DOWN_IN_PLACE,&stepper_motor_down_flag);
-            if (stepper_motor_down_flag == 1||count_m1_down > STEPER_PHASE_UP)
+            ioctl(stepper_motor_fd,SMUPDOWN_DOWN_IN_PLACE,&stepper_motor_down_flag);
+            flag_down=(stepper_motor_down_flag == 1||count_m1_down > STEPER_PHASE_UP);
+            if (flag_down)
             {	
                 if(flag_down==flag_down_pre)
                     break;
@@ -95,6 +98,7 @@ void stepper_motor_updown()
             }
             else
             {
+                flag_down_pre=flag_down;
                 count_m1_up--;
                 count_m1_down++;
                 for (i=0;i<8;i++)
@@ -126,8 +130,9 @@ void stepper_motor_leftright()
         {
         case MOTOR_FORWARD:
             get_cmd_pre=get_cmd;
-            flag_left=ioctl(stepper_motor_fd,SMLEFTRIGHT_LEFT_IN_PLACE,&stepper_motor_left_flag);
-            if (stepper_motor_left_flag == 1||count_m2_left > STEPER_PHASE_LEFT)
+            ioctl(stepper_motor_fd,SMLEFTRIGHT_LEFT_IN_PLACE,&stepper_motor_left_flag);
+            flag_left=(stepper_motor_left_flag == 1||count_m2_left > STEPER_PHASE_LEFT);
+            if (flag_left)
             {
                 if(flag_left==flag_left_pre)
                     break;
@@ -138,11 +143,12 @@ void stepper_motor_leftright()
             }
             else
             {
+                flag_left_pre=flag_left;
                 count_m2_left++;
                 count_m2_right--;
-                for (i=8;i>0;i--)
+                for (i=0;i<8;i++)
                 {
-                    ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_LEFT,&sm_phase[i-1]);
+                    ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_LEFT,&sm_phase[i]);
                     usleep(STEPPER_DELAY);
                 }
             }
@@ -150,7 +156,8 @@ void stepper_motor_leftright()
         case MOTOR_BACKWARD:
             get_cmd_pre=get_cmd;
             ioctl(stepper_motor_fd,SMLEFTRIGHT_RIGHT_IN_PLACE,&stepper_motor_right_flag);
-            if (stepper_motor_right_flag == 1||count_m2_right > STEPER_PHASE_LEFT)
+            flag_right=(stepper_motor_right_flag == 1||count_m2_right > STEPER_PHASE_LEFT);
+            if (flag_right)
             {	
                 if(flag_right==flag_right_pre)
                     break;
@@ -161,11 +168,12 @@ void stepper_motor_leftright()
             }
             else
             {
+                flag_right_pre=flag_right;
                 count_m2_left--;
                 count_m2_right++;
-                for (i=0;i<8;i++)
+                for (i=8;i>0;i--)
                 {
-                    ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_RIGHT,&sm_phase[i]);
+                    ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_RIGHT,&sm_phase[i-1]);
                     usleep(STEPPER_DELAY);
                 }
             }

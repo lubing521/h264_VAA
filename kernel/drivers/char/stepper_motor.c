@@ -163,6 +163,7 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
                 up_flag =1;
                 break;
             }
+            up_flag = 0;
             if(get_user(data,(int __user *)arg))
                 return -EFAULT;
             stepper_dbg("1data is :%d\n",data);
@@ -181,6 +182,7 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
                 down_flag =1;
                 break;
             }
+            down_flag = 0;
             if(get_user(data,(int __user *)arg))
                 return -EFAULT;
             stepper_dbg("1data is :%d\n",data);
@@ -194,8 +196,6 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
     case SM1_POWER:
         {
             //printk("sm1_stop,set all port in\n");
-            up_flag = 0;
-            down_flag = 0;
             msleep(20);
             sep0611_gpio_setpin(SEP0611_PT_IN1,LOW);
             sep0611_gpio_setpin(SEP0611_PT_IN2,LOW);
@@ -211,6 +211,7 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
                 left_flag =1;
                 break;
             }
+            left_flag =0;
             if(get_user(data,(int __user *)arg))
                 return -EFAULT;
             stepper_dbg("2data is :%d\n",data);
@@ -229,6 +230,7 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
                 right_flag =1;
                 break;
             }
+            right_flag =0;
             if(get_user(data,(int __user *)arg))
                 return -EFAULT;
             stepper_dbg("2data is :%d\n",data);
@@ -241,8 +243,6 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
         }
     case SM2_POWER:
         {
-            left_flag = 0;
-            right_flag = 0;
             msleep(20);
             sep0611_gpio_setpin(SEP0611_PT_IN5,LOW);
             sep0611_gpio_setpin(SEP0611_PT_IN6,LOW);
