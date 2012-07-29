@@ -48,9 +48,9 @@ PROGRAMS = $(bin_PROGRAMS)
 am_pcare_OBJECTS = main.$(OBJEXT) utils.$(OBJEXT) rw.$(OBJEXT)
 pcare_OBJECTS = $(am_pcare_OBJECTS)
 pcare_LDADD = $(LDADD)
-pcare_DEPENDENCIES = $(top_srcdir)/src/audio/libaudio.a \
-	$(top_srcdir)/src/video/libvideo.a \
+pcare_DEPENDENCIES = $(top_srcdir)/src/video/libvideo.a \
 	$(top_srcdir)/src/network/libnetwork.a \
+	$(top_srcdir)/src/audio/libaudio.a \
 	$(top_srcdir)/src/control/libcontrol.a \
 	$(top_srcdir)/src/lib/libjpeg.a \
 	$(top_srcdir)/src/lib/libmad.so.0.2.1
@@ -193,9 +193,9 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pcare_SOURCES = main.c utils.c rw.c
-SUBDIRS = ../audio ../video ../network ../control
+SUBDIRS = ../video ../network ../control ../audio 
 INCLUDES = -I$(top_srcdir)/src/include
-LDADD = $(top_srcdir)/src/audio/libaudio.a $(top_srcdir)/src/video/libvideo.a $(top_srcdir)/src/network/libnetwork.a $(top_srcdir)/src/control/libcontrol.a $(top_srcdir)/src/lib/libjpeg.a $(top_srcdir)/src/lib/libmad.so.0.2.1
+LDADD = $(top_srcdir)/src/video/libvideo.a $(top_srcdir)/src/network/libnetwork.a $(top_srcdir)/src/audio/libaudio.a $(top_srcdir)/src/control/libcontrol.a $(top_srcdir)/src/lib/libjpeg.a $(top_srcdir)/src/lib/libmad.so.0.2.1
 all: all-recursive
 
 .SUFFIXES:

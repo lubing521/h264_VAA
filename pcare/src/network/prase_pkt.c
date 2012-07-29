@@ -55,12 +55,14 @@ int prase_packet(int opcode, u8 *buf)
 			break;
 		case 11:
 			/* TODO enable talk audio */
-			start_playback();
+			//start_playback();
+            StartPlayer();
 			printf(">>>Start playbacking ...\n");
 			break;
 		case 13:
 			/* TODO disable talk audio */
-			stop_playback();
+			//stop_playback();
+            StopPlayer();
 			break;
 		case 251:
 			deal_bat_info();

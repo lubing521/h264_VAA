@@ -411,7 +411,7 @@ void keep_connect(void)
 	}
 }
 
-static void read_client( int fd, char *buf, int len )
+int read_client( int fd, char *buf, int len )
 {
     int n;
     int recv_len = 0;
@@ -421,10 +421,8 @@ static void read_client( int fd, char *buf, int len )
             n =recv(fd, p, len-recv_len, 0);
            if( n <= 0 )
            {
-			    perror("recv");
-			    close(fd);
-                printf("========%s,%u n=%d==========\n",__FILE__,__LINE__,n);
-		    	exit(0);
+                printf("======%s,%u n=%d recv_len=%d======\n",__FILE__,__LINE__,n,recv_len);
+		    	break;
             }
             else
             {
@@ -433,7 +431,7 @@ static void read_client( int fd, char *buf, int len )
              
             }
 	}
-    return;
+    return recv_len;
 }
 /* ------------------------------------------- */
 
@@ -678,16 +676,24 @@ void set_opcode_connection(u32 client_fd)
         /* read command from client */
         do
         {
-            read_client( client_fd, buffer, sync_len );
+            if( read_client( client_fd, buffer, sync_len ) != sync_len )
+            {
+                printf("phone closed command socket! restart!\n");
+                exit(0);
+            }
             if(strncmp(buffer,str_ctl,sync_len))
             {
                 printf("command's head is %lx\nstr_ctl is %s\n",(*(unsigned long *)buffer),str_ctl);
-                clear_recv_buf(client_fd);
+                //clear_recv_buf(client_fd);
             }
             else
                 sync_ok = 1;
         }while(!sync_ok);
-        read_client( client_fd, buffer, 23-sync_len );
+        if( read_client( client_fd, buffer, 23-sync_len ) != 23-sync_len )
+        {
+            printf("phone closed command socket! restart!\n");
+            exit(0);
+        }
         opcode = buffer[0];
         text_len = byteArrayToInt(&buffer[11], 0, 4);
         if( text_len > 200 )
@@ -695,7 +701,11 @@ void set_opcode_connection(u32 client_fd)
             printf("bad text_len!\n");
             continue;
         }
-        read_client( client_fd, buffer, text_len );
+        if( read_client( client_fd, buffer, text_len ) != text_len )
+        {
+            printf("phone closed command socket! restart!\n");
+            exit(0);
+        }
         if (prase_packet(opcode, buffer) == -1)
             continue;
     }
@@ -777,7 +787,6 @@ void network(void)
 	AVtext = malloc(200);					/* TODO */
 	text = malloc(100);						/* TODO */
 
-	sem_init(&start_music, 0, 0);
 
 	/* create socket */
 	server_fd = socket(AF_INET, SOCK_STREAM, 0);

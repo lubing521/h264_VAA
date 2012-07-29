@@ -67,6 +67,9 @@ void *audio_playback_thread(void *args);
 
 /* do nothing, just for project compiling */
 void init_receive(void);
+void StartPlayer(void);
+void StopPlayer(void);
+void EndPlayer(int);
 
 /* the third thread to process file receiving from cellphone and runtime playbacking */
 void *deal_FEdata_request(void *arg);
