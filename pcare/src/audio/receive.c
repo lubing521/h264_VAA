@@ -39,6 +39,7 @@ struct Player
 	enum PlayerState state;
 	enum PlayerOp next_op;
 	pthread_t playback_thread;
+    pthread_mutex_t lock;
 };
 
 pthread_t playback_td, talk_playback_td;
@@ -68,6 +69,7 @@ u8 g_decoded_buffer[2][ADPCM_MAX_READ_LEN * 4];
 void init_receive()
 {
     sem_init(&start_music,0,0);
+    pthread_mutex_init(&g_player.lock,NULL);
     g_player.state = STOPPED;
     g_player.next_op = NONE;
 }
@@ -369,6 +371,8 @@ int enable_playback_audio()
 
 void StartPlayer()
 {
+    printf("StartPlayer g_player.lock<<<<<<<<<<<<<<<<\n");
+    pthread_mutex_lock(&g_player.lock);
 	if( g_player.state == STOPPED )
 	{
         printf("ToStartPlayer\n");
@@ -388,11 +392,15 @@ void StartPlayer()
         printf("Wait for play\n");
 		g_player.next_op = PLAY;
 	}
+    pthread_mutex_unlock(&g_player.lock);
+    printf("StartPlayer g_player.unlock>>>>>>>>>>>>>>\n");
 	return;
 }
 
 void StopPlayer()
 {
+    printf("StopPlayer g_player.lock<<<<<<<<<<<<<<<<\n");
+    pthread_mutex_lock(&g_player.lock);
     printf("ToStopPlayer\n");
     if( g_player.state == PLAYING )
         g_player.state = STOPPING;
@@ -415,11 +423,15 @@ void StopPlayer()
         printf("Wait for stop\n");
         g_player.next_op = STOP;
         }*/
+    pthread_mutex_unlock(&g_player.lock);
+    printf("StopPlayer g_player.unlock>>>>>>>>>>>>>>\n");
 	return;
 }
 
 void EndPlayer( int exit_flag )
 {    
+    printf("EndPlayer g_player.lock<<<<<<<<<<<<<<<<\n");
+    pthread_mutex_lock(&g_player.lock);
 	if( g_player.state == STOPPING || g_player.state == PLAYING )
 	{
         printf("End player\n");
@@ -442,14 +454,18 @@ void EndPlayer( int exit_flag )
 		if( g_player.next_op == PLAY )
 		{
             printf("ReStartPlayer\n");
-			StartPlayer();
-		}
-		g_player.next_op = NONE;
-	}
+            pthread_mutex_unlock(&g_player.lock);
+            StartPlayer();
+            pthread_mutex_lock(&g_player.lock);
+        }
+        g_player.next_op = NONE;
+    }
 	else
 	{
 		printf("ERR(Player):wrong state(%d) for end player!\n", g_player.state );
 	}
 
+    pthread_mutex_unlock(&g_player.lock);
+    printf("EndPlayer g_player.unlock>>>>>>>>>>>>>>\n");
 	return;
 }

@@ -546,7 +546,9 @@ static int cs3700_set_audio_input(struct snd_soc_codec *codec)
 	//cs3700_write_reg(0x07, rate);				//
 	cs3700_write_reg(0x08, 0x0000);				//ADC input
 
-	cs3700_write_reg(0x0A, 0x0020);				//256*Fs;
+    cs3700_write_reg(0x0A, 0x0020);				//256*Fs;
+    cs3700_write_reg(0x0B, 0x01C0);
+    cs3700_write_reg(0x0C, 0x01C0);
 
 #endif
 
