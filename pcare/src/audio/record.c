@@ -131,7 +131,7 @@ static void read_audio_frame()
 
 	};
     //printf("wr_len is %lx\n",wr_len);
-    close(pcm_fd);
+    //close(pcm_fd);
 }
 
 /* ---------------------------------------------------------- */
