@@ -213,7 +213,7 @@ void *talk_play(void *arg)
         oss_fd= 0;
         printf("audio(oss) already opened! close it!\n");
     }
-    oss_fd = open(OSS_AUDIO_DEV,O_RDWR);
+    oss_fd = open(OSS_AUDIO_DEV,O_WRONLY);
     if (oss_fd < 0) {
         printf("Err: Open audio(oss) device failed!\n");
         goto exit;

@@ -71,7 +71,7 @@ int playback_buf(u8 *play_buf, int len)
     //printf("playback_buf>>>>>> rc= %d,left_len=%d\n",rc,left_len);
 	if (rc < 0)
     {
-		printf("oss write error!\n");
+		printf("oss write error! error num is %d\n",rc);
         return -1;
     }
 	if (rc != left_len)
@@ -87,47 +87,52 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
 {
 	int status, arg;
 	
-	oss_fd = fd;
 	
 	/* set audio bit */
 	arg = bit;
-	status = ioctl(oss_fd, SOUND_PCM_WRITE_BITS, &arg);
+	status = ioctl(fd, SOUND_PCM_WRITE_BITS, &arg);
+	printf("status is %d   arg is %d\n",status,arg);
 	if (status == -1)
     {
-		perror("SOUND_PCM_WRITE_BITS ioctl failed");
+		printf("SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
         return -1;
     }
 	if (arg != bit)
     {
-    	perror("unable to set sample size");
+    	printf("unable to set sample size\n");
         return -2;
     }
     
     /* set audio channels */
 	arg = channels;	
-	status = ioctl(oss_fd, SOUND_PCM_WRITE_CHANNELS, &arg);
+	//arg = channels = 2;	
+	status = ioctl(fd, SOUND_PCM_WRITE_CHANNELS, &arg);
+	//status = ioctl(fd, SNDCTL_DSP_STEREO, &arg);
+	printf("status is %d   arg is %d\n",status,arg);
 	if (status == -1)
     {
-		perror("SOUND_PCM_WRITE_CHANNELS ioctl failed");
+		printf("SNDCTL_DSP_STEREO ioctl failed,status is %d\n",status);
         return -3;
     }
 	if (arg != channels)
     {
-		perror("unable to set number of channels");
+		printf("unable to set number of channels\n");
         return -4;
     }
 	
 	/* set audio rate */
+    //rate =8000;
 	arg	= rate;
-	status = ioctl(oss_fd, SOUND_PCM_WRITE_RATE, &arg);
+	status = ioctl(fd, SNDCTL_DSP_SPEED, &arg);
+	printf("status is %d   arg is %d\n",status,arg);
 	if (status == -1)
     {
-		perror("SOUND_PCM_WRITE_WRITE ioctl failed");
+		printf("SNDCTL_DSP_SPEED ioctl failed,status is %d\n",status);
         return -5;
     }
 	if (arg != rate)
     {
-		perror("unable to set number of rate");
+		printf("unable to set number of rate\n");
         return -6;
     }
 

@@ -9,6 +9,11 @@
 #include "audio.h"
 #include "types.h"
 #include "protocol.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 
 #include "adpcm.h"
 
@@ -37,26 +42,31 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 	/* set audio bit */
 	arg = bit;
 	status = ioctl(fd, SOUND_PCM_WRITE_BITS, &arg);
+	printf("status is %d   arg is %d\n",status,arg);
 	if (status == -1)
-		printf("SOUND_PCM_WRITE_BITS ioctl failed");
+		printf("SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
 	if (arg != bit)
-    	printf("unable to set sample size");
+    	printf("unable to set sample size\n");
     
     /* set audio channels */
 	arg = channels;	
 	status = ioctl(fd, SOUND_PCM_WRITE_CHANNELS, &arg);
+	printf("status is %d   arg is %d\n",status,arg);
 	if (status == -1)
-		perror("SOUND_PCM_WRITE_CHANNELS ioctl failed");
+		printf("SOUND_PCM_WRITE_CHANNELS ioctl failed,status is %d\n",status);
 	if (arg != channels)
-		perror("unable to set number of channels");
+		printf("unable to set number of channels\n");
 	
 	/* set audio rate */
 	arg	= rate;
-	status = ioctl(fd, SOUND_PCM_WRITE_RATE, &arg);
+	//arg	= 8000;
+	status = ioctl(fd, SNDCTL_DSP_SPEED, &arg);
+	//status = ioctl(fd, SOUND_PCM_WRITE_RATE, &arg);
+	printf("status is %d   arg is %d\n",status,arg);
 	if (status == -1)
-		printf("SOUND_PCM_WRITE_WRITE ioctl failed");
+		printf("SOUND_PCM_WRITE_WRITE ioctl failed,status is %d\n",status);
 	if (arg != rate)
-		printf("unable to set number of rate");
+		printf("unable to set number of rate\n");
 }
 
 /* ------------------------------------------------------------------------------ */
@@ -102,6 +112,9 @@ static int store_audio_data(void)
  */
 static void read_audio_frame()
 {
+    //int pcm_fd;
+    //unsigned long wr_len;
+    //pcm_fd=open("/11.pcm",O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 	printf(">>>Start capturing audio data ...\n");
     set_oss_record_config(oss_fd,RECORD_RATE,RECORD_CHANNELS,RECORD_BIT);
 	
@@ -111,8 +124,14 @@ static void read_audio_frame()
 
 		//send_audio_data(pcm_data_buf, oss_buf_size);
 		send_audio_data(audio_data, data_buf_size);
+        //write(pcm_fd,pcm_data_buf,oss_buf_size);
+        //wr_len+=oss_buf_size;
+        //write(pcm_fd,audio_data,data_buf_size);
+        //wr_len+=data_buf_size;
 
 	};
+    //printf("wr_len is %lx\n",wr_len);
+    close(pcm_fd);
 }
 
 /* ---------------------------------------------------------- */
