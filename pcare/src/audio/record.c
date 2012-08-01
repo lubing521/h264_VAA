@@ -21,7 +21,7 @@
 
 int capture_on;
 
-extern int oss_open_flag, oss_close_flag, oss_fd;
+extern int oss_open_flag, oss_close_flag, oss_fd_record;
 /* ---------------------------------------------------------- */
 
 int oss_buf_size = MAX_READ_LEN;
@@ -82,7 +82,7 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 static int record_oss_data(u8 *buffer, u32 oss_buf_size)
 {
 	/* TODO (FIX ME) */
-	read(oss_fd, buffer, oss_buf_size);
+	read(oss_fd_record, buffer, oss_buf_size);
 }
 
 /*
@@ -122,7 +122,7 @@ static void read_audio_frame()
     //unsigned long wr_len;
     //pcm_fd=open("/11.pcm",O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 	printf(">>>Start capturing audio data ...\n");
-    set_oss_record_config(oss_fd,RECORD_RATE,RECORD_CHANNELS,RECORD_BIT);
+    set_oss_record_config(oss_fd_record,RECORD_RATE,RECORD_CHANNELS,RECORD_BIT);
 	
 	while (capture_on) {
 
@@ -173,10 +173,10 @@ void stop_capture(void)
 {
 	capture_on = 0;
 
-    if( oss_fd > 0 )
+    if( oss_fd_record > 0 )
     {
-		close(oss_fd);
-		oss_fd = 0;
+		close(oss_fd_record);
+		oss_fd_record = 0;
 		printf("<<<Close capture audio device ...\n");
 	}
 	

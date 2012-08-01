@@ -46,7 +46,7 @@ static struct wav_header hdr;
 
 int playback_on = 0;		/* TODO (FIX ME) now the software on cellphone may not support talk_playback opcode command, we enable first */
 
-extern int oss_fd;
+extern int oss_fd_play;
 extern sem_t start_music;
 /* ---------------------------------------------------------- */
 /* 
@@ -65,11 +65,11 @@ int playback_buf(u8 *play_buf, int len)
     }
     printf("\n");
 #endif
-	if ((oss_fd < 0) | play_buf == NULL)
+	if ((oss_fd_play < 0) | play_buf == NULL)
 		return 0;
 	
 	/* TODO (FIX ME) */
-   	rc = write(oss_fd, buf, left_len);
+   	rc = write(oss_fd_play, buf, left_len);
 
     //printf("playback_buf>>>>>> rc= %d,left_len=%d\n",rc,left_len);
 	if (rc < 0)
@@ -212,10 +212,10 @@ void stop_playback()
     pthread_mutex_lock(&stop_playback_lock);
 	playback_on = 0;
 
-    if( oss_fd>0 )
+    if( oss_fd_play>0 )
     {
-		close(oss_fd);
-		oss_fd = 0;
+		close(oss_fd_play);
+		oss_fd_play = 0;
 		printf("<<<Close playback audio device\n");
 	}
 	pthread_mutex_unlock(&stop_playback_lock);

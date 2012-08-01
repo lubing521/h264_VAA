@@ -46,7 +46,7 @@ pthread_t playback_td, talk_playback_td;
 struct Player g_player;
 
 extern int music_data_fd;
-extern int oss_fd;
+extern int oss_fd_play;
 
 extern int read_client( int fd, char *buf, int len );
 
@@ -207,20 +207,20 @@ void *talk_play(void *arg)
     bit=buf[2];
     ispk=buf[3];
 
-    if(oss_fd > 0)
+    if(oss_fd_play > 0)
     {
-        close(oss_fd);
-        oss_fd= 0;
+        close(oss_fd_play);
+        oss_fd_play= 0;
         printf("audio(oss) already opened! close it!\n");
     }
-    oss_fd = open(OSS_AUDIO_DEV,O_WRONLY);
-    if (oss_fd < 0) {
+    oss_fd_play = open(OSS_AUDIO_DEV,O_WRONLY);
+    if (oss_fd_play < 0) {
         printf("Err: Open audio(oss) device failed!\n");
         goto exit;
     }
 
     /* set oss configuration */
-    if( set_oss_play_config(oss_fd, rate,AUDIO_CHANNELS, bit) < 0 )
+    if( set_oss_play_config(oss_fd_play, rate,AUDIO_CHANNELS, bit) < 0 )
     {
         printf("Err: set oss play config failed!\n");
         goto exit;
@@ -404,10 +404,10 @@ void StopPlayer()
     printf("ToStopPlayer\n");
     if( g_player.state == PLAYING )
         g_player.state = STOPPING;
-    if(oss_fd > 0)
+    if(oss_fd_play > 0)
     {
-        close(oss_fd);
-        oss_fd = -1;
+        close(oss_fd_play);
+        oss_fd_play = -1;
     }
     if(queue_state)
         ResetBufferQueue();
@@ -437,10 +437,10 @@ void EndPlayer( int exit_flag )
         printf("End player\n");
         if(exit_flag == -1)
         {
-            if(oss_fd > 0)
+            if(oss_fd_play > 0)
             {
-                close(oss_fd);
-                oss_fd = -1;
+                close(oss_fd_play);
+                oss_fd_play = -1;
             }
             if(queue_state)
                 ResetBufferQueue();
