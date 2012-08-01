@@ -42,6 +42,8 @@
 
 /* for oss configuration */
 #define OSS_AUDIO_DEV 	"/dev/dsp"
+#define CS3700_VOLUME 	"/dev/cs3700_volume"
+#define SPEAK_POWER 	"/sys/devices/platform/soc-audio/speak_power"
 
 /* --------------------------------------------------------- */
 
@@ -62,6 +64,8 @@ void close_audio_device(void);
 
 void *audio_capture_thread(void *args);
 void *audio_playback_thread(void *args);
+int volume_set(char );
+int speak_power(char *state);
 
 /* --------------------------------------------------------- */
 

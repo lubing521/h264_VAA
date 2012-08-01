@@ -983,7 +983,7 @@ ssize_t test_write(struct file *filp, const char __user *buff, size_t count, lof
 		return ret;
 	}
 	//printk("[kernel] vol frome use is : %d\n", vol);
-	printk("[kernel] vol frome use is : %c\n", vol);
+	//printk("[kernel] vol frome use is : %c\n", vol);
 #if 0
 	if (c == '1'){
 	  cs3700_show_regs();

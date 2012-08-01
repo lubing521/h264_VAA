@@ -5,6 +5,9 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <fcntl.h>					/* for O_WRONLY ... */
 #include <linux/soundcard.h>		/* for oss  */
 #include <sys/ioctl.h>
 #include <pthread.h>
@@ -79,15 +82,42 @@ int playback_buf(u8 *play_buf, int len)
 
 	return 0;
 }
-
+int speak_power(char *state)
+{
+    int speak_power_fd;
+	speak_power_fd=open(SPEAK_POWER,O_WRONLY);
+    if(speak_power_fd<0)
+    {
+        return -1;
+    }
+    write(speak_power_fd,state);//on/off
+    printf("set speak_power to %s\n",state);
+    close(speak_power_fd);
+    return 0;
+}
+int volume_set(char volume)
+{
+    int volume_fd;
+	volume_fd=open(CS3700_VOLUME,O_WRONLY);
+    if(volume_fd<0)
+    {
+        //printf("volume_fd open failed !!!\n");
+        return -1;
+    }
+    write(volume_fd,&volume);//0~7
+    printf("set volume to %c\n",volume);
+    close(volume_fd);
+    return 0;
+}
 /*
  * set oss configuration
  */
 int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
 {
 	int status, arg;
-	
-	
+    char volume = '5';
+    if(volume_set(volume))
+       printf("volume set failed !\n");
 	/* set audio bit */
 	arg = bit;
 	status = ioctl(fd, SOUND_PCM_WRITE_BITS, &arg);

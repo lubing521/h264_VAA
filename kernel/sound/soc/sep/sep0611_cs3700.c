@@ -80,6 +80,23 @@ void sep0611_spk_out(bool enable)
 	else
     	sep0611_gpio_setpin(SEP0611_SPK_CTL, GPIO_LOW);		/* speaker power off */
 }
+static size_t speak_power_store(struct device *dev, struct device_attribute *attr,
+        const char *buf, size_t count)
+{
+    if(sysfs_streq(buf,"off")){
+        buf =NULL;
+        sep0611_spk_out(0);
+    }
+    else if(sysfs_streq(buf,"on")){
+        sep0611_spk_out(1);
+    }
+    else{
+        printk("speak_power set failed !");
+        return -1;
+    }
+    return count;
+}
+static DEVICE_ATTR(speak_power, 0222, NULL, speak_power_store);
 
 #endif
 
@@ -139,13 +156,14 @@ static int sep0611_board_probe(struct platform_device *pdev)
 
 #ifdef SEP0611_AUDIO_EN
     sep0611_codec_gpio_init();
-    sep0611_codec_enable(true);
+    sep0611_codec_enable(false);
 #endif
 
 #ifdef SEP0611_SPK_CTL
     sep0611_spk_gpio_init();
     sep0611_spk_out(false);
 #endif
+    device_create_file(&pdev->dev, &dev_attr_speak_power);
 
    	return 0;
 }
@@ -160,6 +178,7 @@ static int sep0611_board_remove(struct platform_device *pdev)
 	sep0611_spk_out(false);
 #endif
 
+    device_remove_file(&pdev->dev, &dev_attr_speak_power);
 	return 0;
 }
 
@@ -254,7 +273,6 @@ static void __exit sep0611_snd_exit(void)
 {
 	platform_device_unregister(sep0611_snd_device);
 }
-
 module_init(sep0611_snd_init);
 module_exit(sep0611_snd_exit);
 

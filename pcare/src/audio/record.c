@@ -38,6 +38,12 @@ static adpcm_state_t adpcm_state_curr, adpcm_state_next;
 void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 {
 	int status, arg;
+    char volume = '7';
+    char state[]="off";
+    if(volume_set(volume)<0)
+       printf("volume set failed !\n");
+    if(speak_power(state)<0)
+        printf("set speak_power off failed ! \n");
 	printf("rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
 	/* set audio bit */
 	arg = bit;
