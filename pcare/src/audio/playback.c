@@ -52,7 +52,7 @@ extern sem_t start_music;
 /* 
  * playback buffer data (double buffer, be called from ./receive.c)
  */
-int playback_buf(u8 *play_buf, int len)
+int playback_buf(int fd,u8 *play_buf, int len)
 {
 	int rc=0;
 	int left_len = len;
@@ -65,11 +65,11 @@ int playback_buf(u8 *play_buf, int len)
     }
     printf("\n");
 #endif
-	if ((oss_fd_play < 0) | play_buf == NULL)
+	if ((fd < 0) | play_buf == NULL)
 		return 0;
 	
 	/* TODO (FIX ME) */
-   	rc = write(oss_fd_play, buf, left_len);
+   	rc = write(fd, buf, left_len);
 
     //printf("playback_buf>>>>>> rc= %d,left_len=%d\n",rc,left_len);
 	if (rc < 0)
@@ -200,7 +200,7 @@ void start_playback()
 	/* TODO (FIX ME)
 	 * we may create a new thread to process the receiving func here
 	 */
-	enable_playback_audio();
+	//enable_playback_audio();
 }
 
 static pthread_mutex_t stop_playback_lock = PTHREAD_MUTEX_INITIALIZER;

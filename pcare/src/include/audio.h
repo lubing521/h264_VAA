@@ -73,7 +73,7 @@ int speak_power(char *state);
 void init_receive(void);
 void StartPlayer(void);
 void StopPlayer(void);
-void EndPlayer(int);
+void EndPlayer(void);
 
 /* the third thread to process file receiving from cellphone and runtime playbacking */
 void *deal_FEdata_request(void *arg);
@@ -82,7 +82,7 @@ void *deal_FEdata_request(void *arg);
 int parse_wav_header(u8 *buf, u32 fd);
 
 /* playback buffer data (double buffer, be called from ./receive.c) */
-int playback_buf(u8 *play_buf, int len);
+int playback_buf(int fd,u8 *play_buf, int len);
 
 /* set oss configuration */
 int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit);

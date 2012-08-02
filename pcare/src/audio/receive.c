@@ -1,9 +1,3 @@
-/*
- * receive.c
- *	Receive audio file from cellphone(Android)
- *	jgfntu@163.com
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -18,7 +12,9 @@
 #include "rw.h"
 #include "adpcm.h"
 
-extern sem_t start_music;
+static void *talk_playback( void *arg );
+static void *talk_receive( void *arg );
+extern sem_t start_talk;
 /* --------------------------------------------------------- */
 enum PlayerState
 {
@@ -38,40 +34,94 @@ struct Player
 {
 	enum PlayerState state;
 	enum PlayerOp next_op;
+	pthread_t receive_thread;
 	pthread_t playback_thread;
     pthread_mutex_t lock;
 };
+struct AUDIO_CFG 
+{
+    int rate;
+    int channels;
+    int bit;
+    int ispk;
+};
+enum QueueState
+{
+    QUEUE_INIT,
+	QUEUE_WORKING,
+	QUEUE_STOPPED
+};
 
-pthread_t playback_td, talk_playback_td;
-struct Player g_player;
+enum TalkBufferFlag
+{
+	START_TALK,
+	KEEP_TALK,
+	END_TALK,
+	STOP_TALK
+};
 
-extern int music_data_fd;
-extern int oss_fd_play;
+enum TalkReceiveState
+{
+	TALK_INIT,
+	TALK_RECEIVE,
+	TALK_STOPPED
+};
 
-extern int read_client( int fd, char *buf, int len );
+enum TalkPlaybackState
+{
+	PLAYER_INIT,
+	PLAYER_PLAYBACK,
+	PLAYER_STOPPED
+};
 
 struct Buffer
 {
-    u8 data[ADPCM_MAX_READ_LEN];
+	struct Buffer *next;
+	u8 data[ADPCM_MAX_READ_LEN];
     int len;
-    sem_t is_empty;
-    sem_t is_full;
-    int wanted;
-    pthread_mutex_t lock;
+	int flag;
 };
 
-#define BUFFER_NUM 2
-struct Buffer g_talk_buffer_queue[BUFFER_NUM];
-int g_full_head = 0, g_empty_head = 0,queue_state=0;
+struct BufferQueue
+{
+	struct Buffer *buffer;
+	struct Buffer *list_filled;
+	struct Buffer *list_empty;
+	int buffer_num;
+	int state;
+	sem_t is_not_full;
+	sem_t is_not_empty;
+    pthread_mutex_t lock;
+};
+pthread_t talk_playback_td, talk_receive_td;
+struct Player g_player;
+
+#define BUFFER_NUM 3
+struct BufferQueue g_talk_buffer_queue;
+#define TALK_QUEUE (&g_talk_buffer_queue)
 
 u8 g_decoded_buffer[2][ADPCM_MAX_READ_LEN * 4];
 
+extern int music_data_fd;
+
+extern int read_client( int fd, char *buf, int len );
+
+
 void init_receive()
 {
-    sem_init(&start_music,0,0);
+    sem_init(&start_talk,0,0);
     pthread_mutex_init(&g_player.lock,NULL);
     g_player.state = STOPPED;
     g_player.next_op = NONE;
+    InitQueue(TALK_QUEUE,BUFFER_NUM);
+    if(pthread_create(&g_player.playback_thread, NULL, talk_playback, NULL) != 0) {
+        perror("pthread_create");
+        return ;
+    }
+    if(pthread_create(&g_player.receive_thread, NULL, talk_receive, NULL) != 0) {
+        perror("pthread_create");
+        return ;
+    }
 }
 
 /*
@@ -96,7 +146,7 @@ void clear_recv_buf(int client_fd)
         close(client_fd);
         exit(0);
     }
-    printf("first * clear recv socket buffer : %då­—èŠ‚!\n", recv_size);
+    printf("first * clear recv socket buffer : %d×Ö½Ú!\n", recv_size);
     recv_size = 0;
 #endif
     while(1) {
@@ -106,7 +156,7 @@ void clear_recv_buf(int client_fd)
         recv(client_fd, tmp, 1, 0);
         recv_size++;
     }
-    printf("second * clear recv socket buffer : %då­—èŠ‚!\n", recv_size);
+    printf("second * clear recv socket buffer : %d×Ö½Ú!\n", recv_size);
 #if 0
     do {
         if ((recv_size = recv(client_fd, runtime_recv_buf, RUNTIME_RECV_LEN, 0)) == -1) {
@@ -114,358 +164,415 @@ void clear_recv_buf(int client_fd)
             close(client_fd);
             exit(0);
         }
-        printf("clear recv socket buffer : %då­—èŠ‚!\n", recv_size);
+        printf("clear recv socket buffer : %d×Ö½Ú!\n", recv_size);
     } while (recv_size > 0);
 #endif
 }
 
-void init_buffer()
-{
-    int i;
-    for( i = 0; i < BUFFER_NUM; i++ )
-    {
-        struct Buffer *p_buf = &g_talk_buffer_queue[i];
-        p_buf->len = 0;
-        //p_buf->wanted = WANTED_NONE;
-        sem_init(&p_buf->is_full, 0, 0);			/* read socket to buffer */
-        sem_init(&p_buf->is_empty, 0, 1);
-        pthread_mutex_init(&p_buf->lock,NULL);
-    }
-    g_full_head = 0;
-    g_empty_head = 0;
-    queue_state=1;
-    return;
-}
 
-struct Buffer *GetBuffer( void )
+struct Buffer *GetBuffer( struct BufferQueue *queue )
 {
-    struct Buffer *p = &g_talk_buffer_queue[g_full_head];
-    //pthread_mutex_lock( &p->lock );
-    //p->wanted = WANTED_FULL;
-    //pthread_mutex_unlock( &p->lock );
-    if( sem_wait(&p->is_full) < 0 )
-        return NULL;
-    pthread_mutex_lock( &p->lock );
-    g_full_head++;
-    if( g_full_head >= BUFFER_NUM )
-        g_full_head = 0;
-    pthread_mutex_unlock( &p->lock );
+    struct Buffer *p = NULL;
+    
+    pthread_mutex_lock( &queue->lock );
+    if( queue->list_filled == NULL )
+    {
+    	pthread_mutex_unlock( &queue->lock );
+   		sem_wait(&queue->is_not_empty);
+   		pthread_mutex_lock( &queue->lock );
+    }
+	p = queue->list_filled;
+    if( p != NULL && queue->state == QUEUE_STOPPED )
+    {
+    	p->flag = STOP_TALK;
+	}
+    pthread_mutex_unlock( &queue->lock );
+    //printf("GetBuffer %x\n",p);
     return p;
 }
 
-int EmptyBuffer(struct Buffer *p_buf)
+int EmptyBuffer( struct BufferQueue *queue )
 {
-    //pthread_mutex_lock( &p_buf->lock );
-    return sem_post(&p_buf->is_empty);
-    //p_buf->wanted = WANTED_NONE;
-    //pthread_mutex_unlock( &p_buf->lock );
+	int result = 0;
+    pthread_mutex_lock( &queue->lock );
+    //printf("EmptyBuffer %x\n",queue->list_filled);
+    if( queue->list_filled != NULL )
+    {
+	    if( queue->list_empty == NULL )
+	    {
+	    	queue->list_empty = queue->list_filled;
+	    	sem_post( &queue->is_not_full );
+	    }
+   		queue->list_filled = queue->list_filled->next;
+   		if( queue->list_filled == queue->list_empty )
+   			queue->list_filled = NULL;
+   		result = 1;
+	}
+    pthread_mutex_unlock( &queue->lock );
+    return result;
 }
 
-struct Buffer *GetEmptyBuffer()
+struct Buffer *GetEmptyBuffer( struct BufferQueue *queue )
 {
-    struct Buffer *p = &g_talk_buffer_queue[g_empty_head];
-    //pthread_mutex_lock( &p->lock );
-    //p->wanted = WANTED_EMPTY;
-    //pthread_mutex_unlock( &p->lock );
-    if( sem_wait(&p->is_empty) < 0 )
-        return NULL;
-    pthread_mutex_lock( &p->lock );
-    g_empty_head++;
-    if( g_empty_head >= BUFFER_NUM ) g_empty_head = 0;
-    pthread_mutex_unlock( &p->lock );
+    struct Buffer *p = NULL;
+    
+    pthread_mutex_lock( &queue->lock );
+    while( queue->state == QUEUE_WORKING && queue->list_empty == NULL )
+    {
+    	pthread_mutex_unlock( &queue->lock );
+   		sem_wait(&queue->is_not_full);
+   		pthread_mutex_lock( &queue->lock );
+    }
+    if( queue->state == QUEUE_WORKING )
+    {
+    	p = queue->list_empty;
+	}
+    pthread_mutex_unlock( &queue->lock );
+   // printf("GetEmptyBuffer %x\n",p);
     return p;
 }
 
-int AddBuffer( struct Buffer *p_buf )
+int FillBuffer( struct BufferQueue *queue )
 {
-    //pthread_mutex_lock( &p_buf->lock );
-    return sem_post(&p_buf->is_full);
-    //p_buf->wanted = WANTED_NONE;
-    //pthread_mutex_unlock( &p_buf->lock );
+	int result = 0;
+    pthread_mutex_lock( &queue->lock );
+    //printf("FillBuffer %x\n",queue->list_empty);
+    if( queue->state == QUEUE_WORKING && queue->list_empty != NULL )
+    {
+	    if( queue->list_filled == NULL )
+	    {
+	    	queue->list_filled = queue->list_empty;
+	    	sem_post( &queue->is_not_empty );
+	    }
+   		queue->list_empty = queue->list_empty->next;
+   		if( queue->list_empty == queue->list_filled )
+   			queue->list_empty = NULL;
+   		result = 1;
+	}
+    pthread_mutex_unlock( &queue->lock );
+    return result;
 }
 
-void ResetBufferQueue()
+void InitQueue( struct BufferQueue *queue, int num )
 {
-    int i;
-    for( i = 0; i < BUFFER_NUM; i++ )
-    {
-        struct Buffer *p_buf = &g_talk_buffer_queue[i];
-        pthread_mutex_lock( &p_buf->lock );
-        sem_destroy( &p_buf->is_full );
-        sem_destroy( &p_buf->is_empty );
-        pthread_mutex_unlock( &p_buf->lock );
-    }
-    queue_state=0;
-
+	int i;
+	
+	queue->buffer = (struct Buffer *)malloc(sizeof(struct Buffer)*num);
+	queue->buffer_num = num;
+	for( i = 0; i < num-1; i++ )
+	{
+		queue->buffer[i].next = &queue->buffer[i+1];
+	}
+	queue->buffer[i].next = &queue->buffer[0];
+	
+	queue->state = QUEUE_INIT;
+	queue->list_filled = NULL;
+	queue->list_empty = queue->buffer;
+	
+    sem_init(&queue->is_not_full, 0, 0);
+    sem_init(&queue->is_not_empty, 0, 0);
+	pthread_mutex_init(&queue->lock,NULL);
+	
+	return;
 }
-void *talk_play(void *arg)
+
+int SetFlag( struct BufferQueue *queue, int flag )
 {
-    u8 *buf = (u8 *)arg;
-    unsigned int rate,channels,bit,ispk,i;
-    rate=un_OSS_RATE[buf[0]];
-    channels=buf[1];
-    bit=buf[2];
-    ispk=buf[3];
-
-    if(oss_fd_play > 0)
+	int result = 0;
+    pthread_mutex_lock( &queue->lock );
+    if( queue->state == QUEUE_WORKING && queue->list_empty != NULL )
     {
-        close(oss_fd_play);
-        oss_fd_play= 0;
-        printf("audio(oss) already opened! close it!\n");
-    }
-    oss_fd_play = open(OSS_AUDIO_DEV,O_WRONLY);
-    if (oss_fd_play < 0) {
-        printf("Err: Open audio(oss) device failed!\n");
-        goto exit;
-    }
 
-    /* set oss configuration */
-    if( set_oss_play_config(oss_fd_play, rate,AUDIO_CHANNELS, bit) < 0 )
-    {
-        printf("Err: set oss play config failed!\n");
-        goto exit;
-    }
+   		queue->list_empty->flag = flag;
+   		result = 1;
+	}
+    pthread_mutex_unlock( &queue->lock );
+    return result;
+}
 
-    printf(">>>Open playback audio device\n");
+void EnableBufferQueue( struct BufferQueue *queue )
+{
+    printf("Enable queue\n");
+	pthread_mutex_lock( &queue->lock );
+	queue->state = QUEUE_WORKING;
+	pthread_mutex_unlock( &queue->lock );
+	return;
+}
+
+void DisableBufferQueue( struct BufferQueue *queue )
+{
+	int i;
+    printf("Disable queue\n");
+	pthread_mutex_lock( &queue->lock );
+	
+	for( i = 0; i < queue->buffer_num-1; i++ )
+	{
+		queue->buffer[i].flag = STOP_TALK;
+	}
+	queue->state = QUEUE_STOPPED;
+	if( sem_trywait(&queue->is_not_full) < 0 )
+        sem_post(&queue->is_not_full);
+	if( sem_trywait(&queue->is_not_empty) < 0 )
+        sem_post(&queue->is_not_empty);
+	pthread_mutex_unlock( &queue->lock );
+	return;
+}
+
+void *talk_playback( void *arg )
+{
+	int state = PLAYER_INIT, i=0;
+	int audio_fd = 0;
+	struct Buffer *buffer;
     adpcm_state_t adpcm_state = {0, 0};
-
-    i = 0;
-    while(1)
-    {
-        struct Buffer *buffer=GetBuffer();
-        if( buffer == NULL )
-            break;
-        adpcm_decoder( buffer->data, (short *)g_decoded_buffer[i],buffer->len, &adpcm_state);
-        if( EmptyBuffer(buffer) < 0 )
-            break;
-        if( playback_buf(g_decoded_buffer[i],buffer->len*4) < 0 )
-        {
-            printf("Err(talk):playback failed!\n");
-            break;
-        }
-        usleep(1000);
-        i = !i;
-    }
-
-exit:
-    printf("talk play thread exit\n");
-    EndPlayer(-1);
-    pthread_exit(NULL);
+	pthread_detach(pthread_self());
+	do
+	{
+		switch( state )
+		{
+			case PLAYER_INIT:
+				printf("player init\n");
+                buffer = GetBuffer( TALK_QUEUE );
+                if( buffer == NULL )
+                    break;
+				if( buffer->flag == START_TALK && buffer->len == sizeof(struct AUDIO_CFG) )
+				{
+					struct AUDIO_CFG *cfg = (struct AUDIO_CFG *)(buffer->data);
+					
+					audio_fd = open(OSS_AUDIO_DEV,O_RDWR);
+					if(audio_fd < 0)
+					{
+						printf("Err(talkplayback): Open audio(oss) device failed!\n");
+					}
+					else if( set_oss_play_config(audio_fd, cfg->rate,cfg->channels, cfg->bit) < 0 )
+					{
+						printf("Err(talkplayback): set oss play config failed!\n");
+						close(audio_fd);
+						audio_fd = 0;
+					}
+                    adpcm_state.valprev = 0;
+                    adpcm_state.index = 0;
+                    printf("talk start\n");
+					state = PLAYER_PLAYBACK;
+				}
+				else if( buffer->flag == STOP_TALK )
+				{
+					printf("Info(talkplayback): Stop play, skip buffer!\n");
+				}
+				else
+				{
+					printf("Err(talkplayback): Bad start flag or config!\n");
+				}
+				EmptyBuffer( TALK_QUEUE );
+				break;
+			case PLAYER_PLAYBACK:
+                //printf("playback\n");
+				buffer = GetBuffer( TALK_QUEUE );
+                if( buffer == NULL )
+                {
+                    state = PLAYER_STOPPED;
+                    break;
+                }
+				if( buffer->flag != STOP_TALK )
+				{
+					if( audio_fd > 0 )
+					{
+                        if( buffer->len <= 0 || buffer->len > ADPCM_MAX_READ_LEN )
+                            printf("err buffer len %d\n", buffer->len);
+						adpcm_decoder( buffer->data, (short *)g_decoded_buffer[i],buffer->len, &adpcm_state);
+						playback_buf( audio_fd, g_decoded_buffer[i], buffer->len*4);
+						i = !i;
+					}
+					if( buffer->flag == END_TALK )
+						state = PLAYER_STOPPED;
+				}
+				else
+				{
+					state = PLAYER_STOPPED;
+					printf("Info(talkplayback): talk stopped!\n");
+				}
+				EmptyBuffer( TALK_QUEUE );
+				break;
+			case PLAYER_STOPPED:
+                printf("player stop\n");
+				close(audio_fd);
+                audio_fd = 0;
+				state = PLAYER_INIT;
+				break;
+		}
+	}while(1);
+	
+	pthread_exit(NULL);
 }
 
-static int receive_talk(u32 client_fd)
+void *talk_receive( void *arg )
 {
+	int state = TALK_INIT;
+	struct Buffer *buffer;
     int error_flag, read_left,file_size,error_num=0;
     unsigned rate,channels,bit,ispk;
     u8 buf[12];
-    
-    printf("in talk_playback>>>>>>>>>>\n");
-    /* receive file size from cellphone */
-    if (read_client(client_fd, buf, 8) != 8) {
-        perror("recv");
-        return -1;
-    }
-    file_size = *((u32 *)&buf[0]);
-    read_left = file_size;
-    printf(">>>receive file size : %då­—èŠ‚\n", file_size);
-    if (read_client(client_fd, buf, 4) != 4) {
-        perror("recv");
-        return -1;
-    }
-    rate=un_OSS_RATE[buf[0]];
-    channels=buf[1];
-    bit=buf[2];
-    ispk=buf[3];
-    printf("rate is %d,channels is %d,bit is %d,ispk is %d\n",rate,channels,bit,ispk);
-    if(channels !=1||bit!=16||buf[8]>7||file_size<0)
-    {
-        printf("Err: received file error !!\n");
-        return -1;
-    }
-   
-    init_buffer();
 
-    /*
-     * TODO (FIX ME)
-     * create a thread for playbacking recording data from cellphone
-     */
-    error_flag = pthread_create(&talk_playback_td, NULL, talk_play, buf);
-    if (error_flag < 0) {
-        printf("Create talk playback thread faild!\n");
-        return -1;
-    }
-    
-    while(1)
-    {
-        struct Buffer *p_buf = GetEmptyBuffer();
-        int read_len = ADPCM_MAX_READ_LEN;
-        if( p_buf == NULL )
-            return -1;
-        error_flag = read_all(client_fd, p_buf->data, &read_len);
-        if (error_flag < 0)
-            return -1;
-        p_buf->len = read_len;
-        if (p_buf->len == 0)
-        {
-            printf("###no data read###\n");	
-            return -1;
-        }
-        AddBuffer(p_buf);
-        if(!ispk)
-        {
-            read_left -= p_buf->len;
-            if( read_left <= 0 )
-            {
-                printf("music play over\n");
-                break;
-            }
-        }
-    }
+	pthread_detach(pthread_self());
+	do
+	{
+		switch( state )
+		{
+			case TALK_INIT:
+				printf("Talk init\n");
+				sem_wait(&start_talk);
+				printf("after wait\n");
 
-    return 0;
+				send_talk_resp();
+			    if (read_client(music_data_fd, buf, 8) != 8) {
+			        perror("recv");
+			        state = TALK_STOPPED;
+			    }
+			    else
+			    {
+				    file_size = *((u32 *)&buf[0]);
+				    read_left = file_size;
+				    printf(">>>receive file size : %d×Ö½Ú\n", file_size);
+				    if (read_client(music_data_fd, buf, 4) != 4) {
+				        printf("Err: no file size!\n");
+                        state = TALK_STOPPED;
+				    }
+				    else
+				    {
+					    rate=un_OSS_RATE[buf[0]];
+					    channels=buf[1];
+					    bit=buf[2];
+					    ispk=buf[3];
+					    printf("rate is %d,channels is %d,bit is %d,ispk is %d\n",rate,channels,bit,ispk);
+					    if(channels !=1||bit!=16||buf[8]>7||file_size<0)
+					    {
+					        printf("Err: received file error !!\n");
+					        state = TALK_STOPPED;
+					    }
+					    else
+					    {
+					    	struct AUDIO_CFG *cfg;
+					    	buffer = GetEmptyBuffer( TALK_QUEUE);
+                            if( buffer == NULL )
+                            {
+                                state = TALK_STOPPED;
+                                break;
+                            }
+                            buffer->len = sizeof(struct AUDIO_CFG);
+					    	cfg = (struct AUDIO_CFG *)(buffer->data);
+						    cfg->rate=rate;
+						    cfg->channels=channels;
+						    cfg->bit=bit;
+						    cfg->ispk=ispk;
+						    SetFlag( TALK_QUEUE, START_TALK );
+						    printf("start talk\n");
+                            FillBuffer( TALK_QUEUE );
+						    state = TALK_RECEIVE;
+						}
+					}
+				}
+				break;
+			case TALK_RECEIVE:
+				//printf("Talk receive\n");
+		        buffer = GetEmptyBuffer(TALK_QUEUE);
+                if( buffer == NULL )
+                {
+                    state = TALK_STOPPED;
+                    break;
+                }
+		        int read_len = ADPCM_MAX_READ_LEN;
+		        if( buffer == NULL )
+		        {
+		            state = TALK_STOPPED;
+		        }
+		        else
+		        {
+			        error_flag = read_all(music_data_fd, buffer->data, &read_len);
+			        if (error_flag < 0)
+			        {
+			            state = TALK_STOPPED;
+			        }
+			        else
+			        {
+				        buffer->len = read_len;
+				        if (buffer->len == 0)
+				        {
+				            printf("###no data read###\n");	
+				            state = TALK_STOPPED;;
+				        }
+				        else
+				        {
+				        	if(!ispk)
+				        	{
+					            read_left -= buffer->len;
+					            if( read_left <= 0 )
+					            {
+					                printf("music play over\n");
+						    		SetFlag( TALK_QUEUE, END_TALK );
+					            }
+					            else
+					            {
+						    		SetFlag( TALK_QUEUE, KEEP_TALK );
+					            }
+				            }
+				            else
+				            {
+						    	SetFlag( TALK_QUEUE, KEEP_TALK );
+				            }
+					        FillBuffer( TALK_QUEUE );
+				        }
+				    }
+			    }
+				break;
+			case TALK_STOPPED:
+				printf("Talk stop\n");
+				EndPlayer();
+				state = TALK_INIT;
+				break;
+		}
+	}while(1);
+	
+	pthread_exit(NULL);
 }
 
-/* TODO (FIX ME)
- * thread for receiving file from cellphone or runtime playbacking
- */
-void *deal_FEdata_request(void *arg)
+void EndPlayer()
 {
-    int client_fd,exit_flag=-1;
-    printf("before wait\n");
-    if(sem_wait(&start_music)<0)
-        goto free_buf;
-    printf("after wait\n");
-    /* tell cellphone to start sending file */
-    send_talk_resp();
-    client_fd = music_data_fd;
-    /* seperate mode, free source when thread working is over */
-    pthread_detach(pthread_self());
-    /* receive talk data frome cellphone */
-    if (receive_talk(client_fd) == -1)
-    {
-        printf("File receive connection is error!\n");
-    }
-    else
-        exit_flag =0;
-
-
-
-free_buf:
-    EndPlayer(exit_flag);
-    printf("deal_FEdata_request thread exit!\n");
-    pthread_exit(NULL);
+    pthread_mutex_lock(&g_player.lock);
+    printf("ToEndPlayer\n");
+	if(music_data_fd > 0)
+	{
+		close(music_data_fd);
+		music_data_fd = -1;
+	}
+	g_player.state = STOPPED;
+    pthread_mutex_unlock(&g_player.lock);
+	return;
 }
-
-/*
- * create playback audio thread
- */
-int enable_playback_audio()
-{
-    if(pthread_create(&playback_td, NULL, deal_FEdata_request, NULL) != 0) {
-        perror("pthread_create");
-        return -1;
-    }
-    return 0;
-}
-
-
 void StartPlayer()
 {
-    printf("StartPlayer g_player.lock<<<<<<<<<<<<<<<<\n");
     pthread_mutex_lock(&g_player.lock);
-	if( g_player.state == STOPPED )
-	{
-        printf("ToStartPlayer\n");
-		int ret =enable_playback_audio(); 
-	    if (ret != 0)
-    	{
-	    	printf("ERR(Player):create playback thread error\n");
-	    }
-	    else
-	    {
-			g_player.state = PLAYING;
-		}
-		g_player.next_op = NONE;
-	}
-	else
-	{
-        printf("Wait for play\n");
-		g_player.next_op = PLAY;
-	}
+    printf("ToStartPlayer\n");
+    EnableBufferQueue(TALK_QUEUE);
+	g_player.state = PLAYING;
+	g_player.next_op = NONE;
     pthread_mutex_unlock(&g_player.lock);
-    printf("StartPlayer g_player.unlock>>>>>>>>>>>>>>\n");
 	return;
 }
 
 void StopPlayer()
 {
-    printf("StopPlayer g_player.lock<<<<<<<<<<<<<<<<\n");
     pthread_mutex_lock(&g_player.lock);
     printf("ToStopPlayer\n");
     if( g_player.state == PLAYING )
         g_player.state = STOPPING;
-    if(oss_fd_play > 0)
-    {
-        close(oss_fd_play);
-        oss_fd_play = -1;
-    }
-    if(queue_state)
-        ResetBufferQueue();
+   
+    DisableBufferQueue(TALK_QUEUE);
     if(music_data_fd>0)
     {
         close(music_data_fd);
         music_data_fd =-1;
     }
     g_player.next_op = NONE;
-    //	}
-    /*	else
-        {
-        printf("Wait for stop\n");
-        g_player.next_op = STOP;
-        }*/
-    pthread_mutex_unlock(&g_player.lock);
-    printf("StopPlayer g_player.unlock>>>>>>>>>>>>>>\n");
-	return;
-}
-
-void EndPlayer( int exit_flag )
-{    
-    printf("EndPlayer g_player.lock<<<<<<<<<<<<<<<<\n");
-    pthread_mutex_lock(&g_player.lock);
-	if( g_player.state == STOPPING || g_player.state == PLAYING )
-	{
-        printf("End player\n");
-        if(exit_flag == -1)
-        {
-            if(oss_fd_play > 0)
-            {
-                close(oss_fd_play);
-                oss_fd_play = -1;
-            }
-            if(queue_state)
-                ResetBufferQueue();
-        }
-        if(music_data_fd>0)
-        {
-            close(music_data_fd);
-            music_data_fd =-1;
-        }
-		g_player.state = STOPPED;
-		if( g_player.next_op == PLAY )
-		{
-            printf("ReStartPlayer\n");
-            pthread_mutex_unlock(&g_player.lock);
-            StartPlayer();
-            pthread_mutex_lock(&g_player.lock);
-        }
-        g_player.next_op = NONE;
-    }
-	else
-	{
-		printf("ERR(Player):wrong state(%d) for end player!\n", g_player.state );
-	}
 
     pthread_mutex_unlock(&g_player.lock);
-    printf("EndPlayer g_player.unlock>>>>>>>>>>>>>>\n");
 	return;
 }

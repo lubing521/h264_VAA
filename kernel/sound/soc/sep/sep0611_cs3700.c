@@ -90,6 +90,14 @@ static size_t speak_power_store(struct device *dev, struct device_attribute *att
     else if(sysfs_streq(buf,"on")){
         sep0611_spk_out(1);
     }
+    else if(sysfs_streq (buf,"coff")){
+        sep0611_codec_enable(0);
+        printk(" set codec off !\n");
+    }
+    else if(sysfs_streq (buf,"con\n")){
+        sep0611_codec_enable(1);
+        printk(" set codec on !");
+    }
     else{
         printk("speak_power set failed !");
         return -1;
@@ -154,14 +162,14 @@ static int sep0611_board_probe(struct platform_device *pdev)
 {
 	alsa_dbg("%s\n", __func__);
 
-#ifdef SEP0611_AUDIO_EN
-    sep0611_codec_gpio_init();
-    sep0611_codec_enable(false);
-#endif
 
 #ifdef SEP0611_SPK_CTL
     sep0611_spk_gpio_init();
     sep0611_spk_out(false);
+#endif
+#ifdef SEP0611_AUDIO_EN
+    sep0611_codec_gpio_init();
+    sep0611_codec_enable(false);
 #endif
     device_create_file(&pdev->dev, &dev_attr_speak_power);
 
@@ -170,12 +178,12 @@ static int sep0611_board_probe(struct platform_device *pdev)
 
 static int sep0611_board_remove(struct platform_device *pdev)
 {
-#ifdef SEP0611_AUDIO_EN
-	sep0611_codec_enable(false);
-#endif
 
 #ifdef SEP0611_SPK_CTL
 	sep0611_spk_out(false);
+#endif
+#ifdef SEP0611_AUDIO_EN
+	sep0611_codec_enable(false);
 #endif
 
     device_remove_file(&pdev->dev, &dev_attr_speak_power);
@@ -187,12 +195,12 @@ static int sep0611_board_suspend_post(struct platform_device *pdev, pm_message_t
 {
 	alsa_dbg("%s\n", __func__);
 
-#ifdef SEP0611_AUDIO_EN
-	sep0611_codec_enable(false);
-#endif
 
 #ifdef SEP0611_SPK_CTL
 	sep0611_spk_out(false);
+#endif
+#ifdef SEP0611_AUDIO_EN
+	sep0611_codec_enable(false);
 #endif
 
 	return 0;
@@ -202,14 +210,14 @@ static int sep0611_board_resume_pre(struct platform_device *pdev)
 {
 	alsa_dbg("%s\n", __func__);
 
-#ifdef SEP0611_AUDIO_EN
-	sep0611_codec_gpio_init();
-	sep0611_codec_enable(true);
-#endif
 
 #ifdef SEP0611_SPK_CTL
 	sep0611_spk_gpio_init();
 	sep0611_spk_out(true);
+#endif
+#ifdef SEP0611_AUDIO_EN
+	sep0611_codec_gpio_init();
+	sep0611_codec_enable(true);
 #endif
 
 	return 0;
