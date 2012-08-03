@@ -15,6 +15,7 @@
 static void *talk_playback( void *arg );
 static void *talk_receive( void *arg );
 extern sem_t start_talk;
+extern oss_fd_play;
 /* --------------------------------------------------------- */
 enum PlayerState
 {
@@ -230,7 +231,7 @@ struct Buffer *GetEmptyBuffer( struct BufferQueue *queue )
     	p = queue->list_empty;
 	}
     pthread_mutex_unlock( &queue->lock );
-    printf("GetEmptyBuffer %x\n",p);
+    //printf("GetEmptyBuffer %x\n",p);
     return p;
 }
 
@@ -323,7 +324,6 @@ void DisableBufferQueue( struct BufferQueue *queue )
 void *talk_playback( void *arg )
 {
 	int state = PLAYER_INIT, i=0;
-	int audio_fd = 0;
 	struct AUDIO_CFG cfg;
     struct Buffer *buffer;
     adpcm_state_t adpcm_state = {0, 0};
@@ -341,17 +341,19 @@ void *talk_playback( void *arg )
 				if( buffer->flag == START_TALK && buffer->len == sizeof(struct AUDIO_CFG) )
 				{
 					cfg = *(struct AUDIO_CFG *)(buffer->data);
-					
-					audio_fd = open(OSS_AUDIO_DEV,O_RDWR);
-					if(audio_fd < 0)
-					{
-						printf("Err(talkplayback): Open audio(oss) device failed!\n");
+                    if(oss_fd_play <= 0)
+                    {
+                        oss_fd_play = open(OSS_AUDIO_DEV,O_WRONLY);
+                    }
+                    if(oss_fd_play < 0)
+                    {
+                        printf("Err(talkplayback): Open audio(oss) device failed!\n");
 					}
-					else if( set_oss_play_config(audio_fd, cfg.rate,cfg.channels, cfg.bit) < 0 )
+					else if( set_oss_play_config(oss_fd_play, cfg.rate,cfg.channels, cfg.bit) < 0 )
 					{
 						printf("Err(talkplayback): set oss play config failed!\n");
-						close(audio_fd);
-						audio_fd = 0;
+						close(oss_fd_play);
+						oss_fd_play = 0;
 					}
                     adpcm_state.valprev = 0;
                     adpcm_state.index = 0;
@@ -370,16 +372,16 @@ void *talk_playback( void *arg )
 				break;
             case PLAYER_RESET:
 				printf("player reset\n");
-                audio_fd = open(OSS_AUDIO_DEV,O_RDWR);
-                if(audio_fd < 0)
+                oss_fd_play = open(OSS_AUDIO_DEV,O_WRONLY);
+                if(oss_fd_play < 0)
                 {
                     printf("Err(talkplayback): Open audio(oss) device failed!\n");
                 }
-                else if( set_oss_play_config(audio_fd, cfg.rate,cfg.channels, cfg.bit) < 0 )
+                else if( set_oss_play_config(oss_fd_play, cfg.rate,cfg.channels, cfg.bit) < 0 )
                 {
                     printf("Err(talkplayback): set oss play config failed!\n");
-                    close(audio_fd);
-                    audio_fd = 0;
+                    close(oss_fd_play);
+                    oss_fd_play = 0;
                 }
                 state = PLAYER_PLAYBACK;
                 break;
@@ -393,15 +395,15 @@ void *talk_playback( void *arg )
                 }
 				if( buffer->flag != STOP_TALK )
 				{
-					if( audio_fd > 0 )
+					if( oss_fd_play > 0 )
 					{
                         if( buffer->len <= 0 || buffer->len > ADPCM_MAX_READ_LEN )
                             printf("err buffer len %d\n", buffer->len);
 						adpcm_decoder( buffer->data, (short *)g_decoded_buffer[i],buffer->len, &adpcm_state);
-						if( playback_buf( audio_fd, g_decoded_buffer[i], buffer->len*4) < 0 )
+						if( playback_buf( oss_fd_play, g_decoded_buffer[i], buffer->len*4) < 0 )
                         {
-                            close(audio_fd);
-                            audio_fd = 0;
+                            close(oss_fd_play);
+                            oss_fd_play = 0;
                             state = PLAYER_RESET;
                         }
 						i = !i;
@@ -418,8 +420,8 @@ void *talk_playback( void *arg )
 				break;
 			case PLAYER_STOPPED:
                 printf("player stop\n");
-				close(audio_fd);
-                audio_fd = 0;
+				//close(oss_fd_play);
+                //oss_fd_play = 0;
 				state = PLAYER_INIT;
 				break;
 		}
@@ -443,8 +445,8 @@ void *talk_receive( void *arg )
 		{
 			case TALK_INIT:
 				printf("Talk init\n");
-				sem_wait(&start_talk);
-				printf("after wait\n");
+                sem_wait(&start_talk);
+                printf("after wait\n");
 
 				send_talk_resp();
 			    if (read_client(music_data_fd, buf, 8) != 8) {

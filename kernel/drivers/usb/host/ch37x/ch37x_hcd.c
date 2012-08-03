@@ -395,6 +395,11 @@ static int start_transfer(struct ch37x *ch37x, struct ch37x_td *td)
 	}
 	
 	if(td->again){
+        if( td->epnum && td->pid == DEF_USB_PID_OUT && !(td->status & BIT_STAT_TOG_MATCH) )
+        {
+            td->tog = !td->tog;
+            printk("revert tog %d!\n", td->tog);
+        }
 		goto go;
 	}
 	

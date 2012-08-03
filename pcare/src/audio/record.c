@@ -39,11 +39,16 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 {
 	int status, arg;
     char volume = '7';
-    char state[]="off";
+#if 1
+    char state1[]="coff";
+    char state2[]="con";
+    if(speak_power(state1)<0)
+        printf("set codec off failed ! \n");
+    if(speak_power(state2)<0)
+        printf("set codec on failed ! \n");
+#endif
     if(volume_set(volume)<0)
        printf("volume set failed !\n");
-    if(speak_power(state)<0)
-        printf("set speak_power off failed ! \n");
 	printf("rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
 	/* set audio bit */
 	arg = bit;
@@ -81,8 +86,15 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
  */
 static int record_oss_data(u8 *buffer, u32 oss_buf_size)
 {
+    int tmp;
 	/* TODO (FIX ME) */
-	read(oss_fd_record, buffer, oss_buf_size);
+	if(read(oss_fd_record, buffer, oss_buf_size) < 0){
+        printf("sound  read  error  !\n");
+        return -1;
+    }
+    //for(tmp =0;tmp<10;tmp++)
+    //printf("buffer[%d]is %d \n",tmp,buffer[tmp]);
+    return 0;
 }
 
 /*
@@ -98,11 +110,17 @@ static int store_audio_data(void)
 	 * put them in the ado_data[0] area
 	 *
 	 */
-	/* convert pcm to adpcm */
-	/* TODO (FIX ME) */
-	record_oss_data(pcm_data_buf, oss_buf_size);
-	
-	//fprintf(stderr, "*");
+    /* convert pcm to adpcm */
+    /* TODO (FIX ME) */
+    if(record_oss_data(pcm_data_buf, oss_buf_size) < 0){
+        oss_fd_record = open(OSS_AUDIO_DEV,O_RDONLY);
+        if(oss_fd_record < 0){
+            printf("oss_fd_record open failed !\n");
+            return -1;
+        }
+    }
+
+    //fprintf(stderr, "*");
 #if 1
 	/* convert pcm to adpcm */
 	adpcm_coder((short *)pcm_data_buf, (char *)audio_data, oss_buf_size, &adpcm_state_next);
@@ -111,6 +129,7 @@ static int store_audio_data(void)
 
 	adpcm_state_curr = adpcm_state_next;
 #endif
+    return 0;
 }
 
 /*
@@ -122,14 +141,19 @@ static void read_audio_frame()
     //unsigned long wr_len;
     //pcm_fd=open("/11.pcm",O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 	printf(">>>Start capturing audio data ...\n");
+    //close(oss_fd_record);
+    //oss_fd_record=open(OSS_AUDIO_DEV,O_RDONLY);
     set_oss_record_config(oss_fd_record,RECORD_RATE,RECORD_CHANNELS,RECORD_BIT);
 	
 	while (capture_on) {
 
-		store_audio_data();
+		if(store_audio_data() < 0){
+            break;
+        }
 
 		//send_audio_data(pcm_data_buf, oss_buf_size);
 		send_audio_data(audio_data, data_buf_size);
+    //    printf("send_audio_data size is %d\n",data_buf_size);
         //write(pcm_fd,pcm_data_buf,oss_buf_size);
         //wr_len+=oss_buf_size;
         //write(pcm_fd,audio_data,data_buf_size);
@@ -172,14 +196,14 @@ void start_capture(void)
 void stop_capture(void)
 {
 	capture_on = 0;
-
+#if 0
     if( oss_fd_record > 0 )
     {
 		close(oss_fd_record);
 		oss_fd_record = 0;
 		printf("<<<Close capture audio device ...\n");
 	}
-	
+#endif	
 	printf("<<<Stop capture audio ...\n");
 }
 /* ---------------------------------------------------------- */
