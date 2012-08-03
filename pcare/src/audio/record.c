@@ -48,7 +48,7 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 	/* set audio bit */
 	arg = bit;
 	status = ioctl(fd, SOUND_PCM_WRITE_BITS, &arg);
-	printf("status is %d   arg is %d\n",status,arg);
+//	printf("status is %d   arg is %d\n",status,arg);
 	if (status == -1)
 		printf("SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
 	if (arg != bit)
@@ -57,7 +57,7 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
     /* set audio channels */
 	arg = channels;	
 	status = ioctl(fd, SOUND_PCM_WRITE_CHANNELS, &arg);
-	printf("status is %d   arg is %d\n",status,arg);
+//	printf("status is %d   arg is %d\n",status,arg);
 	if (status == -1)
 		printf("SOUND_PCM_WRITE_CHANNELS ioctl failed,status is %d\n",status);
 	if (arg != channels)
@@ -68,7 +68,7 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 	//arg	= 8000;
 	status = ioctl(fd, SNDCTL_DSP_SPEED, &arg);
 	//status = ioctl(fd, SOUND_PCM_WRITE_RATE, &arg);
-	printf("status is %d   arg is %d\n",status,arg);
+//	printf("status is %d   arg is %d\n",status,arg);
 	if (status == -1)
 		printf("SOUND_PCM_WRITE_WRITE ioctl failed,status is %d\n",status);
 	if (arg != rate)

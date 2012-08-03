@@ -19,7 +19,7 @@ extern void enable_t_rh_sent();
 /* prase opcode command text */
 int prase_packet(int opcode, u8 *buf)
 {
-	printf(">>>opcode = %d\n", opcode);
+	//printf(">>>opcode = %d\n", opcode);
 	
 	switch (opcode) {
 		case 250:

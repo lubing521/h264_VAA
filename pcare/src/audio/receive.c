@@ -71,7 +71,8 @@ enum TalkPlaybackState
 {
 	PLAYER_INIT,
 	PLAYER_PLAYBACK,
-	PLAYER_STOPPED
+	PLAYER_STOPPED,
+    PLAYER_RESET
 };
 
 struct Buffer
@@ -219,6 +220,7 @@ struct Buffer *GetEmptyBuffer( struct BufferQueue *queue )
     pthread_mutex_lock( &queue->lock );
     while( queue->state == QUEUE_WORKING && queue->list_empty == NULL )
     {
+        printf("#wait is not full\n");
     	pthread_mutex_unlock( &queue->lock );
    		sem_wait(&queue->is_not_full);
    		pthread_mutex_lock( &queue->lock );
@@ -228,7 +230,7 @@ struct Buffer *GetEmptyBuffer( struct BufferQueue *queue )
     	p = queue->list_empty;
 	}
     pthread_mutex_unlock( &queue->lock );
-   // printf("GetEmptyBuffer %x\n",p);
+    printf("GetEmptyBuffer %x\n",p);
     return p;
 }
 
@@ -322,8 +324,10 @@ void *talk_playback( void *arg )
 {
 	int state = PLAYER_INIT, i=0;
 	int audio_fd = 0;
-	struct Buffer *buffer;
+	struct AUDIO_CFG cfg;
+    struct Buffer *buffer;
     adpcm_state_t adpcm_state = {0, 0};
+
 	pthread_detach(pthread_self());
 	do
 	{
@@ -336,14 +340,14 @@ void *talk_playback( void *arg )
                     break;
 				if( buffer->flag == START_TALK && buffer->len == sizeof(struct AUDIO_CFG) )
 				{
-					struct AUDIO_CFG *cfg = (struct AUDIO_CFG *)(buffer->data);
+					cfg = *(struct AUDIO_CFG *)(buffer->data);
 					
 					audio_fd = open(OSS_AUDIO_DEV,O_RDWR);
 					if(audio_fd < 0)
 					{
 						printf("Err(talkplayback): Open audio(oss) device failed!\n");
 					}
-					else if( set_oss_play_config(audio_fd, cfg->rate,cfg->channels, cfg->bit) < 0 )
+					else if( set_oss_play_config(audio_fd, cfg.rate,cfg.channels, cfg.bit) < 0 )
 					{
 						printf("Err(talkplayback): set oss play config failed!\n");
 						close(audio_fd);
@@ -364,6 +368,21 @@ void *talk_playback( void *arg )
 				}
 				EmptyBuffer( TALK_QUEUE );
 				break;
+            case PLAYER_RESET:
+				printf("player reset\n");
+                audio_fd = open(OSS_AUDIO_DEV,O_RDWR);
+                if(audio_fd < 0)
+                {
+                    printf("Err(talkplayback): Open audio(oss) device failed!\n");
+                }
+                else if( set_oss_play_config(audio_fd, cfg.rate,cfg.channels, cfg.bit) < 0 )
+                {
+                    printf("Err(talkplayback): set oss play config failed!\n");
+                    close(audio_fd);
+                    audio_fd = 0;
+                }
+                state = PLAYER_PLAYBACK;
+                break;
 			case PLAYER_PLAYBACK:
                 //printf("playback\n");
 				buffer = GetBuffer( TALK_QUEUE );
@@ -379,7 +398,12 @@ void *talk_playback( void *arg )
                         if( buffer->len <= 0 || buffer->len > ADPCM_MAX_READ_LEN )
                             printf("err buffer len %d\n", buffer->len);
 						adpcm_decoder( buffer->data, (short *)g_decoded_buffer[i],buffer->len, &adpcm_state);
-						playback_buf( audio_fd, g_decoded_buffer[i], buffer->len*4);
+						if( playback_buf( audio_fd, g_decoded_buffer[i], buffer->len*4) < 0 )
+                        {
+                            close(audio_fd);
+                            audio_fd = 0;
+                            state = PLAYER_RESET;
+                        }
 						i = !i;
 					}
 					if( buffer->flag == END_TALK )

@@ -121,7 +121,7 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
 	/* set audio bit */
 	arg = bit;
 	status = ioctl(fd, SOUND_PCM_WRITE_BITS, &arg);
-	printf("status is %d   arg is %d\n",status,arg);
+//	printf("status is %d   arg is %d\n",status,arg);
 	if (status == -1)
     {
 		printf("SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
@@ -138,10 +138,10 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
 	//arg = channels = 2;	
 	status = ioctl(fd, SOUND_PCM_WRITE_CHANNELS, &arg);
 	//status = ioctl(fd, SNDCTL_DSP_STEREO, &arg);
-	printf("status is %d   arg is %d\n",status,arg);
+//	printf("status is %d   arg is %d\n",status,arg);
 	if (status == -1)
     {
-		printf("SNDCTL_DSP_STEREO ioctl failed,status is %d\n",status);
+		printf("SOUND_PCM_WRITE_CHANNELS ioctl failed,status is %d\n",status);
         return -3;
     }
 	if (arg != channels)
@@ -154,7 +154,7 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
     //rate =8000;
 	arg	= rate;
 	status = ioctl(fd, SNDCTL_DSP_SPEED, &arg);
-	printf("status is %d   arg is %d\n",status,arg);
+//	printf("status is %d   arg is %d\n",status,arg);
 	if (status == -1)
     {
 		printf("SNDCTL_DSP_SPEED ioctl failed,status is %d\n",status);

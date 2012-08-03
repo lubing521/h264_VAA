@@ -343,7 +343,6 @@ void send_picture(char *data, u32 length)
 
 	video_data->pic_len = length;
     video_data->time_stamp = times(NULL)*10;
-    //printf("video_data time_stamp is %lu\n",video_data->time_stamp);
 	video_data->frame_time = pic_num++;				/* test for time stamp */
 
 	pthread_mutex_lock(&AVsocket_mutex);
@@ -915,7 +914,7 @@ void network(void)
             else{
                 music_data_fd = *client_fd;
                 /* TODO just want to erase the no using data int the new socket buffer */
-                clear_recv_buf(music_data_fd);
+                //clear_recv_buf(music_data_fd);
                 /* when the new socket is connected, then tell the cellphone to start sending file */
                 sem_post(&start_talk);
             }

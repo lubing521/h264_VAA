@@ -416,13 +416,15 @@ static int start_transfer(struct ch37x *ch37x, struct ch37x_td *td)
 			ch37x_writeb(REG_USB_LENGTH, 0);
 		}
 		else{
+		    if( td->epnum ) td->tog = ch37x->ep_out[td->epnum-1].tog;    
 			packet_write(ch37x);
 			return 0;
 		}
 		break;
 
 	case DEF_USB_PID_IN:
-		break;
+		if( td->epnum ) td->tog = ch37x->ep_in[td->epnum-1].tog;    
+        break;
 	
 	default:
 		printk("should never be here!\n");
@@ -466,6 +468,30 @@ static void finish_request(struct ch37x *ch37x, struct ch37x_td *td,
 	}
 
 	ch37x_work(ch37x);
+}
+
+static void packet_skip(struct ch37x *ch37x)
+{
+	int rcv_len, size;
+	u8 buf[64];
+
+	/* prepare parameters */
+	rcv_len = ch37x_readb(REG_USB_LENGTH);
+	
+	if(rcv_len == 0)
+		return;
+
+	if (rcv_len <= 64) {
+		size = rcv_len;
+		printk("skip %d\n",rcv_len);
+	} else {
+		size = 64;
+		printk("buffer Overflow %d!\n",rcv_len - 64);
+	}
+
+	/* read fifo */
+	ch37x_read_fifo_cpu(buf, size);
+	
 }
 
 /* read a packet from ch37x's FIFO to urb buffer */
@@ -580,7 +606,6 @@ static void check_ep0_next_phase(struct ch37x *ch37x, int status)
 				td->pid = DEF_USB_PID_OUT;
 			else
 				td->pid = DEF_USB_PID_IN;
-
 			td->tog = true;
 			ch37x_dbg("ep0 data finish\n");
 		}
@@ -668,11 +693,16 @@ static void check_next_phase(struct ch37x *ch37x, int status)
 	}
 
 	if (check_transfer_finish(td, urb)){
+		//printk("finish(%d):%d\n",td->tog,urb->actual_length);
+		ep->tog = !ep->tog;
 		finish = 1;
 	}
 	else{
+//longn_qi
+		//printk("data(%d):%d\n",td->tog,urb->actual_length);
 		ep->tog = !ep->tog;
 		td->tog = ep->tog;
+		//td->tog = !td->tog;
 	}
 	
 	td->nak_times = 0;
@@ -778,6 +808,7 @@ static void ch37x_work(struct ch37x *_ch37x)
 	struct urb *urb;
 	int pipe, err = -EPIPE, epnum;
 	u8 status, r;
+	static int in_cnt=0,out_cnt=0;
 
 	ch37x_dbg("%s\n", __func__);
 
@@ -801,25 +832,35 @@ static void ch37x_work(struct ch37x *_ch37x)
 	case DEF_USB_PID_SETUP:
 	case DEF_USB_PID_OUT:
 		if(r == DEF_USB_PID_ACK)
-			err = 0;
+		{	err = 0; if(epnum) out_cnt++; }
 		else if(r == DEF_USB_PID_NAK)
 			err = -EAGAIN;
 
-		if(!(status & BIT_STAT_TOG_MATCH) && epnum){
-			printk("out no match\n");
+		if(!(status & BIT_STAT_TOG_MATCH)){
+			printk("ep %d out %d no match, tog %d\n",epnum, out_cnt,td->tog);
+            err = -EAGAIN;
 		}
 
 		break;
 
 	case DEF_USB_PID_IN:
 		if(M_IS_HOST_IN_DATA(status)){
-			if(!(status & BIT_STAT_TOG_MATCH) && epnum){
+			if(!(status & BIT_STAT_TOG_MATCH)){
 				ep = &ch37x->ep_in[epnum-1];
-				ep->tog = !ep->tog;
-				printk("in no match\n");
+//longn_qi
+				//ep->tog = !ep->tog;
+				printk("ep %d in %d no match, tog %d\n",epnum, in_cnt,td->tog);
+				err = -EAGAIN;
+				packet_skip(ch37x);
+                //err = 0;
+                //packet_read(ch37x);
 			}
-			packet_read(ch37x);
-			err = 0;
+			else
+			{
+				err = 0;
+				packet_read(ch37x);
+				in_cnt++;
+			}
 		}
 		else if(r == DEF_USB_PID_NAK)
 			err = -EAGAIN;
@@ -956,15 +997,17 @@ static struct ch37x_td *ch37x_make_td(struct ch37x *ch37x,
 	else if (usb_pipein(pipe)){
 		td->pid = DEF_USB_PID_IN;
 		ep = &ch37x->ep_in[epnum - 1];
-		ep->tog = !ep->tog;
-		td->tog = ep->tog;
+//longn_qi
+		//td->tog = ep->tog;
+		//ep->tog = 0;
 		list_add_tail(&td->queue, &ch37x->ep_in[epnum].pipe_queue);
 	}
 	else{
 		td->pid = DEF_USB_PID_OUT;
 		ep = &ch37x->ep_out[epnum - 1];
-		ep->tog = !ep->tog;
-		td->tog = ep->tog;
+//longn_qi
+		//td->tog = ep->tog;
+		//ep->tog = 0;
 		list_add_tail(&td->queue, &ch37x->ep_out[epnum].pipe_queue);
 	}
 

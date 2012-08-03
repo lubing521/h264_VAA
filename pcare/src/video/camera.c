@@ -32,7 +32,7 @@ int pic_cnt=0;
 
 void sigalrm_handler(int sig)
 {
-	printf("fps=%d\n", pic_cnt);
+	//printf("fps=%d\n", pic_cnt);
 	pic_cnt = 0;
 }
 
@@ -106,7 +106,9 @@ static void *camera_thread(void *args)
 		}
 		else
 			printf("r = %d\n", r);
+#ifdef PRINTFPS        
         pic_cnt++;
+#endif        
 		if(camera_stop)
 			pthread_exit(0);
     }
