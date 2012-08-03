@@ -90,7 +90,7 @@ int speak_power(char *state)
     {
         return -1;
     }
-    printf("set speak_power to %s\n",state);
+//    printf("set speak_power to %s\n",state);
     write(speak_power_fd,state);//on/off
     close(speak_power_fd);
     return 0;
