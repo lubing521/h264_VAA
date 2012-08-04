@@ -221,7 +221,7 @@ struct Buffer *GetEmptyBuffer( struct BufferQueue *queue )
     pthread_mutex_lock( &queue->lock );
     while( queue->state == QUEUE_WORKING && queue->list_empty == NULL )
     {
-        printf("#wait is not full\n");
+        //printf("#wait is not full\n");
     	pthread_mutex_unlock( &queue->lock );
    		sem_wait(&queue->is_not_full);
    		pthread_mutex_lock( &queue->lock );

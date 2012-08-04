@@ -111,14 +111,15 @@ static int cs3700_write(struct snd_soc_codec *codec, unsigned int reg,
 	data[1] = (value >> 8) & 0x00ff;
 	data[2] = value & 0x00ff;
 
-    printk("cs3700 write reg %d=%x", reg, value);
-	cs3700_write_reg_cache (codec, reg, value);
-	if (codec->hw_write(codec->control_data, data, 3) == 3)
+//    printk("cs3700 write reg %d=%x", reg, value);
+    cs3700_write_reg_cache (codec, reg, value);
+    if (codec->hw_write(codec->control_data, data, 3) == 3)
     {
-        printk("..ok\n");
-		return 0;
+        //      printk("..ok\n");
+        udelay(500);
+        return 0;
     }
-	else
+    else
     {
         printk("..failed\n");
 		return -EIO;
@@ -534,6 +535,7 @@ static int cs3700_set_audio_input(struct snd_soc_codec *codec)
 	cs3700_write_reg(0x16, 0x0118);				//IN1_L 6db -> 12db	###########
 	//cs3700_write_reg(0x0F, 0x01DB);			//10db 
 	cs3700_write_reg(0x0F, 0x01F0);				//17.625db 
+	cs3700_write_reg(0x0E, 0x0140);				//ADC  FS 11K FC 130K
 	cs3700_write_reg(0x1A, 0x0040);				 
 	cs3700_write_reg(0x18, 0x0043);				//############ IN2_L boost 6db  ; importmant
 

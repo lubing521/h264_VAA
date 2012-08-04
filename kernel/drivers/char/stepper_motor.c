@@ -30,6 +30,7 @@
 #include <mach/gpio.h>
 #include <mach/irqs.h>
 #include <board/board.h>
+#include <linux/time.h>
 
 
 
@@ -59,7 +60,7 @@
 #define SM2_POWER 5
 #define LOW  0
 #define HIGH  1
-#define STEPPER_DELAY 1
+#define STEPPER_DELAY 2000
 
 typedef unsigned long    U32;     /* unsigned 32-bit integer */
 
@@ -156,14 +157,14 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             {
                 return -EFAULT;
             }
-            for (i=7;i>=0;i--)
-            {
-                tmp_reg = read_reg(GPIO_PORTF_DATA_V);
-                tmp_reg &= SM1_MASK;
-                tmp_reg = tmp_reg | (sm_phase[i] << SM1_SHIFT);
-                write_reg(GPIO_PORTF_DATA_V,tmp_reg);
-                msleep(STEPPER_DELAY);
-            }
+            if(get_user(data,(int __user *)arg))
+                return -EFAULT;
+            stepper_dbg("2data is :%d\n",data);
+            i = (u32)data;
+            tmp_reg = read_reg(GPIO_PORTF_DATA_V);
+            tmp_reg &= SM1_MASK;
+            tmp_reg = tmp_reg | (sm_phase[i] << SM1_SHIFT);
+            write_reg(GPIO_PORTF_DATA_V,tmp_reg);
             break;
         }
     case SM1_CONFIG_DOWN:
@@ -173,14 +174,14 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             {
                 return -EFAULT;
             }
-            for (i=0;i<8;i++)
-            {
-                tmp_reg = read_reg(GPIO_PORTF_DATA_V);
-                tmp_reg &= SM1_MASK;
-                tmp_reg = tmp_reg | (sm_phase[i] << SM1_SHIFT);
-                write_reg(GPIO_PORTF_DATA_V,tmp_reg);
-                msleep(STEPPER_DELAY);
-            }
+            if(get_user(data,(int __user *)arg))
+                return -EFAULT;
+            stepper_dbg("2data is :%d\n",data);
+            i = (u32)data;
+            tmp_reg = read_reg(GPIO_PORTF_DATA_V);
+            tmp_reg &= SM1_MASK;
+            tmp_reg = tmp_reg | (sm_phase[i] << SM1_SHIFT);
+            write_reg(GPIO_PORTF_DATA_V,tmp_reg);
             break;
         }
     case SM1_POWER:
@@ -199,14 +200,14 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             {
                 return -EFAULT;
             }
-            for (i=7;i>=0;i--)
-            {
-                tmp_reg = read_reg(GPIO_PORTF_DATA_V);
-                tmp_reg &= SM2_MASK;
-                tmp_reg = tmp_reg | (sm_phase[i] << SM2_SHIFT);
-                write_reg(GPIO_PORTF_DATA_V,tmp_reg);
-                msleep(STEPPER_DELAY);
-            }
+            if(get_user(data,(int __user *)arg))
+                return -EFAULT;
+            stepper_dbg("2data is :%d\n",data);
+            i = (u32)data;
+            tmp_reg = read_reg(GPIO_PORTF_DATA_V);
+            tmp_reg &= SM2_MASK;
+            tmp_reg = tmp_reg | (sm_phase[i] << SM2_SHIFT);
+            write_reg(GPIO_PORTF_DATA_V,tmp_reg);
             break;
         }
     case SM2_CONFIG_RIGHT:
@@ -216,14 +217,14 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             {
                 return -EFAULT;
             }
-            for (i=0;i<8;i++)
-            {
-                tmp_reg = read_reg(GPIO_PORTF_DATA_V);
-                tmp_reg &= SM2_MASK;
-                tmp_reg = tmp_reg | (sm_phase[i] << SM2_SHIFT);
-                write_reg(GPIO_PORTF_DATA_V,tmp_reg);
-                msleep(STEPPER_DELAY);
-            }
+            if(get_user(data,(int __user *)arg))
+                return -EFAULT;
+            stepper_dbg("2data is :%d\n",data);
+            i = (u32)data;
+            tmp_reg = read_reg(GPIO_PORTF_DATA_V);
+            tmp_reg &= SM2_MASK;
+            tmp_reg = tmp_reg | (sm_phase[i] << SM2_SHIFT);
+            write_reg(GPIO_PORTF_DATA_V,tmp_reg);
             break;
         }
     case SM2_POWER:

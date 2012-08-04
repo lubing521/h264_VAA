@@ -20,11 +20,6 @@
 
 struct MotorOpBuffer
 {
-	int cur_op;
-	int next_op;
-    int wanted;
-	sem_t op_arrive;
-	pthread_mutex_t op_lock;
 };
 enum MotorType
 {
@@ -35,7 +30,10 @@ enum MotorType
 struct Motor
 {
 	int type;
-	struct MotorOpBuffer	buffer;
+	int cur_op;
+    int wanted;
+	sem_t op_arrive;
+	pthread_mutex_t op_lock;
 	pthread_t control_thread;
 };
 
@@ -47,70 +45,39 @@ struct MotorManager
 
 struct MotorManager	g_motor_manager;
 
-void InitMotorOpBuffer( struct MotorOpBuffer *p_buffer )
-{
-	// assert( p_buffer != 0 )
-	
-	p_buffer->cur_op = MOTOR_STOP;
-	p_buffer->next_op = MOTOR_NOOP;
-    p_buffer->wanted = 0;
-	sem_init(&p_buffer->op_arrive,0,0);
-	pthread_mutex_init(&p_buffer->op_lock,NULL);
-	
-	return;
-}
-
 int GetNextOp( int id )
 {
 	// assert( id >= MIN_ID && id <= MAX_ID )
-	int next_op;
 	struct Motor	*p_motor = &g_motor_manager.motor[id];
-	struct MotorOpBuffer	*p_buffer = &p_motor->buffer;
+	return p_motor->cur_op;
+}
 
-	pthread_mutex_lock(&p_buffer->op_lock);
-	if( p_buffer->next_op == MOTOR_NOOP )
-	{
-		if( p_buffer->cur_op == MOTOR_STOP )
-		{
-            p_buffer->wanted = 1;
-            pthread_mutex_unlock(&p_buffer->op_lock);
-			sem_wait(&p_buffer->op_arrive);
-            pthread_mutex_lock(&p_buffer->op_lock);
-			p_buffer->cur_op = p_buffer->next_op;
-            p_buffer->next_op = MOTOR_NOOP;
-		}
-		
-	}
-	else
-	{
-		p_buffer->cur_op = p_buffer->next_op;
-        p_buffer->next_op = MOTOR_NOOP;
-	}
-	next_op = p_buffer->cur_op;
-	pthread_mutex_unlock(&p_buffer->op_lock);
-	return next_op;
+void WaitNextOp( int id )
+{
+	struct Motor	*p_motor = &g_motor_manager.motor[id];
+
+    p_motor->wanted = 1;
+    sem_wait(&p_motor->op_arrive);
+    return;
 }
 
 void SetNextOp( int id, int next_op )
 {
 	// assert( id >= MIN_ID && id <= MAX_ID )
 	struct Motor	*p_motor = &g_motor_manager.motor[id];
-	struct MotorOpBuffer	*p_buffer = &p_motor->buffer;
 	
-	pthread_mutex_lock(&p_buffer->op_lock);
-	p_buffer->next_op = next_op;
-	if( p_buffer->cur_op == MOTOR_STOP )
+	if( next_op != MOTOR_STOP && next_op != p_motor->cur_op )
 	{
-		//int op_wait;
-		//sem_getvalue(&p_buffer->op_arrive,&op_wait);
-		if( p_buffer->wanted )
+		if( p_motor->wanted )
 		{
-            p_buffer->wanted = 0;
-			sem_post(&p_buffer->op_arrive);
+            p_motor->wanted = 0;
+            p_motor->cur_op = next_op;
+			sem_post(&p_motor->op_arrive);
+            return;
 		}
 	}
-	pthread_mutex_unlock(&p_buffer->op_lock);
-	
+	p_motor->cur_op = next_op;
+    
 	return;
 }
 
@@ -119,7 +86,10 @@ void InitMotors( )
     int ret;
 	struct Motor *p_motor = g_motor_manager.motor;
 	p_motor[UPDOWN_SMID].type = STEPPER_MOTOR;
-	InitMotorOpBuffer( &p_motor[UPDOWN_SMID].buffer );
+	p_motor[UPDOWN_SMID].cur_op = MOTOR_STOP;
+    p_motor[UPDOWN_SMID].wanted = 0;
+	sem_init(&p_motor[UPDOWN_SMID].op_arrive,0,0);
+	pthread_mutex_init(&p_motor[UPDOWN_SMID].op_lock,NULL);
 	ret = pthread_create(&p_motor[UPDOWN_SMID].control_thread,NULL,(void *)stepper_motor_updown,NULL);
     if (ret != 0)
     {
@@ -127,7 +97,10 @@ void InitMotors( )
     }
 	
 	p_motor[LEFTRIGHT_SMID].type = STEPPER_MOTOR;
-	InitMotorOpBuffer( &p_motor[LEFTRIGHT_SMID].buffer );
+	p_motor[LEFTRIGHT_SMID].cur_op = MOTOR_STOP;
+    p_motor[LEFTRIGHT_SMID].wanted = 0;
+	sem_init(&p_motor[LEFTRIGHT_SMID].op_arrive,0,0);
+	pthread_mutex_init(&p_motor[LEFTRIGHT_SMID].op_lock,NULL);
 	ret = pthread_create(&p_motor[LEFTRIGHT_SMID].control_thread,NULL,(void *)stepper_motor_leftright,NULL);
     if (ret != 0)
     {
