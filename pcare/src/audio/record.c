@@ -39,7 +39,7 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 {
 	int status, arg;
     char volume = '7';
-#if 1
+#if 0
     char state1[]="coff";
     char state2[]="con";
     if(speak_power(state1)<0)
@@ -47,6 +47,8 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
     if(speak_power(state2)<0)
         printf("set codec on failed ! \n");
 #endif
+    if(ioctl(fd,SNDCTL_DSP_RESET) != 0)
+        printf("OSS Reset Failed !\n");
     if(volume_set(volume)<0)
        printf("volume set failed !\n");
 	printf("rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
@@ -196,7 +198,7 @@ void start_capture(void)
 void stop_capture(void)
 {
 	capture_on = 0;
-#if 0
+#if 1
     if( oss_fd_record > 0 )
     {
 		close(oss_fd_record);

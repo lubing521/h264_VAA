@@ -420,8 +420,8 @@ void *talk_playback( void *arg )
 				break;
 			case PLAYER_STOPPED:
                 printf("player stop\n");
-				//close(oss_fd_play);
-                //oss_fd_play = 0;
+				close(oss_fd_play);
+                oss_fd_play = 0;
 				state = PLAYER_INIT;
 				break;
 		}

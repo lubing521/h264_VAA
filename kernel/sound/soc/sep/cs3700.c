@@ -111,11 +111,18 @@ static int cs3700_write(struct snd_soc_codec *codec, unsigned int reg,
 	data[1] = (value >> 8) & 0x00ff;
 	data[2] = value & 0x00ff;
 
+    printk("cs3700 write reg %d=%x", reg, value);
 	cs3700_write_reg_cache (codec, reg, value);
 	if (codec->hw_write(codec->control_data, data, 3) == 3)
+    {
+        printk("..ok\n");
 		return 0;
+    }
 	else
+    {
+        printk("..failed\n");
 		return -EIO;
+    }
 }
 
 static unsigned int cs3700_read_reg(struct snd_soc_codec *codec, unsigned char reg)

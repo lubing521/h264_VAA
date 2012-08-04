@@ -422,6 +422,11 @@ static int start_transfer(struct ch37x *ch37x, struct ch37x_td *td)
 		}
 		else{
 		    if( td->epnum ) td->tog = ch37x->ep_out[td->epnum-1].tog;    
+        if( td->epnum && (td->status & BIT_STAT_DEV_RESP)== DEF_USB_PID_ACK  && !(td->status & BIT_STAT_TOG_MATCH) )
+        {
+            td->tog = !td->tog;
+            printk("revert %d tog %d!\n", td->epnum, td->tog);
+        }
 			packet_write(ch37x);
 			return 0;
 		}
@@ -837,14 +842,17 @@ static void ch37x_work(struct ch37x *_ch37x)
 	case DEF_USB_PID_SETUP:
 	case DEF_USB_PID_OUT:
 		if(r == DEF_USB_PID_ACK)
-		{	err = 0; if(epnum) out_cnt++; }
+		{	
+            err = 0; 
+            if(epnum) out_cnt++;
+            if(!(status & BIT_STAT_TOG_MATCH)){
+                printk("ep %d out %d no match, tog %d\n",epnum, out_cnt,td->tog);
+                err = -EAGAIN;
+            }
+        }
 		else if(r == DEF_USB_PID_NAK)
 			err = -EAGAIN;
 
-		if(!(status & BIT_STAT_TOG_MATCH)){
-			printk("ep %d out %d no match, tog %d\n",epnum, out_cnt,td->tog);
-            err = -EAGAIN;
-		}
 
 		break;
 

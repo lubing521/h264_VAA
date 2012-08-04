@@ -118,6 +118,8 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
     char volume = '5';
     if(volume_set(volume))
        printf("volume set failed !\n");
+    if(ioctl(fd,SNDCTL_DSP_RESET) != 0)
+        printf("OSS Reset Failed !\n");
 	/* set audio bit */
 	arg = bit;
 	status = ioctl(fd, SOUND_PCM_WRITE_BITS, &arg);
