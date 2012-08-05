@@ -274,7 +274,8 @@ irqreturn_t ch37x_spi_dma_irq_handler(int irq, void *devid)
 		struct ch37x_td *td = ch37x->current_td;		
 		ch37x_spi_Disable_dma_txrx();
 		
-		if(td->use_dma){
+		//if(td->use_dma){
+		if(1){
 			ch37x_writeb(REG_USB_ADDR, td->address);
 			ch37x_writeb(REG_USB_LENGTH, td->length);
 			ch37x_writeb(REG_USB_H_PID, M_MK_HOST_PID_ENDP(td->pid, td->epnum));

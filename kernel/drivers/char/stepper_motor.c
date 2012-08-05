@@ -46,8 +46,8 @@
 #define SM1_MASK  0xFFFFF87F
 #define UP_MASK  0x00000040
 #define DOWN_MASK  0x00000080
-#define RIGHT_MASK  0x00000200
-#define LEFT_MASK  0x0000100
+#define RIGHT_MASK  0x00000100
+#define LEFT_MASK  0x0000200
 #define SM1_SHIFT 7
 #define SM2_MASK  0xFFFF87FF
 #define SM2_SHIFT 11
@@ -155,6 +155,7 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             reg_gpio_i = read_reg(GPIO_PORTI_DATA_V);
             if((reg_gpio_i&UP_MASK) == 0)
             {
+                printk("up in place\n");
                 return -EFAULT;
             }
             if(get_user(data,(int __user *)arg))
@@ -172,6 +173,7 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             reg_gpio_i = read_reg(GPIO_PORTI_DATA_V);
             if((reg_gpio_i&DOWN_MASK) == 0)
             {
+                printk("down in place\n");
                 return -EFAULT;
             }
             if(get_user(data,(int __user *)arg))
@@ -198,6 +200,7 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             reg_gpio_i = read_reg(GPIO_PORTI_DATA_V);
             if((reg_gpio_i&LEFT_MASK) == 0)
             {
+                printk("left in place\n");
                 return -EFAULT;
             }
             if(get_user(data,(int __user *)arg))
@@ -215,6 +218,7 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             reg_gpio_i = read_reg(GPIO_PORTI_DATA_V);
             if((reg_gpio_i&RIGHT_MASK) == 0)
             {
+                printk("right in place\n");
                 return -EFAULT;
             }
             if(get_user(data,(int __user *)arg))

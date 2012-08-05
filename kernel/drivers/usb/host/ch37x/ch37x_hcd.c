@@ -395,11 +395,6 @@ static int start_transfer(struct ch37x *ch37x, struct ch37x_td *td)
 	}
 	
 	if(td->again){
-        if( td->epnum && td->pid == DEF_USB_PID_OUT && !(td->status & BIT_STAT_TOG_MATCH) )
-        {
-            td->tog = !td->tog;
-            printk("revert tog %d!\n", td->tog);
-        }
 		goto go;
 	}
 	
@@ -422,11 +417,6 @@ static int start_transfer(struct ch37x *ch37x, struct ch37x_td *td)
 		}
 		else{
 		    if( td->epnum ) td->tog = ch37x->ep_out[td->epnum-1].tog;    
-        if( td->epnum && (td->status & BIT_STAT_DEV_RESP)== DEF_USB_PID_ACK  && !(td->status & BIT_STAT_TOG_MATCH) )
-        {
-            td->tog = !td->tog;
-            printk("revert %d tog %d!\n", td->epnum, td->tog);
-        }
 			packet_write(ch37x);
 			return 0;
 		}
@@ -576,6 +566,7 @@ static int packet_write(struct ch37x *ch37x)
 	}
 
 	/* write fifo */
+    if(td->use_dma != 0 ) printk("#err... bad dma state!\n");
 	td->use_dma = 1;
 	td->length = size;
 	urb->actual_length += size;

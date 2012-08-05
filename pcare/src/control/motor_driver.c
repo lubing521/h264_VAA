@@ -63,14 +63,14 @@ void stepper_motor_updown()
             for(i = 7;i>=0;i--)
             {
                 inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_UP,&i);
-                usleep(2000);
+                usleep(1000);
             }
             break;
         case MOTOR_BACKWARD:
             for(i = 0;i<8;i++)
             {
                 inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_DOWN,&i);
-                usleep(2000);
+                usleep(1000);
             }
             break;
         case MOTOR_STOP:
