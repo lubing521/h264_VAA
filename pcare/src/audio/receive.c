@@ -189,7 +189,6 @@ struct Buffer *GetBuffer( struct BufferQueue *queue )
     	p->flag = STOP_TALK;
 	}
     pthread_mutex_unlock( &queue->lock );
-    //printf("GetBuffer %x\n",p);
     return p;
 }
 
@@ -207,7 +206,10 @@ int EmptyBuffer( struct BufferQueue *queue )
 	    }
    		queue->list_filled = queue->list_filled->next;
    		if( queue->list_filled == queue->list_empty )
+        {
    			queue->list_filled = NULL;
+            sem_trywait(&queue->is_not_empty);
+        }
    		result = 1;
 	}
     pthread_mutex_unlock( &queue->lock );
@@ -249,7 +251,10 @@ int FillBuffer( struct BufferQueue *queue )
 	    }
    		queue->list_empty = queue->list_empty->next;
    		if( queue->list_empty == queue->list_filled )
+        {
    			queue->list_empty = NULL;
+            sem_trywait(&queue->is_not_full);
+        }
    		result = 1;
 	}
     pthread_mutex_unlock( &queue->lock );
@@ -579,7 +584,6 @@ void StartPlayer()
     printf("ToStartPlayer\n");
     EnableBufferQueue(TALK_QUEUE);
 	g_player.state = PLAYING;
-	g_player.next_op = NONE;
     pthread_mutex_unlock(&g_player.lock);
 	return;
 }
@@ -589,16 +593,17 @@ void StopPlayer()
     pthread_mutex_lock(&g_player.lock);
     printf("ToStopPlayer\n");
     if( g_player.state == PLAYING )
-        g_player.state = STOPPING;
-   
-    DisableBufferQueue(TALK_QUEUE);
-    if(music_data_fd>0)
     {
-        close(music_data_fd);
-        music_data_fd =-1;
-    }
-    g_player.next_op = NONE;
+        g_player.state = STOPPING;
 
+        DisableBufferQueue(TALK_QUEUE);
+        if(music_data_fd>0)
+        {
+            shutdown(music_data_fd,SHUT_RDWR);
+            close(music_data_fd);
+            music_data_fd =-1;
+        }
+    }
     pthread_mutex_unlock(&g_player.lock);
 	return;
 }

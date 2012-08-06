@@ -419,12 +419,12 @@ int read_client( int fd, char *buf, int len )
     int n;
     int recv_len = 0;
     char *p = buf;
-	while ( recv_len != len )
+	while ( recv_len < len )
     {
-            n =recv(fd, p, len-recv_len, 0);
+           n =recv(fd, p, len-recv_len, 0);
            if( n <= 0 )
            {
-                printf("======%s,%u n=%d recv_len=%d======\n",__FILE__,__LINE__,n,recv_len);
+                printf("==recv err(%d): n=%d recv_len=%d======\n",errno,n,recv_len);
 		    	break;
             }
             else
