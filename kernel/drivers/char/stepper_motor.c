@@ -164,7 +164,7 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             i = (u32)data;
             tmp_reg = read_reg(GPIO_PORTF_DATA_V);
             tmp_reg &= SM1_MASK;
-            tmp_reg = tmp_reg | (sm_phase[i] << SM1_SHIFT);
+            tmp_reg = tmp_reg | (((~sm_phase[i])&0xf) << SM1_SHIFT);
             write_reg(GPIO_PORTF_DATA_V,tmp_reg);
             break;
         }
@@ -182,7 +182,7 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             i = (u32)data;
             tmp_reg = read_reg(GPIO_PORTF_DATA_V);
             tmp_reg &= SM1_MASK;
-            tmp_reg = tmp_reg | (sm_phase[i] << SM1_SHIFT);
+            tmp_reg = tmp_reg | (((~sm_phase[i])&0xf) << SM1_SHIFT);
             write_reg(GPIO_PORTF_DATA_V,tmp_reg);
             break;
         }
@@ -209,7 +209,7 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             i = (u32)data;
             tmp_reg = read_reg(GPIO_PORTF_DATA_V);
             tmp_reg &= SM2_MASK;
-            tmp_reg = tmp_reg | (sm_phase[i] << SM2_SHIFT);
+            tmp_reg = tmp_reg | (((~sm_phase[i])&0xf) << SM2_SHIFT);
             write_reg(GPIO_PORTF_DATA_V,tmp_reg);
             break;
         }
@@ -227,7 +227,8 @@ static int sep_steppermotor_ioctl(struct inode *inode, struct file *file, unsign
             i = (u32)data;
             tmp_reg = read_reg(GPIO_PORTF_DATA_V);
             tmp_reg &= SM2_MASK;
-            tmp_reg = tmp_reg | (sm_phase[i] << SM2_SHIFT);
+            tmp_reg = tmp_reg | (((~sm_phase[i])&0xf) << SM2_SHIFT);
+            //tmp_reg = tmp_reg | (sm_phase[i] << SM2_SHIFT);
             write_reg(GPIO_PORTF_DATA_V,tmp_reg);
             break;
         }
