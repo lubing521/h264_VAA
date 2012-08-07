@@ -19,6 +19,12 @@ int get_tem()
 	float tem1;
 	fd = open(name ,O_RDONLY);
 	size = read(fd, buf, 5);
+    if(size < 0)
+    {
+        tem_integer=-1;
+        tem_decimal=-1;
+        return -1;
+    }
 	tem0 = atoi(buf);
 	tem1 = ((float)tem0)/65536*175.72-46.85;
 	tem_integer = ((int)tem1);
@@ -38,6 +44,11 @@ int get_rh()
 	float rh1;
 	fd = open(name , O_RDONLY);
 	size = read(fd, buf, 5);
+    if(size < 0)
+    {
+        rh = -1;
+        return -1;
+    }
 	rh0 = atoi(buf);
 	rh1 = ((float)rh0)/65536*125-6;
 	rh = ((int)rh1);
@@ -47,18 +58,7 @@ int get_rh()
 
 int start_measure(void)
 {
-	get_tem();
-	get_rh();
+	if((get_tem() < 0)| (get_rh() < 0 ))
+        return -1;
 	return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
