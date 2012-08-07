@@ -268,7 +268,7 @@ int init_device (int fd, int width, int height, int fps)
     v4l_buf.memory = V4L2_MEMORY_MMAP;
 
     CLEAR (req);
-    req.count	= 4;
+    req.count	= 8;
     req.type 	= V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory	= V4L2_MEMORY_MMAP;
 

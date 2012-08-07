@@ -843,7 +843,11 @@ static void ch37x_work(struct ch37x *_ch37x)
         }
 		else if(r == DEF_USB_PID_NAK)
 			err = -EAGAIN;
+        else
+            printk("unkown usb out packet response!\n");
 
+        if( epnum && td->pid == DEF_USB_PID_OUT && td->use_dma != 0 )
+            printk("wrong dma flag for usb!\n");
 
 		break;
 

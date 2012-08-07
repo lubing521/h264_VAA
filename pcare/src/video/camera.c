@@ -29,11 +29,17 @@ sem_t start_camera;
 
 #ifdef PRINTFPS
 int pic_cnt=0;
+int total_len=0;
+int max_send_time=0;
+int total_send_time=0;
 
 void sigalrm_handler(int sig)
 {
-	//printf("fps=%d\n", pic_cnt);
+	printf("fps=%d,Bps=%dK\n", pic_cnt,total_len/1024);
+	printf("ave=%dms,max=%dms\n", total_send_time/pic_cnt, max_send_time);
 	pic_cnt = 0;
+    total_len = 0;
+    total_send_time = 0;
 }
 
 
@@ -99,15 +105,25 @@ static void *camera_thread(void *args)
         }
        
 		if(r = get_frame(fd, &pict)){
+#ifdef PRINTFPS
+            int t1 = times(NULL), t2, send_time;
+#endif
 			send_picture(pict.data, pict.length);
+#ifdef PRINTFPS
+            t2 = times(NULL);
+            send_time = t2 - t1;
+            if( send_time > max_send_time ) max_send_time = send_time;
+            total_send_time += send_time;
+#endif
 			r = put_frame(fd);
 			if(r<0)
-				printf("pr = %d\n", r);
+				printf("put_frame err = %d\n", r);
 		}
 		else
-			printf("r = %d\n", r);
+			printf("get_frame err = %d\n", r);
 #ifdef PRINTFPS        
         pic_cnt++;
+        total_len += pict.length;
 #endif        
 		if(camera_stop)
 			pthread_exit(0);
