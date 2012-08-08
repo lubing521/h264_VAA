@@ -31,9 +31,9 @@ static ssize_t sht20_show_tem(struct device *dev, struct device_attribute *attr,
 	struct i2c_client *client = to_i2c_client(dev);
 	struct sht20_data *data = i2c_get_clientdata(client);
 	int ret,tem,tem_l,tem_h;
-	if (mutex_trylock(&data->update_lock) == EBUSY)
+	if (mutex_trylock(&data->update_lock) != 1)
     {
-        printk("i2c locked!!\n");   
+        printk("%si2c locked!!\n",__func__);   
         return -EBUSY;
     }
 	tem = i2c_smbus_read_word_data(client, SHT20_OPERATING_MODE[0]);
@@ -55,9 +55,9 @@ static ssize_t sht20_show_rh(struct device *dev, struct device_attribute *attr, 
     struct i2c_client *client = to_i2c_client(dev);
     struct sht20_data *data = i2c_get_clientdata(client); 
     int ret,rh,rh_h,rh_l; 
-	if (mutex_trylock(&data->update_lock) == EBUSY)
+	if (mutex_trylock(&data->update_lock) != 1 )
     {
-        printk("i2c locked!!\n");   
+        printk("%si2c locked!!\n",__func__);   
         return -EBUSY;
     }
     rh = i2c_smbus_read_word_data(client, SHT20_OPERATING_MODE[1]);
@@ -89,9 +89,9 @@ static ssize_t sht20_store_reg_cfg(struct device *dev, struct device_attribute *
 	struct sht20_data *data = i2c_get_clientdata(client); 
 	unsigned long val = simple_strtoul(buf, NULL, 10); 
 	int ret; 
-	if (mutex_trylock(&data->update_lock) == EBUSY)
+	if (mutex_trylock(&data->update_lock) != 1)
     {
-        printk("i2c locked!!\n");   
+        printk("%si2c locked!!\n",__func__);   
         return -EBUSY;
     }
 	ret = i2c_smbus_write_byte_data(client, SHT20_USER_WR, val); 

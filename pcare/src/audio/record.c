@@ -24,11 +24,11 @@ int capture_on;
 extern int oss_open_flag, oss_close_flag, oss_fd_record;
 /* ---------------------------------------------------------- */
 
-int oss_buf_size = MAX_READ_LEN;
-int data_buf_size = MAX_READ_LEN / 4;
+int oss_buf_size = RECORD_MAX_READ_LEN;
+int data_buf_size = RECORD_MAX_READ_LEN / 4;
 
-static u8 pcm_data_buf[MAX_READ_LEN] = {0};			/* TODO (FIX ME) can use malloc */
-static u8 audio_data[MAX_READ_LEN / 4 + 3] = {0};
+static u8 pcm_data_buf[RECORD_MAX_READ_LEN] = {0};			/* TODO (FIX ME) can use malloc */
+static u8 audio_data[RECORD_MAX_READ_LEN / 4 + 3] = {0};
 static adpcm_state_t adpcm_state_curr, adpcm_state_next;
 
 /* ---------------------------------------------------------- */
@@ -216,5 +216,3 @@ void stop_capture(void)
 	printf("<<<Stop capture audio ...\n");
 }
 /* ---------------------------------------------------------- */
-
-

@@ -27,8 +27,11 @@ static int camera_fd;
 static int camera_stop = 0;
 sem_t start_camera;
 
+//#undef PRINTFPS
+
 #ifdef PRINTFPS
 int pic_cnt=0;
+int skip_cnt=0;
 int total_len=0;
 int max_send_time=0;
 int total_send_time=0;
@@ -37,7 +40,10 @@ void sigalrm_handler(int sig)
 {
 	printf("fps=%d,Bps=%dK\n", pic_cnt,total_len/1024);
 	printf("ave=%dms,max=%dms\n", total_send_time/pic_cnt, max_send_time);
-	pic_cnt = 0;
+	if( pic_cnt > 26 ) skip_cnt = 2;
+    else if( pic_cnt > 20 ) skip_cnt = 3;
+    else skip_cnt = 0;
+    pic_cnt = 0;
     total_len = 0;
     total_send_time = 0;
 }
@@ -70,7 +76,7 @@ static void *camera_thread(void *args)
 	int fd = camera_fd;
     struct timeval tv;
     fd_set fds;
-    int r;
+    int r, i = 0, skip = 0;
     
     frame_t pict;
     pict.data = NULL;
@@ -108,12 +114,22 @@ static void *camera_thread(void *args)
 #ifdef PRINTFPS
             int t1 = times(NULL), t2, send_time;
 #endif
-			send_picture(pict.data, pict.length);
+            if(!skip) send_picture(pict.data, pict.length);
+
 #ifdef PRINTFPS
             t2 = times(NULL);
             send_time = t2 - t1;
             if( send_time > max_send_time ) max_send_time = send_time;
             total_send_time += send_time;
+            if( skip_cnt > 0 && ++i >= skip_cnt ) 
+            {
+                i = 0;
+                skip = 1;
+            }
+            else
+            {
+                skip = 0;
+            }
 #endif
 			r = put_frame(fd);
 			if(r<0)
