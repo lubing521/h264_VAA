@@ -79,9 +79,9 @@ static struct snd_pcm_hardware snd_pcm_capture =
 	.rate_max			= 48000,
 	.channels_min		= 1,
 	.channels_max		= 2,
-	.buffer_bytes_max	= 16*4096,
-	.period_bytes_min	= 4096,
-	.period_bytes_max	= 4096,
+	.buffer_bytes_max	= 4*4096,
+	.period_bytes_min	= 1024,
+	.period_bytes_max	= 1024,
 	.periods_min		= 6,
 	.periods_max		= 64,
 };
