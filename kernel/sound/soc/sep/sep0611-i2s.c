@@ -197,7 +197,7 @@ static int sep0611_i2s_set_dai_fmt(struct snd_soc_dai *cpu_dai, unsigned int for
  */
 static unsigned int sep0611_i2s_calc_clk(unsigned int rate, unsigned int bits)
 {
-	printk("------rate = %d---------%s\n",rate, __func__);
+	//printk("------rate = %d---------%s\n",rate, __func__);
     unsigned int n1, n2;
     unsigned int scr;
 	unsigned int mclk = i2s_info.clk_rate;
@@ -231,7 +231,7 @@ static int sep0611_i2s_set_dai_sysclk(struct snd_soc_dai *cpu_dai,
 	unsigned temp;
 	
 	alsa_dbg("%s\n", __func__);
-	printk("%s\n", __func__);
+	//printk("%s\n", __func__);
 
 	i2s_info.sample_rate = freq;
 

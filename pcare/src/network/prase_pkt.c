@@ -16,6 +16,7 @@
 motor_ctrl_t opt;
 extern int start_measure();
 extern void enable_t_rh_sent();
+extern u32 audio_num;
 /* prase opcode command text */
 int prase_packet(int opcode, u8 *buf)
 {
@@ -39,6 +40,7 @@ int prase_packet(int opcode, u8 *buf)
 			break;
 		case 8:
 #ifdef ENABLE_CAPTURE_AUDIO
+            audio_num = 0;
 			start_capture();			/* !!!must be called first */
 			enable_audio_send();
 #else
@@ -47,6 +49,7 @@ int prase_packet(int opcode, u8 *buf)
 			break;
 		case 10:
 #ifdef ENABLE_CAPTURE_AUDIO
+            printf("send audio packages num is %lu/n",audio_num);
 			stop_capture();
 			disable_audio_send();
 #else

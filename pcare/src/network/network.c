@@ -60,6 +60,7 @@ u8 *text;						/* TODO for opcode command text */
 u8 *AVtext;						/* TODO for AVdata command text */
 
 u32 pic_num = 1;				/* for time stamp */
+u32 audio_num = 1;
 
 int send_audio_flag = 1;
 
@@ -378,6 +379,7 @@ int send_audio_data(u8 *audio_buf, u32 data_len)
     audio_data->time_stamp = times(NULL)*10;
     //printf("audio_data time_stamp is %lu\n",audio_data->time_stamp);
 
+    audio_num++;
 	pthread_mutex_lock(&AVsocket_mutex);
 
 	if ((send(audio_data_fd, av_command2, 40, 0)) == -1) {

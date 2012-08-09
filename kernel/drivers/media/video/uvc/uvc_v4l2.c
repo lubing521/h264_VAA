@@ -1044,11 +1044,13 @@ static long uvc_v4l2_do_ioctl(struct file *file, unsigned int cmd, void *arg)
 static long uvc_v4l2_ioctl(struct file *file,
 		     unsigned int cmd, unsigned long arg)
 {
+#if 0
 	if (uvc_trace_param & UVC_TRACE_IOCTL) {
 		uvc_printk(KERN_DEBUG, "uvc_v4l2_ioctl(");
 		v4l_printk_ioctl(cmd);
 		printk(")\n");
 	}
+#endif
 
 	return video_usercopy(file, cmd, arg, uvc_v4l2_do_ioctl);
 }
