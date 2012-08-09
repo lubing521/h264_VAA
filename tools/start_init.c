@@ -27,8 +27,7 @@
 #define LED_Statue "/sys/devices/platform/sep0611_led.1/leds/LED_Statue/brightness"
 #define CAMERA_DEV "/dev/video0"
 
-int led_flag =1;
-pthread_t led_flash_id;
+pthread_t led_flash_id,smupdown_id,smleftright_id;
 
 void led_on()
 {
@@ -64,20 +63,56 @@ void led_flash()
 {
     while(1)
     {
-        if(!led_flag)
-            break;
         led_on();
         usleep(50000);
         led_off();
-        usleep(500000);
+        sleep(1);
     }
     return;
 }
 
-int step_motor()
+int step_motor_leftright()
 {
-    int n,i,stepper_motor_fd;
-    printf("Open Stepper_Motor .....");
+    int n,i,stepper_motor_fd,inplace_flag = 1;
+    printf("Open Stepper_Motor LEFTRIGHT.....");
+    stepper_motor_fd=open(STEPPER_MOTOR_DEV,O_WRONLY);
+    if(stepper_motor_fd < 0)
+    {
+        printf("FAILED!!!\n");
+        return -1;
+    }
+    inplace_flag = 1;
+    printf("OK!!!\n");
+    for(n=0;n<STEPER_PHASE_LEFT && inplace_flag >= 0;n++ )
+    {
+        for(i = 0;i<8;i++)
+        {
+            inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_RIGHT,&i);
+            usleep(1000);
+        }
+    }
+    inplace_flag = 1;
+    printf("Stepper_Motor Turn Right .....OK!!!\n");
+    for(n=0;n<STEPER_PHASE_LEFT && inplace_flag >= 0;n++ )
+    {
+        for(i = 7;i>=0;i--)
+        {
+            inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_LEFT,&i);
+            usleep(1000);
+        }
+    }
+    inplace_flag = 1;
+    printf("Stepper_Motor Turn Left .....OK!!!\n");
+    printf("Close Stepper_Motor LEFTRIGHT.....");
+    ioctl(stepper_motor_fd,SMLEFTRIGHT_POWER,NULL);
+    close(stepper_motor_fd);
+    printf("OK!!!\n");
+    return 0;
+}
+int step_motor_updown()
+{
+    int n,i,stepper_motor_fd,inplace_flag = 1;
+    printf("Open Stepper_Motor UPDOWN.....");
     stepper_motor_fd=open(STEPPER_MOTOR_DEV,O_WRONLY);
     if(stepper_motor_fd < 0)
     {
@@ -85,48 +120,28 @@ int step_motor()
         return -1;
     }
     printf("OK!!!\n");
-    printf("Stepper_Motor Turn Down .....");
-    for(n=0;n<STEPER_PHASE_UP;n++ )
+    for(n=0;n<STEPER_PHASE_UP && inplace_flag >= 0;n++ )
     {
         for(i = 0;i<8;i++)
         {
-            ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_DOWN,&i);
+            inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_DOWN,&i);
             usleep(1000);
         }
     }
-    printf("OK!!!\n");
-    printf("Stepper_Motor Turn Up .....");
-    for(n=0;n<STEPER_PHASE_UP;n++ )
+    inplace_flag = 1;
+    printf("Stepper_Motor Turn Down .....OK!!!\n");
+    for(n=0;n<STEPER_PHASE_UP && inplace_flag >= 0;n++ )
     {
         for(i = 7;i>=0;i--)
         {
-            ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_UP,&i);
+            inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_UP,&i);
             usleep(1000);
         }
     }
-    printf("OK!!!\n");
-    printf("Stepper_Motor Turn Right .....");
-    for(n=0;n<STEPER_PHASE_LEFT;n++ )
-    {
-        for(i = 0;i<8;i++)
-        {
-            ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_RIGHT,&i);
-            usleep(1000);
-        }
-    }
-    printf("OK!!!\n");
-    printf("Stepper_Motor Turn Left .....");
-    for(n=0;n<STEPER_PHASE_LEFT;n++ )
-    {
-        for(i = 7;i>=0;i--)
-        {
-            ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_LEFT,&i);
-            usleep(1000);
-        }
-    }
-    printf("OK!!!\n");
-    printf("Close Stepper_Motor .....");
-    ioctl(stepper_motor_fd,SMLEFTRIGHT_POWER,NULL);
+    inplace_flag = 1;
+    printf("Stepper_Motor Turn Up .....OK!!!\n");
+    printf("Close Stepper_Motor UPDOWN.....");
+    ioctl(stepper_motor_fd,SMUPDOWN_POWER,NULL);
     close(stepper_motor_fd);
     printf("OK!!!\n");
     return 0;
@@ -157,12 +172,15 @@ void main()
     printf("\n===========================================\n");
     printf("========= Now Start Check Myself ==========\n");
     printf("===========================================\n");
-    led_flag=1;
-	ret = pthread_create(&led_flash_id,NULL,(void *)led_flash,NULL); 
+    ret = pthread_create(&led_flash_id,NULL,(void *)led_flash,NULL); 
     if(camera() < 0)
         goto CAMERA_ERROR;
-    if(step_motor() < 0)
-        goto STEPPER_MOTOR_ERROR;
+    ret = pthread_create(&smupdown_id,NULL,(void *)step_motor_updown,NULL); 
+    ret = pthread_create(&smleftright_id,NULL,(void *)step_motor_leftright,NULL); 
+    //if(step_motor() < 0)
+      //  goto STEPPER_MOTOR_ERROR;
+	pthread_join(smupdown_id, NULL);
+	pthread_join(smleftright_id, NULL);
     printf("\n\n\n\n\n\n===========================================\n");
     printf("===== Check Over ,Thanks For Use ^_^ ======\n");
     printf("===========================================\n");

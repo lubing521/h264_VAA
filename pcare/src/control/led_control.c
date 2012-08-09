@@ -46,7 +46,7 @@ void led_flash()
 		if(!led_flag)
 			break;
 		led_on();
-		usleep(50000);
+		sleep(2);
 		led_off();
 		sleep(2);		
 	}
