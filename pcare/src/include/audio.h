@@ -29,8 +29,8 @@
 #define ENABLE_TALK_PLAYBACK 	1		/* 1 : means playback record data from cellphone; 0 : means disable */
 
 /* max read buf */
-#define RECORD_MAX_READ_LEN 	640			/* TODO (FIX ME) 4kb */
-#define RECORD_ADPCM_MAX_READ_LEN 	160		/* TODO (FIX ME) 1kb */
+#define RECORD_MAX_READ_LEN     1024				/* TODO (FIX ME) 4kb */
+#define RECORD_ADPCM_MAX_READ_LEN 	256		/* TODO (FIX ME) 1kb */
 #define MAX_READ_LEN 	1024*4			/* TODO (FIX ME) 4kb */
 #define ADPCM_MAX_READ_LEN 	1024		/* TODO (FIX ME) 1kb */
 #define WAV_HEADER_SIZE 44
