@@ -105,17 +105,22 @@ static void keep_alive_timeout(int signo )
     close(AVcommand_fd);
     exit(0);
 }
-
+#if 0
 static void reset_keep_alive_timer( void )
 {
+#if 0
     struct itimerval t;
     t.it_interval.tv_sec = 10;
     t.it_interval.tv_usec = 0;
-    t.it_value.tv_sec = 10;
-    t.it_value.tv_usec = 0;
-    setitimer(ITIMER_REAL, &t, NULL);
+    //t.it_value.tv_sec = 10;
+    //t.it_value.tv_usec = 0;
+    setitimer(SIGALRM, &t, NULL);
+    printf("My Heart Is Beated !\n");
+    //setitimer(ITIMER_REAL, &t, NULL);
+    //setitimer(SIGALRM, &value, &ovalue); 
+#endif
 }
-
+#endif
 /* ---------------------------------------------------------- */
 /* deal bat info */
 void deal_bat_info()
@@ -346,21 +351,21 @@ void send_picture(char *data, u32 length)
     video_data->time_stamp = times(NULL)*10;
 	video_data->frame_time = pic_num++;				/* test for time stamp */
 
-	pthread_mutex_lock(&AVsocket_mutex);
-
-	if ((send_len = send(picture_fd, av_command1, 36, 0)) == -1) {
-		perror("send_header");
-		close(picture_fd);
-        printf("========%s,%u,%d==========\n",__FILE__,__LINE__,picture_fd);
-		exit(0);
-	}
-	if (send_len != 36)
-		printf("opcode header short send!\n");
-
-	if ((send_len = send(picture_fd, (void *)data, length, 0)) == -1) {
-		perror("send_pic");
-		close(picture_fd);
-        printf("========%s,%u==========\n",__FILE__,__LINE__);
+    pthread_mutex_lock(&AVsocket_mutex);
+    send_len = send(picture_fd, av_command1, 36, 0);
+    if (send_len <= 0) {
+        perror("send_header");
+        close(picture_fd);
+        printf("======= %s,%u ,%s ==========\n",__FILE__,__LINE__,__FUNCTION__);
+        exit(0);
+    }
+    if (send_len != 36)
+        printf("opcode header short send!\n");
+    send_len = send(picture_fd, (void *)data, length, 0);
+    if (send_len <= 0) {
+        perror("send_pic");
+        close(picture_fd);
+        printf("======= %s,%u ,%s ==========\n",__FILE__,__LINE__,__FUNCTION__);
 		exit(0);
 	}
 	if (send_len != length)
@@ -406,7 +411,6 @@ void keep_connect(void)
 	command255->opcode = 255;
 	command255->text_len = 0;
 
-    reset_keep_alive_timer();
 	/* write command to client --- keep alive */
 	if ((n = send(client_fd, command255, 23, 0)) == -1) {
 		perror("send");
@@ -597,6 +601,7 @@ void set_opcode_connection(u32 client_fd)
 	str_tmp[13] = '\0';
 	wifi_dbg("buf[camVS] = %s\n", str_tmp);
 	wifi_dbg("---------------------------------------\n");
+    printf("Send My ID and Version OK\n");
 #endif
 	/* TODO we can do something here to process connection later! */
 	//usleep(1000);
@@ -622,6 +627,7 @@ void set_opcode_connection(u32 client_fd)
         printf("========%s,%u==========\n",__FILE__,__LINE__);
 		exit(0);
 	}
+    printf("Write Command 3 is OK!\n");
 
 	/* ------------------------------------------- */
 
@@ -667,6 +673,7 @@ void set_opcode_connection(u32 client_fd)
         printf("========%s,%u==========\n",__FILE__,__LINE__);
 		exit(0);
 	}
+    printf("Video RESP Send OK !\nNEXT START PHRASING COMMANDS!\n");
 
 	wifi_dbg("---------------------------------------\n");
 
@@ -781,8 +788,8 @@ void network(void)
 	struct sockaddr_in server_addr;
 	struct sockaddr_in client_addr;
     in_addr_t current_client_address =0;
-	int sin_size;
-	int opt = 1;							/* allow server address reuse */
+    int sin_size;
+    int opt = 1;							/* allow server address reuse */
 	int flag = 1;							/* TODO thread flag */
 	int nagle_flag = 1;						/* disable Nagle */
 	
@@ -860,29 +867,37 @@ void network(void)
 		/* TODO(FIX ME): disable the Nagle (TCP No Delay) algorithm */
 		setsockopt(*client_fd, IPPROTO_TCP, TCP_NODELAY, (char *)&nagle_flag, sizeof(nagle_flag));
 
-		/* create a new thread for each client request */
-		if (flag == 1) {
-			flag = 2;
-			AVcommand_fd = *client_fd;
-			/* ----------------------------------------------------------------- */
+        /* create a new thread for each client request */
+        if (flag == 1) {
+            int timeout = 10000;
+            flag = 2;
+            AVcommand_fd = *client_fd;
+            setsockopt(*client_fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));
+            /* ----------------------------------------------------------------- */
 
             led_flag = 0;
             led_on();
             /* TODO keep connection ever 1 minute */
             command255 = malloc(sizeof(struct command));
             memcpy(command255->protocol_head, str_ctl, 4);
-			
+#if 0
             signal(SIGALRM,keep_alive_timeout); 
-            reset_keep_alive_timer();
-			/* ----------------------------------------------------------------- */
-			if(pthread_create(&th1, NULL, deal_opcode_request, client_fd) != 0) {
-				perror("pthread_create");
-				break;
-			}
-		} else if (flag == 2){
-			flag = 3;
-			printf(">>>>>in video or record data connection<<<<<\n");
-			/* ----------------------------------------------------------------- */
+            alarm(10);
+            value.it_value.tv_sec = 10;
+            value.it_value.tv_usec = 0;
+            value.it_interval.tv_sec = 10;
+            value.it_interval.tv_usec = 0;
+            setitimer(SIGALRM, &value, &ovalue); 
+#endif
+            /* ----------------------------------------------------------------- */
+            if(pthread_create(&th1, NULL, deal_opcode_request, client_fd) != 0) {
+                perror("pthread_create");
+                break;
+            }
+        } else if (flag == 2){
+            flag = 3;
+            printf(">>>>>in video or record data connection<<<<<\n");
+            /* ----------------------------------------------------------------- */
 
 			picture_fd = *client_fd;					
 			audio_data_fd = *client_fd;
