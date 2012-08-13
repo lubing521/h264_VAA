@@ -42,13 +42,16 @@ void led_off()
 
 void led_flash()
 {
+    pthread_detach(pthread_self());
 	while(1){
-		if(!led_flag)
-			break;
 		led_on();
 		sleep(2);
+		if(!led_flag)
+			break;
 		led_off();
-		sleep(2);		
+		sleep(2);
+		if(!led_flag)
+			break;
 	}
 	return;
 }
