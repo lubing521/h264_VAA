@@ -80,6 +80,7 @@ void sep0611_spk_out(bool enable)
 	else
     	sep0611_gpio_setpin(SEP0611_SPK_CTL, GPIO_LOW);		/* speaker power off */
 }
+EXPORT_SYMBOL_GPL(sep0611_spk_out);
 static size_t speak_power_store(struct device *dev, struct device_attribute *attr,
         const char *buf, size_t count)
 {
