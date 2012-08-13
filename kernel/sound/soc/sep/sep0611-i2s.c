@@ -197,7 +197,7 @@ static int sep0611_i2s_set_dai_fmt(struct snd_soc_dai *cpu_dai, unsigned int for
  */
 static unsigned int sep0611_i2s_calc_clk(unsigned int rate, unsigned int bits)
 {
-	//printk("------rate = %d---------%s\n",rate, __func__);
+	printk("--- rate = %d -- %s %s\n",rate, __FILE__,__func__);
     unsigned int n1, n2;
     unsigned int scr;
 	unsigned int mclk = i2s_info.clk_rate;
@@ -231,7 +231,7 @@ static int sep0611_i2s_set_dai_sysclk(struct snd_soc_dai *cpu_dai,
 	unsigned temp;
 	
 	alsa_dbg("%s\n", __func__);
-	//printk("%s\n", __func__);
+	printk(" %s %s\n",__FILE__, __func__);
 
 	i2s_info.sample_rate = freq;
 
@@ -263,6 +263,15 @@ out:
    	return 0;
 }
 
+static size_t i2s_rate_store(struct device *dev, struct device_attribute *attr,
+        const char *buf, size_t count)
+{
+    unsigned long rate;
+    rate = simple_strtoul(buf,NULL,10);
+    sep0611_i2s_set_dai_sysclk(NULL,MASTER_MODE_SOFTWARE,(unsigned int)rate,0);
+    return count;
+}
+static DEVICE_ATTR(i2s_rate, 0222, NULL, i2s_rate_store);
 /*
  * set hardware parameters of i2s, to set format and clock
  */
@@ -546,7 +555,7 @@ static int sep0611_i2s_probe(struct platform_device *pdev, struct snd_soc_dai *d
 	i2s_dma_init();
 	
 	writel(0x00, i2s_info.base + I2S_IER); 	/*disable i2s*/ 
-	
+    device_create_file(&pdev->dev, &dev_attr_i2s_rate);
   	return 0;
 }
 

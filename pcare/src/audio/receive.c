@@ -407,6 +407,7 @@ void *talk_playback( void *arg )
 						adpcm_decoder( buffer->data, (short *)g_decoded_buffer[i],buffer->len, &adpcm_state);
 						if( playback_buf( oss_fd_play, g_decoded_buffer[i], buffer->len*4) < 0 )
                         {
+                            printf("playback_buf ret error !\n");
                             close(oss_fd_play);
                             oss_fd_play = 0;
                             state = PLAYER_RESET;
@@ -425,8 +426,8 @@ void *talk_playback( void *arg )
 				break;
 			case PLAYER_STOPPED:
                 printf("player stop\n");
-				close(oss_fd_play);
-                oss_fd_play = 0;
+				//close(oss_fd_play);
+                //oss_fd_play = 0;
 				state = PLAYER_INIT;
 				break;
 		}
@@ -473,7 +474,7 @@ void *talk_receive( void *arg )
 					    channels=buf[1];
 					    bit=buf[2];
 					    ispk=buf[3];
-					    printf("rate is %d,channels is %d,bit is %d,ispk is %d\n",rate,channels,bit,ispk);
+					    //printf("rate is %d,channels is %d,bit is %d,ispk is %d\n",rate,channels,bit,ispk);
 					    if(channels !=1||bit!=16||buf[8]>7||file_size<0)
 					    {
 					        printf("Err: received file error !!\n");

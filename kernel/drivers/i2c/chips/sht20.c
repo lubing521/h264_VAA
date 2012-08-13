@@ -89,14 +89,14 @@ static ssize_t sht20_store_reg_cfg(struct device *dev, struct device_attribute *
 	struct sht20_data *data = i2c_get_clientdata(client); 
 	unsigned long val = simple_strtoul(buf, NULL, 10); 
 	int ret; 
-	if (mutex_trylock(&data->update_lock) != 1)
+    if (mutex_trylock(&data->update_lock) != 1)
     {
         printk("%si2c locked!!\n",__func__);   
         return -EBUSY;
     }
-	ret = i2c_smbus_write_byte_data(client, SHT20_USER_WR, val); 
-	mutex_unlock(&data->update_lock); 
-	if(ret < 0) 
+    ret = i2c_smbus_write_byte_data(client, SHT20_USER_WR, val); 
+    mutex_unlock(&data->update_lock); 
+    if(ret < 0) 
 		return ret; 
 	return count; 
 }

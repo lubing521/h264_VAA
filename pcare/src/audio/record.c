@@ -30,7 +30,21 @@ int data_buf_size = RECORD_MAX_READ_LEN / 4;
 static u8 pcm_data_buf[RECORD_MAX_READ_LEN] = {0};			/* TODO (FIX ME) can use malloc */
 static u8 audio_data[RECORD_MAX_READ_LEN / 4 + 3] = {0};
 static adpcm_state_t adpcm_state_curr, adpcm_state_next;
+static int stat_record=0;
 
+int set_i2s_rate(unsigned int rate)
+{
+    int fd,ret;
+    char ch_rate1[]="11025";
+    char ch_rate2[]="44100";
+    printf("%s to %d\n",__func__,rate);
+    fd = open(I2S_RATE,O_WRONLY);
+    if(rate == 11025)
+        write(fd,ch_rate1,sizeof(ch_rate1));
+    else
+        write(fd,ch_rate2,sizeof(ch_rate2));
+
+}
 /* ---------------------------------------------------------- */
 /*
  * set oss record configuration
@@ -39,6 +53,11 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 {
 	int status, arg;
     char volume = '7';
+    if(stat_record == 1)
+    {
+        set_i2s_rate(rate);
+        return;
+    }
 #if 0
     char state1[]="coff";
     char state2[]="con";
@@ -51,7 +70,16 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
         printf("OSS Reset Failed !\n");
     if(volume_set(volume)<0)
        printf("volume set failed !\n");
-	printf("rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
+	/* set audio rate */
+	arg	= rate;
+	//arg	= 8000;
+	status = ioctl(fd, SNDCTL_DSP_SPEED, &arg);
+	//status = ioctl(fd, SOUND_PCM_WRITE_RATE, &arg);
+//	printf("status is %d   arg is %d\n",status,arg);
+	if (status == -1)
+		printf("SOUND_PCM_WRITE_WRITE ioctl failed,status is %d\n",status);
+	if (arg != rate)
+		printf("unable to set number of rate\n");
 	/* set audio bit */
 	arg = bit;
 	status = ioctl(fd, SOUND_PCM_WRITE_BITS, &arg);
@@ -69,17 +97,9 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 		printf("SOUND_PCM_WRITE_CHANNELS ioctl failed,status is %d\n",status);
 	if (arg != channels)
 		printf("unable to set number of channels\n");
+    stat_record = 1;
+	printf("rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
 	
-	/* set audio rate */
-	arg	= rate;
-	//arg	= 8000;
-	status = ioctl(fd, SNDCTL_DSP_SPEED, &arg);
-	//status = ioctl(fd, SOUND_PCM_WRITE_RATE, &arg);
-//	printf("status is %d   arg is %d\n",status,arg);
-	if (status == -1)
-		printf("SOUND_PCM_WRITE_WRITE ioctl failed,status is %d\n",status);
-	if (arg != rate)
-		printf("unable to set number of rate\n");
 }
 
 /* ------------------------------------------------------------------------------ */
@@ -205,7 +225,7 @@ void start_capture(void)
 void stop_capture(void)
 {
 	capture_on = 0;
-#if 1
+#if 0
     if( oss_fd_record > 0 )
     {
 		close(oss_fd_record);

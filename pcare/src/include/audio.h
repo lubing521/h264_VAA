@@ -46,6 +46,7 @@
 #define OSS_AUDIO_DEV 	"/dev/dsp"
 #define CS3700_VOLUME 	"/dev/cs3700_volume"
 #define SPEAK_POWER 	"/sys/devices/platform/soc-audio/speak_power"
+#define I2S_RATE 	"/sys/devices/platform/soc-audio/i2s_rate"
 
 /* --------------------------------------------------------- */
 
@@ -89,6 +90,7 @@ int playback_buf(int fd,u8 *play_buf, int len);
 /* set oss configuration */
 int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit);
 void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit);
+int set_i2s_rate(unsigned int rate);
 extern unsigned un_OSS_RATE[];
 
 /* --------------------------------------------------------- */

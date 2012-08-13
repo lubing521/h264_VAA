@@ -43,6 +43,7 @@ struct wav_header {
 }__attribute__((packed));
 unsigned un_OSS_RATE[]={8000,11025,12000,16000,22050,24000,32000,44100,48000};
 static struct wav_header hdr;
+static int stat_play=0;
 
 int playback_on = 0;		/* TODO (FIX ME) now the software on cellphone may not support talk_playback opcode command, we enable first */
 
@@ -116,10 +117,30 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
 {
 	int status, arg;
     char volume = '5';
+    if(stat_play == 1)
+    {
+        set_i2s_rate(rate);
+        return;
+    }
     if(volume_set(volume))
        printf("volume set failed !\n");
     if(ioctl(fd,SNDCTL_DSP_RESET) != 0)
         printf("OSS Reset Failed !\n");
+	/* set audio rate */
+    //rate =8000;
+	arg	= rate;
+	status = ioctl(fd, SNDCTL_DSP_SPEED, &arg);
+//	printf("status is %d   arg is %d\n",status,arg);
+	if (status == -1)
+    {
+		printf("SNDCTL_DSP_SPEED ioctl failed,status is %d\n",status);
+        return -5;
+    }
+	if (arg != rate)
+    {
+		printf("unable to set number of rate\n");
+        return -6;
+    }
 	/* set audio bit */
 	arg = bit;
 	status = ioctl(fd, SOUND_PCM_WRITE_BITS, &arg);
@@ -152,22 +173,8 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
         return -4;
     }
 	
-	/* set audio rate */
-    //rate =8000;
-	arg	= rate;
-	status = ioctl(fd, SNDCTL_DSP_SPEED, &arg);
-//	printf("status is %d   arg is %d\n",status,arg);
-	if (status == -1)
-    {
-		printf("SNDCTL_DSP_SPEED ioctl failed,status is %d\n",status);
-        return -5;
-    }
-	if (arg != rate)
-    {
-		printf("unable to set number of rate\n");
-        return -6;
-    }
-
+    stat_play = 1;
+	printf("rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
     return 0;
 }
 

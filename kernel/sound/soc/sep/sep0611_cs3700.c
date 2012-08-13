@@ -169,7 +169,7 @@ static int sep0611_board_probe(struct platform_device *pdev)
 #endif
 #ifdef SEP0611_AUDIO_EN
     sep0611_codec_gpio_init();
-    sep0611_codec_enable(false);
+    sep0611_codec_enable(true);
 #endif
     device_create_file(&pdev->dev, &dev_attr_speak_power);
 
