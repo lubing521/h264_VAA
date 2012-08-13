@@ -332,7 +332,7 @@ static int get_coeff(int mclk, int rate)
 static int cs3700_set_dai_sysclk(struct snd_soc_dai *codec_dai,
 		int clk_id, unsigned int freq, int dir)
 {
-	printk("************ %s **********\n", __func__);
+	//printk("************ %s **********\n", __func__);
 	struct snd_soc_codec *codec = codec_dai->codec;
 	struct cs3700_priv *cs3700 = codec->private_data;
 
