@@ -87,7 +87,7 @@ int step_motor_leftright()
     {
         for(i = 7;i>=0;i--)
         {
-            inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_LEFT,&i);
+            inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_RIGHT,&i);
             usleep(1000);
         }
     }
@@ -97,7 +97,7 @@ int step_motor_leftright()
     {
         for(i = 0;i<8;i++)
         {
-            inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_RIGHT,&i);
+            inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_LEFT,&i);
             usleep(1000);
         }
     }
