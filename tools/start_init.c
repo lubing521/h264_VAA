@@ -92,7 +92,7 @@ int step_motor_leftright()
         }
     }
     inplace_flag = 1;
-    printf("Stepper_Motor Turn Left .....OK!!!\n");
+    printf("Stepper_Motor Turn Right .....OK!!!\n");
     for(n=0;n<STEPER_PHASE_LEFT && inplace_flag >= 0;n++ )
     {
         for(i = 0;i<8;i++)
@@ -102,7 +102,7 @@ int step_motor_leftright()
         }
     }
     inplace_flag = 1;
-    printf("Stepper_Motor Turn Right .....OK!!!\n");
+    printf("Stepper_Motor Turn Left .....OK!!!\n");
     printf("Close Stepper_Motor LEFTRIGHT.....");
     ioctl(stepper_motor_fd,SMLEFTRIGHT_POWER,NULL);
     close(stepper_motor_fd);

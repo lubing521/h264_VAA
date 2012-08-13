@@ -49,7 +49,7 @@ int prase_packet(int opcode, u8 *buf)
 			break;
 		case 10:
 #ifdef ENABLE_CAPTURE_AUDIO
-            printf("send audio packages num is %lu/n",audio_num);
+            printf("send audio packages num is %lu\n",audio_num);
 			stop_capture();
 			disable_audio_send();
 #else
