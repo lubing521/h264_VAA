@@ -177,7 +177,7 @@ struct Buffer *GetBuffer( struct BufferQueue *queue )
     struct Buffer *p = NULL;
     
     pthread_mutex_lock( &queue->lock );
-    if( queue->list_filled == NULL )
+    if( queue->state == QUEUE_WORKING && queue->list_filled == NULL )
     {
     	pthread_mutex_unlock( &queue->lock );
    		sem_wait(&queue->is_not_empty);
@@ -342,7 +342,10 @@ void *talk_playback( void *arg )
 				printf("player init\n");
                 buffer = GetBuffer( TALK_QUEUE );
                 if( buffer == NULL )
+                {
+                    state = PLAYER_STOPPED;
                     break;
+                }
 				if( buffer->flag == START_TALK && buffer->len == sizeof(struct AUDIO_CFG) )
 				{
 					cfg = *(struct AUDIO_CFG *)(buffer->data);
@@ -429,6 +432,7 @@ void *talk_playback( void *arg )
 				//close(oss_fd_play);
                 //oss_fd_play = 0;
 				state = PLAYER_INIT;
+				EnableBufferQueue( TALK_QUEUE );
 				break;
 		}
 	}while(1);
