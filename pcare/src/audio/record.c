@@ -53,6 +53,9 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 {
 	int status, arg;
     char volume = '7';
+    char state1[]="off";
+    if(speak_power(state1)<0)
+        printf("set speak_power off failed ! \n");
     if(stat_record == 1)
     {
         set_i2s_rate(rate);
@@ -225,6 +228,9 @@ void start_capture(void)
 void stop_capture(void)
 {
 	capture_on = 0;
+    char state1[]="on";
+    if(speak_power(state1)<0)
+        printf("set speak_power on failed ! \n");
 #if 0
     if( oss_fd_record > 0 )
     {
