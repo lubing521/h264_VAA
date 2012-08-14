@@ -405,7 +405,7 @@ static irqreturn_t sep0611_i2c_isr(int this_irq, void *dev_id)
 		 */
 		writel(0, i2c->base + I2C_INTR_MASK);
 		
-		printk("abort!\n\n");
+		//printk("abort!\n\n");
 		
 		goto tx_aborted;
 	}

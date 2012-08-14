@@ -279,6 +279,8 @@ irqreturn_t ch37x_spi_dma_irq_handler(int irq, void *devid)
 			ch37x_writeb(REG_USB_ADDR, td->address);
 			ch37x_writeb(REG_USB_LENGTH, td->length);
 			ch37x_writeb(REG_USB_H_PID, M_MK_HOST_PID_ENDP(td->pid, td->epnum));
+			if( td->state != 3 ) printk("err td state %d-3\n",td->state);
+			td->state = 1;
 			ch37x_writeb(REG_USB_H_CTRL, td->tog ? ( BIT_HOST_START | BIT_HOST_TRAN_TOG | BIT_HOST_RECV_TOG ) : BIT_HOST_START);
 			td->use_dma = 0;
 		}

@@ -67,6 +67,8 @@ struct ch37x_td {
 	u8 length;
 	u8 use_dma;
 	u8 hold;
+
+	u8 state;
 	
 	unsigned zero_packet:1;
 	unsigned short_packet:1;

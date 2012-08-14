@@ -435,6 +435,7 @@ static int start_transfer(struct ch37x *ch37x, struct ch37x_td *td)
 go:
 	ch37x_writeb(REG_USB_ADDR, td->address);
 	ch37x_writeb(REG_USB_H_PID, M_MK_HOST_PID_ENDP(td->pid, td->epnum));
+	td->state = 1;
 	ch37x_writeb(REG_USB_H_CTRL, td->tog ? ( BIT_HOST_START | BIT_HOST_TRAN_TOG | BIT_HOST_RECV_TOG ) : BIT_HOST_START);
 	
 	return 0;
@@ -561,12 +562,13 @@ static int packet_write(struct ch37x *ch37x)
 		ch37x_writeb(REG_USB_LENGTH, 0);
 		ch37x_writeb(REG_USB_ADDR, td->address);
 		ch37x_writeb(REG_USB_H_PID, M_MK_HOST_PID_ENDP(td->pid, td->epnum));
+		td->state = 1;
 		ch37x_writeb(REG_USB_H_CTRL, td->tog ? ( BIT_HOST_START | BIT_HOST_TRAN_TOG | BIT_HOST_RECV_TOG ) : BIT_HOST_START);
 		return 0;
 	}
 
 	/* write fifo */
-    if(td->use_dma != 0 ) printk("#err... bad dma state!\n");
+    	td->state = 3;
 	td->use_dma = 1;
 	td->length = size;
 	urb->actual_length += size;
@@ -824,59 +826,63 @@ static void ch37x_work(struct ch37x *_ch37x)
 		printk("urb unlinked\n");
 		return;
 	}
-	
+
 	pipe = urb->pipe;
 	status = ch37x_readb(REG_USB_STATUS);
 	r = status & BIT_STAT_DEV_RESP;
 
 	switch(td->pid){
-	case DEF_USB_PID_SETUP:
-	case DEF_USB_PID_OUT:
-		if(r == DEF_USB_PID_ACK)
-		{	
-            err = 0; 
-            if(epnum) out_cnt++;
-            if(!(status & BIT_STAT_TOG_MATCH)){
-                printk("ep %d out %d no match, tog %d\n",epnum, out_cnt,td->tog);
-                err = -EAGAIN;
-            }
-        }
-		else if(r == DEF_USB_PID_NAK)
-			err = -EAGAIN;
-        else
-            printk("unkown usb out packet response!\n");
-
-        if( epnum && td->pid == DEF_USB_PID_OUT && td->use_dma != 0 )
-            printk("wrong dma flag for usb!\n");
-
-		break;
-
-	case DEF_USB_PID_IN:
-		if(M_IS_HOST_IN_DATA(status)){
-			if(!(status & BIT_STAT_TOG_MATCH)){
-				ep = &ch37x->ep_in[epnum-1];
-//longn_qi
-				//ep->tog = !ep->tog;
-				printk("ep %d in %d no match, tog %d\n",epnum, in_cnt,td->tog);
+		case DEF_USB_PID_SETUP:
+		case DEF_USB_PID_OUT:
+			if(r == DEF_USB_PID_ACK)
+			{	
+				err = 0; 
+				if(epnum) out_cnt++;
+				if(!(status & BIT_STAT_TOG_MATCH)){
+					printk("ep %d out %d no match, tog %d\n",epnum, out_cnt,td->tog);
+					err = -EAGAIN;
+				}
+			}
+			else if(r == DEF_USB_PID_NAK)
 				err = -EAGAIN;
-				packet_skip(ch37x);
-                //err = 0;
-                //packet_read(ch37x);
-			}
 			else
-			{
-				err = 0;
-				packet_read(ch37x);
-				in_cnt++;
-			}
-		}
-		else if(r == DEF_USB_PID_NAK)
-			err = -EAGAIN;
-		break;
+				printk("unkown usb out packet response!\n");
 
-	default:	//impossible
-		printk("should never be here. line %d, pid=%d, ep=%d\n", __LINE__, td->pid, td->epnum);
-		break;
+			if( td->state != 1 )
+				printk("err td state %d-1!\n", td->state);
+			td->state = 2;
+
+			break;
+
+		case DEF_USB_PID_IN:
+			if( td->state != 1 )
+				printk("err td state %d-1!\n", td->state);
+			td->state = 2;
+			if(M_IS_HOST_IN_DATA(status)){
+				if(!(status & BIT_STAT_TOG_MATCH)){
+					ep = &ch37x->ep_in[epnum-1];
+					//longn_qi
+					//ep->tog = !ep->tog;
+					printk("ep %d in %d no match, tog %d\n",epnum, in_cnt,td->tog);
+					err = -EAGAIN;
+					packet_skip(ch37x);
+					//err = 0;
+					//packet_read(ch37x);
+				}
+				else
+				{
+					err = 0;
+					packet_read(ch37x);
+					in_cnt++;
+				}
+			}
+			else if(r == DEF_USB_PID_NAK)
+				err = -EAGAIN;
+			break;
+
+		default:	//impossible
+			printk("should never be here. line %d, pid=%d, ep=%d\n", __LINE__, td->pid, td->epnum);
+			break;
 	}
 
 	td->status = status;
@@ -976,6 +982,7 @@ static struct ch37x_td *ch37x_make_td(struct ch37x *ch37x,
 	td->maxpacket = usb_maxpacket(urb->dev, pipe,
 				      !usb_pipein(pipe));
 	td->tog = false;
+	td->state = 0;
 
 	epnum = usb_pipeendpoint(pipe);
 	if(epnum > CH37X_MAX_EPNUM){
