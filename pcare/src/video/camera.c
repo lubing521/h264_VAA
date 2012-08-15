@@ -38,12 +38,12 @@ int total_send_time=0;
 
 void sigalrm_handler(int sig)
 {
-#if 0
-	printf("fps=%d,Bps=%dK\n", pic_cnt,total_len/1024);
     if (total_len == 0){
         printf("Peers Must be disconnected!  \nRESET NOW!\n");
         exit(1);
     }
+#if 0
+	printf("fps=%d,Bps=%dK\n", pic_cnt,total_len/1024);
 	printf("ave=%dms,max=%dms\n", total_send_time/pic_cnt, max_send_time);
 #endif
 	if( pic_cnt > 26 ) skip_cnt = 2;
