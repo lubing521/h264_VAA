@@ -7,9 +7,12 @@
 #ifndef _V4L2_h
 #define _V4L2_h
 
+#include <linux/videodev2.h>
 #include <camera.h>
 
-typedef struct {
+typedef struct frame{
+	struct frame *next;
+	int flag;
 	char *data;
 	unsigned long length;
 } frame_t;
@@ -20,7 +23,11 @@ void start_capturing (int fd);
 void stop_capturing (int fd);
 void uninit_device (void);
 void close_device (int fd);
-int get_frame(int fd, frame_t *fm);
-int put_frame(int fd);
+int get_buffer(int fd, struct v4l2_buffer *v4l_buf);
+int put_buffer(int fd, struct v4l2_buffer *v4l_buf);
+int get_frame(struct v4l2_buffer *v4l_buf);
+frame_t *use_frame(void);
+void empty_frame(frame_t *fm);
+int init_frame_list(void);
 
 #endif

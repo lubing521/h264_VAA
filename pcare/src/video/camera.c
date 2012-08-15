@@ -23,35 +23,37 @@
 #define CAMERA_DEV "/dev/video0"
 
 static pthread_t camera_ntid;
+static pthread_t send_ntid;
 static int camera_fd;
 static int camera_stop = 0;
 sem_t start_camera;
 
+sem_t new_pict;
+static int pict_num = 0;
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static struct v4l2_buffer cur_buf;
+
 //#undef PRINTFPS
 
 #ifdef PRINTFPS
+int send_cnt=0;
 int pic_cnt=0;
-int skip_cnt=0;
 int total_len=0;
 int max_send_time=0;
 int total_send_time=0;
 
 void sigalrm_handler(int sig)
 {
-    if (total_len == 0){
-        printf("Peers Must be disconnected!  \nRESET NOW!\n");
-        exit(1);
-    }
-#if 0
-	printf("fps=%d,Bps=%dK\n", pic_cnt,total_len/1024);
-	printf("ave=%dms,max=%dms\n", total_send_time/pic_cnt, max_send_time);
-#endif
-	if( pic_cnt > 26 ) skip_cnt = 2;
-    else if( pic_cnt > 20 ) skip_cnt = 3;
-    else skip_cnt = 0;
-    pic_cnt = 0;
-    total_len = 0;
-    total_send_time = 0;
+	printf("fps=%d/%d,Bps=%dK\n", send_cnt, pic_cnt, total_len/1024);
+	printf("ave=%dms,max=%dms\n", total_send_time/send_cnt, max_send_time);
+	if (total_len == 0){
+		printf("Peers Must be disconnected!  \nRESET NOW!\n");
+		exit(1);
+	}
+	pic_cnt = 0;
+	send_cnt = 0;
+	total_len = 0;
+	total_send_time = 0;
 }
 
 
@@ -74,6 +76,41 @@ int init_timer(void)
 	printf("add timer\n");
 }
 #endif
+
+static void *send_picture_thread(void *args)
+{
+	int fd = camera_fd, r;
+	frame_t *fm;
+
+	while(!camera_stop)
+	{
+#ifdef PRINTFPS
+		int t1, t2, send_time;
+#endif
+		fm = use_frame();
+		if( fm == NULL )
+		{
+			printf("no frame, exit!\n");
+			break;
+		}
+#ifdef PRINTFPS
+		t1 = times(NULL);
+#endif
+		if( fm->data ) send_picture(fm->data, fm->length);
+		empty_frame( fm );
+#ifdef PRINTFPS
+		t2 = times(NULL);
+		send_time = t2 - t1;
+		if( send_time > max_send_time ) max_send_time = send_time;
+		total_send_time += send_time;
+		send_cnt++;
+		total_len += fm->length;
+#endif
+	}
+
+	pthread_exit(0);
+}
+
 /*
  * the camera thread entry
  */
@@ -83,14 +120,18 @@ static void *camera_thread(void *args)
     struct timeval tv;
     fd_set fds;
     int r, i = 0, skip = 0;
-    
-    frame_t pict;
-    pict.data = NULL;
-    pict.length = 0;
+    struct v4l2_buffer buf = {0};
+	
+	buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	buf.memory = V4L2_MEMORY_MMAP;
 
 	sem_wait(&start_camera);
 
     start_capturing (fd);
+    r = pthread_create(&send_ntid, NULL, send_picture_thread, NULL);
+    if(r < 0){
+    	printf("create send picture thread failed\n");
+    }
 #ifdef PRINTFPS
 	init_timer();
 #endif    
@@ -115,7 +156,26 @@ static void *camera_thread(void *args)
             system("reboot");
             return NULL;
         }
-       
+
+
+	r = get_buffer(fd, &buf);
+	if( r != 0 )
+	{
+		get_frame(&buf);
+#ifdef PRINTFPS
+		pic_cnt++;
+#endif
+		r = put_buffer(fd, &buf);
+		if(r<0)
+			printf("skip buffer err = %d\n", r);
+	}
+	else
+	{
+		usleep(30000);
+		//printf("get_buffer err = %d\n", r);
+	}
+
+#if 0       
 		if(r = get_frame(fd, &pict)){
 #ifdef PRINTFPS
             int t1 = times(NULL), t2, send_time;
@@ -147,6 +207,7 @@ static void *camera_thread(void *args)
         pic_cnt++;
         total_len += pict.length;
 #endif        
+#endif
 		if(camera_stop)
 			pthread_exit(0);
     }
@@ -196,6 +257,7 @@ int close_camera(void)
 {
 	camera_stop = 1;
 	pthread_join(camera_ntid, NULL);
+	pthread_join(send_ntid, NULL);
 	uninit_device();
 	close_device(camera_fd);
     sem_destroy(&start_camera);

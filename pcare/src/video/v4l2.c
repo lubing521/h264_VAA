@@ -20,6 +20,7 @@
 #include <sys/ioctl.h>
 #include <asm/types.h>          /* for videodev2.h */
 #include <linux/videodev2.h>
+#include <semaphore.h>
 
 #include <types.h>
 #include <camera.h>
@@ -34,7 +35,24 @@ struct buffer {
 
 struct buffer *         buffers		= NULL;
 static unsigned int     n_buffers	= 0;
-static struct v4l2_buffer v4l_buf;
+//static struct v4l2_buffer v4l_buf;
+
+enum FrameFlag
+{
+	FRAME_EMPTY = 0,
+	FRAME_FILLING,
+	FRAME_READY,
+	FRAME_IN_USE
+};
+
+#define MAX_FRAME_LEN	(30*1024)
+#define FRAME_NUM 3
+static frame_t frame_list[FRAME_NUM];
+static frame_t *ready_list_head, *ready_list_tail;
+static frame_t *empty_list_head;
+static sem_t pict_ready;
+static pthread_mutex_t frame_list_lock;
+
 
 static void errno_exit (const char *s)
 {
@@ -62,26 +80,127 @@ void store_raw(unsigned char *buf, int len)
 	fclose(file);
 }
 
+void dump_frame_list()
+{
+	int i;
+	for( i = 0; i < FRAME_NUM; i++ )
+		printf("#f%d: flag=%d\n", i, frame_list[i].flag);
+	printf("#ready head = f%d\n", ready_list_head - frame_list);
+	printf("#ready tail = f%d\n", ready_list_tail - frame_list);
+	printf("#empty head = f%d\n", empty_list_head - frame_list);
+	return;
+}
+
+int get_frame(struct v4l2_buffer *v4l_buf)
+{
+	frame_t *fm;
+	//printf("get_frame\n");
+	pthread_mutex_lock(&frame_list_lock);
+	if( empty_list_head == NULL )
+	{
+		empty_list_head = ready_list_head;
+		ready_list_head = ready_list_head->next;
+		empty_list_head->next = NULL;
+		ready_list_tail->next = empty_list_head;
+		ready_list_tail = empty_list_head;
+		//printf("@catchup\n");
+		sem_trywait(&pict_ready);
+	}
+	empty_list_head->flag = FRAME_FILLING;
+	fm = empty_list_head;
+	empty_list_head = empty_list_head->next;
+	pthread_mutex_unlock(&frame_list_lock);
+	fm->length = v4l_buf->bytesused;
+    	if(fm->data) memcpy(fm->data, buffers[v4l_buf->index].start, fm->length);
+	pthread_mutex_lock(&frame_list_lock);
+	fm->flag = FRAME_READY;
+	//printf("@data ready\n");
+	sem_post(&pict_ready);
+	pthread_mutex_unlock(&frame_list_lock);
+	//printf("get_frame %x ok\n", fm-frame_list);
+
+    return 1;
+}
+
+frame_t *use_frame(void)
+{
+	frame_t *fm = NULL;
+	
+	//printf("@use_frame\n");
+	sem_wait(&pict_ready);
+	pthread_mutex_lock(&frame_list_lock);
+	if( ready_list_head->flag == FRAME_READY )
+	{
+		fm = ready_list_head;
+		fm->flag = FRAME_IN_USE;
+		ready_list_head = fm->next;
+		fm->next = NULL;
+	}
+	else
+	{
+		printf("Err flag of frame %d!\n", ready_list_head-frame_list);
+		dump_frame_list();
+	}
+	pthread_mutex_unlock(&frame_list_lock);
+	//printf("use_frame %x ok\n", fm-frame_list);
+	return fm;
+}
+
+void empty_frame(frame_t *fm)
+{
+	//printf("empty frame\n");
+	pthread_mutex_lock(&frame_list_lock);
+	fm->flag = FRAME_EMPTY;
+	ready_list_tail->next = fm;
+	ready_list_tail = fm;
+	if( empty_list_head == NULL ) empty_list_head = fm;
+	pthread_mutex_unlock(&frame_list_lock);
+	//printf("empty frame %x ok\n", fm-frame_list);
+	return;
+}
+
+int init_frame_list()
+{
+	int i;
+
+	ready_list_head = &frame_list[0];
+	ready_list_tail = ready_list_head;
+	ready_list_head->flag = FRAME_EMPTY;
+	ready_list_head->data = malloc(MAX_FRAME_LEN);
+	for( i = 1; i < FRAME_NUM; i++ )
+	{
+		frame_t *fm;
+		fm = &frame_list[i];
+		fm->flag = FRAME_EMPTY;
+		fm->data = malloc(MAX_FRAME_LEN);
+		ready_list_tail->next = fm;
+		ready_list_tail = fm;
+	} 
+	ready_list_tail->next = NULL;
+	empty_list_head = ready_list_head;
+	sem_init(&pict_ready, 0, 0);
+	pthread_mutex_init(&frame_list_lock);
+
+	return 1;
+}
+
 /*
  * read a frame of image from video device
  */
-int get_frame(int fd, frame_t *fm)
+int get_buffer(int fd, struct v4l2_buffer *v4l_buf)
 {
-    if (-1 == ioctl (fd, VIDIOC_DQBUF, &v4l_buf))
+    if (-1 == ioctl (fd, VIDIOC_DQBUF, v4l_buf))
 		return 0;
     
-    fm->data = buffers[v4l_buf.index].start;
-    fm->length = v4l_buf.bytesused;
-
     return 1;
 }
 
 /*
  * enqueue the frame again
  */
-int put_frame(int fd)
+int put_buffer(int fd, struct v4l2_buffer *v4l_buf)
 {
-	return ioctl(fd, VIDIOC_QBUF, &v4l_buf);
+	return ioctl(fd, VIDIOC_QBUF, v4l_buf);
 }
 
 /*
@@ -263,12 +382,8 @@ int init_device (int fd, int width, int height, int fps)
    		return -1;
     }
     
-    CLEAR (v4l_buf);
-    v4l_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    v4l_buf.memory = V4L2_MEMORY_MMAP;
-
     CLEAR (req);
-    req.count	= 8;
+    req.count	= 16;
     req.type 	= V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory	= V4L2_MEMORY_MMAP;
 
@@ -314,6 +429,9 @@ int init_device (int fd, int width, int height, int fps)
 		    goto err;
 		}
     }
+
+	init_frame_list();
+
     return 0;
 
 err:

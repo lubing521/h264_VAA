@@ -93,14 +93,14 @@ static size_t speak_power_store(struct device *dev, struct device_attribute *att
     }
     else if(sysfs_streq (buf,"coff")){
         sep0611_codec_enable(0);
-        printk(" set codec off !\n");
+        //printk(" set codec off !\n");
     }
     else if(sysfs_streq (buf,"con\n")){
         sep0611_codec_enable(1);
-        printk(" set codec on !");
+        //printk(" set codec on !");
     }
     else{
-        printk("speak_power set failed !");
+        //printk("speak_power set failed !");
         return -1;
     }
     return count;
