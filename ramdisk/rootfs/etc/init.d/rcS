@@ -37,10 +37,10 @@ cd /etc/dropbear
 #echo 4 > /proc/sys/kernel/printk
 #
 #/home/toy/leds.sh&
-/home/toy/init.sh
-/home/toy/initok.sh&
-/home/toy/camera_config.sh
 /home/toy/aptest.sh
+#/home/toy/init.sh
+/home/toy/camera_config.sh
+#/home/toy/initok.sh&
 /home/toy/pcare.sh&
 
 cd /
