@@ -33,7 +33,7 @@ static int pict_num = 0;
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 static struct v4l2_buffer cur_buf;
 
-//#undef PRINTFPS
+#undef PRINTFPS
 
 #ifdef PRINTFPS
 int send_cnt=0;

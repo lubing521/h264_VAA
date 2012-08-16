@@ -9,10 +9,11 @@ enum QueueState
 	QUEUE_STOPPED
 };
 
+#define MAX_BUF_LEN	(MAX_READ_LEN)
 typedef struct s_Buffer
 {
 	struct s_Buffer *next;
-	u8 data[ADPCM_MAX_READ_LEN];
+	u8 data[MAX_BUF_LEN];
 	int len;
 	int flag;
 }Buffer;

@@ -14,23 +14,95 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-
+#include "buffer.h"
 #include "adpcm.h"
 
-/* ---------------------------------------------------------- */
+static void *audio_capture( void *arg );
+static void *audio_send( void *arg );
 
-int capture_on;
+enum RecordState
+{
+	ST_RECORDING,
+	ST_STOPPING,
+	ST_STOPPED
+};
 
-extern int oss_open_flag, oss_close_flag, oss_fd_record;
-/* ---------------------------------------------------------- */
+enum RecordOp
+{
+	OP_NONE,
+	OP_RECORD,
+	OP_STOP
+};
 
-int oss_buf_size = RECORD_MAX_READ_LEN;
-int data_buf_size = RECORD_MAX_READ_LEN / 4;
+struct Recorder
+{
+	enum RecordState state;
+	enum RecordOp next_op;
+	pthread_t send_thread;
+	pthread_t capture_thread;
+	pthread_mutex_t lock;
+};
+struct AUDIO_CFG 
+{
+	int rate;
+	int channels;
+	int bit;
+	int ispk;
+};
 
-static u8 pcm_data_buf[RECORD_MAX_READ_LEN] = {0};			/* TODO (FIX ME) can use malloc */
-static u8 audio_data[RECORD_MAX_READ_LEN / 4 + 3] = {0};
-static adpcm_state_t adpcm_state_curr, adpcm_state_next;
-static int stat_record=0;
+enum CaptureBufferFlag
+{
+	START_CAPTURE,
+	KEEP_CAPTURE,
+	END_CAPTURE,
+	STOP_CAPTURE
+};
+
+enum SendState
+{
+	SOCKET_INIT,
+	SOCKET_SEND,
+	SOCKET_STOPPED
+};
+
+enum RecorderState
+{
+	RECORDER_INIT,
+	RECORDER_CAPTURE,
+	RECORDER_STOPPED,
+	RECORDER_RESET
+};
+
+//pthread_t capture_td, send_td;
+struct Recorder g_recorder;
+
+#define BUFFER_NUM 3
+BufferQueue g_capture_buffer_queue;
+#define CAPTURE_QUEUE (&g_capture_buffer_queue)
+
+u8 g_raw_buffer[2][RECORD_MAX_READ_LEN];
+
+extern int send_data_fd;
+extern int oss_fd_record;
+int start_record = 0;
+sem_t capture_is_start;
+
+void init_send()
+{
+	sem_init(&capture_is_start,0,0);
+	pthread_mutex_init(&g_recorder.lock,NULL);
+	g_recorder.state = ST_STOPPED;
+	g_recorder.next_op = OP_NONE;
+	InitQueue(CAPTURE_QUEUE,BUFFER_NUM);
+	if(pthread_create(&g_recorder.capture_thread, NULL, audio_capture, NULL) != 0) {
+		perror("pthread_create");
+		return ;
+	}
+	if(pthread_create(&g_recorder.send_thread, NULL, audio_send, NULL) != 0) {
+		perror("pthread_create");
+		return ;
+	}
+}
 
 int set_i2s_rate(unsigned int rate)
 {
@@ -56,7 +128,7 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
     char state1[]="off";
     if(speak_power(state1)<0)
         printf("set speak_power off failed ! \n");
-    if(stat_record == 1)
+    if(start_record == 1)
     {
         set_i2s_rate(rate);
         return;
@@ -100,7 +172,7 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 		printf("SOUND_PCM_WRITE_CHANNELS ioctl failed,status is %d\n",status);
 	if (arg != channels)
 		printf("unable to set number of channels\n");
-    stat_record = 1;
+    start_record = 1;
 	printf("rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
 	
 }
@@ -111,103 +183,7 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
  */
 static int record_oss_data(u8 *buffer, u32 oss_buf_size)
 {
-#if 0
-    int tmp;
-	/* TODO (FIX ME) */
-	if(read(oss_fd_record, buffer, oss_buf_size) < 0){
-        printf("sound  read  error  !\n");
-        return -1;
-    }
-    //for(tmp =0;tmp<10;tmp++)
-    //printf("buffer[%d]is %d \n",tmp,buffer[tmp]);
-#endif
-    read(oss_fd_record, buffer, oss_buf_size);
-        return 0;
-}
-
-/*
- * store the record data in queue
- */
-static int store_audio_data(void)
-{
-	/* TODO (FIX ME) */
-	/* use adpcm algorithem to compress pcm data,
-	 * eg: 4KB pcm data can be compressed to 1KB;
-	 * struct audio_data u8  ado_len is audio actual length,
-	 * intent to send sample and index of adpcm parames,
-	 * put them in the ado_data[0] area
-	 *
-	 */
-    /* convert pcm to adpcm */
-    /* TODO (FIX ME) */
-    record_oss_data(pcm_data_buf, oss_buf_size);
-#if 0
-    if(record_oss_data(pcm_data_buf, oss_buf_size) < 0){
-        oss_fd_record = open(OSS_AUDIO_DEV,O_RDONLY);
-        if(oss_fd_record < 0){
-            printf("oss_fd_record open failed !\n");
-            return -1;
-        }
-    }
-
-    //fprintf(stderr, "*");
-#endif
-#if 1
-	/* convert pcm to adpcm */
-	adpcm_coder((short *)pcm_data_buf, (char *)audio_data, oss_buf_size, &adpcm_state_next);
-
-	memcpy((u8 *)(audio_data + data_buf_size), (u8 *)(&adpcm_state_curr), 3);
-
-	adpcm_state_curr = adpcm_state_next;
-#endif
-    return 0;
-}
-
-/*
- * read audio data by frames
- */
-static void read_audio_frame()
-{
-    //int pcm_fd;
-    //unsigned long wr_len;
-    //pcm_fd=open("/11.pcm",O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-	printf(">>>Start capturing audio data ...\n");
-    //close(oss_fd_record);
-    //oss_fd_record=open(OSS_AUDIO_DEV,O_RDONLY);
-    set_oss_record_config(oss_fd_record,RECORD_RATE,RECORD_CHANNELS,RECORD_BIT);
-	
-	while (capture_on) {
-#if 0
-		if(store_audio_data() < 0){
-            break;
-        }
-#endif
-        store_audio_data();
-        //send_audio_data(pcm_data_buf, oss_buf_size);
-		send_audio_data(audio_data, data_buf_size);
-    //    printf("send_audio_data size is %d\n",data_buf_size);
-        //write(pcm_fd,pcm_data_buf,oss_buf_size);
-        //wr_len+=oss_buf_size;
-        //write(pcm_fd,audio_data,data_buf_size);
-        //wr_len+=data_buf_size;
-
-	};
-    //printf("wr_len is %lx\n",wr_len);
-    //close(pcm_fd);
-}
-
-/* ---------------------------------------------------------- */
-/*
- * The audio capture thread entry
- */
-void *audio_capture_thread(void *args)
-{
-	pthread_detach(pthread_self());
-	
-	/* read audio data and send it to network */
-	read_audio_frame();
-
-	pthread_exit(0);
+    return read(oss_fd_record, buffer, oss_buf_size);
 }
 
 /* ---------------------------------------------------------- */
@@ -216,10 +192,8 @@ void *audio_capture_thread(void *args)
  */
 void start_capture(void)
 {	
-	capture_on = 1;
-
-	enable_capture_audio();
-
+	StartRecorder();
+//	enable_capture_audio();
 }
 
 /*
@@ -227,18 +201,204 @@ void start_capture(void)
  */
 void stop_capture(void)
 {
-	capture_on = 0;
-    char state1[]="on";
-    if(speak_power(state1)<0)
-        printf("set speak_power on failed ! \n");
-#if 0
-    if( oss_fd_record > 0 )
-    {
-		close(oss_fd_record);
-		oss_fd_record = 0;
-		printf("<<<Close capture audio device ...\n");
-	}
-#endif	
+	char state1[]="on";
+	if(speak_power(state1)<0)
+		printf("set speak_power on failed ! \n");
+	StopRecorder();
 	printf("<<<Stop capture audio ...\n");
+}
+
+
+void *audio_capture( void *arg )
+{
+	int state = RECORDER_INIT, i=0;
+	struct AUDIO_CFG cfg = {RECORD_RATE,RECORD_CHANNELS,RECORD_BIT,0};
+	Buffer *buffer;
+
+	pthread_detach(pthread_self());
+	oss_fd_record = open(OSS_AUDIO_DEV,O_RDONLY);
+	if(oss_fd_record < 0)
+	{
+		printf("Err(audio_capture): Open audio(oss) device failed!\n");
+		pthread_exit(0);
+	}
+
+	do
+	{
+		switch( state )
+		{
+			case RECORDER_INIT:
+				printf("recorder init\n");
+				sem_wait(&capture_is_start);
+    				set_oss_record_config(oss_fd_record,cfg.rate,cfg.channels,cfg.bit);
+				printf("recorder start\n");
+				state = RECORDER_CAPTURE;
+				break;
+			case RECORDER_RESET:
+				printf("recorder reset\n");
+				oss_fd_record = open(OSS_AUDIO_DEV,O_RDONLY);
+				if(oss_fd_record < 0)
+				{
+					printf("Err(audio_capture): Open audio(oss) device failed!\n");
+				}
+				else if( set_oss_play_config(oss_fd_record,cfg.rate,cfg.channels,cfg.bit) < 0 )
+				{
+					printf("Err(audio_capture): set oss play config failed!\n");
+					close(oss_fd_record);
+					break;
+				}
+				state = RECORDER_CAPTURE;
+				break;
+			case RECORDER_CAPTURE:
+				//printf("capture\n");
+				buffer = GetEmptyBuffer( CAPTURE_QUEUE );
+				if( buffer == NULL )
+				{
+					state = RECORDER_STOPPED;
+					break;
+				}
+				if( record_oss_data( buffer->data, RECORD_MAX_READ_LEN) <= 0 )
+				{
+					printf("record ret error !\n");
+					state = RECORDER_RESET;
+				}
+				else
+				{
+					buffer->len = RECORD_MAX_READ_LEN;
+					FillBuffer( CAPTURE_QUEUE );
+				}
+				break;
+			case RECORDER_STOPPED:
+				printf("recorder stop\n");
+				CloseBufferQueue( CAPTURE_QUEUE, IN_PORT );
+				//close(oss_fd_record);
+				//oss_fd_record = 0;
+				state = RECORDER_INIT;
+				break;
+		}
+	}while(1);
+
+	pthread_exit(NULL);
+}
+
+//#define CAPTURE_PROFILE
+void *audio_send( void *arg )
+{
+	int state = SOCKET_INIT;
+	Buffer *buffer;
+	int error_flag;
+	adpcm_state_t adpcm_state = {0, 0};
+#ifdef CAPTURE_PROFILE
+	int t1, t2, t3;
+	int total_cap_time = 0, cap_cnt = 0, cap_time, max_cap_time = 0;
+	int total_send_time = 0, send_cnt = 0, send_time, max_send_time = 0;
+#endif
+
+	pthread_detach(pthread_self());
+	do
+	{
+		switch( state )
+		{
+			case SOCKET_INIT:
+				printf("start send\n");
+				adpcm_state.valprev = 0;
+				adpcm_state.index = 0;
+				state = SOCKET_SEND;
+				break;
+			case SOCKET_SEND:
+				//printf("send audio\n");
+#ifdef CAPTURE_PROFILE
+				t1 = times(NULL);
+#endif
+				buffer = GetBuffer(CAPTURE_QUEUE);
+				if( buffer == NULL )
+				{
+					state = SOCKET_STOPPED;
+					break;
+				}
+#ifdef CAPTURE_PROFILE
+				t2 = times(NULL);
+#endif
+				memcpy((u8 *)&g_raw_buffer[0][RECORD_ADPCM_MAX_READ_LEN], (u8 *)(&adpcm_state), 3);
+				adpcm_coder( (short *)buffer->data, g_raw_buffer[0],RECORD_MAX_READ_LEN,&adpcm_state);
+				error_flag = send_audio_data(g_raw_buffer[0],RECORD_ADPCM_MAX_READ_LEN);
+#ifdef CAPTURE_PROFILE
+				t3 = times(NULL);
+				cap_time = t2 - t1;
+				if( cap_time > max_cap_time ) max_cap_time = cap_time;
+				total_cap_time += cap_time;
+				cap_cnt++;
+				if( cap_cnt == 10 )
+				{
+					printf("ave_cap=%d,max_cap=%d\n",total_cap_time/cap_cnt,max_cap_time);
+					total_cap_time = 0;
+					cap_cnt = 0;
+				}
+				send_time = t3 - t2;
+				if( send_time > max_send_time ) max_send_time = send_time;
+				total_send_time += send_time;
+				send_cnt++;
+				if( send_cnt == 10 )
+				{
+					printf("ave_send=%d,max_send=%d\n",total_send_time/send_cnt,max_send_time);
+					total_send_time = 0;
+					send_cnt = 0;
+				}
+#endif
+				if (error_flag < 0)
+				{
+					state = SOCKET_STOPPED;
+				}
+				EmptyBuffer(CAPTURE_QUEUE);
+				break;
+			case SOCKET_STOPPED:
+				printf("send stop\n");
+				CloseBufferQueue( CAPTURE_QUEUE, OUT_PORT );
+				EndRecorder();
+				state = SOCKET_INIT;
+				break;
+		}
+	}while(1);
+
+	pthread_exit(NULL);
+}
+
+void EndRecorder()
+{
+	pthread_mutex_lock(&g_recorder.lock);
+	printf("ToEndRecorder\n");
+	g_recorder.state = ST_STOPPED;
+	pthread_mutex_unlock(&g_recorder.lock);
+	if(g_recorder.next_op == OP_RECORD) StartRecorder();
+	return;
+}
+void StartRecorder()
+{
+	pthread_mutex_lock(&g_recorder.lock);
+	printf("ToStartRecorder\n");
+	g_recorder.next_op = OP_RECORD;
+	if(g_recorder.state == ST_STOPPED)
+	{ 
+		EnableBufferQueue(CAPTURE_QUEUE);
+		g_recorder.state = ST_RECORDING;
+		sem_post(&capture_is_start);
+	}
+	pthread_mutex_unlock(&g_recorder.lock);
+	return;
+}
+
+void StopRecorder()
+{
+	pthread_mutex_lock(&g_recorder.lock);
+	printf("ToStopRecorder\n");
+	g_recorder.next_op = OP_STOP;
+	if( g_recorder.state == ST_RECORDING )
+	{
+		g_recorder.state = ST_STOPPING;
+		sem_trywait(&capture_is_start);
+		DisableBufferQueue(CAPTURE_QUEUE);
+	}
+	pthread_mutex_unlock(&g_recorder.lock);
+	return;
 }
 /* ---------------------------------------------------------- */

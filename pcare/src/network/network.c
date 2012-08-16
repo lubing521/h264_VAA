@@ -381,7 +381,7 @@ int send_audio_data(u8 *audio_buf, u32 data_len)
 {
 	av_command2->text_len = data_len + 20;			/* contant sample and index */
 	audio_data->ado_len = data_len;
-    audio_data->time_stamp = times(NULL)*10;
+    audio_data->time_stamp = times(NULL)*10 - data_len/5;
     //printf("audio_data time_stamp is %lu\n",audio_data->time_stamp);
 
     audio_num++;

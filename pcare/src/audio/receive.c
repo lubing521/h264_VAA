@@ -20,16 +20,15 @@ extern oss_fd_play;
 /* --------------------------------------------------------- */
 enum PlayerState
 {
-	PLAYING,
-	STOPPING,
-	STOPPED
+	ST_PLAYING,
+	ST_STOPPING,
+	ST_STOPPED
 };
 
 enum PlayerOp
 {
-	NONE,
-	PLAY,
-	STOP
+	OP_PLAY,
+	OP_STOP
 };
 
 struct Player
@@ -89,8 +88,8 @@ void init_receive()
 {
 	sem_init(&start_talk,0,0);
 	pthread_mutex_init(&g_player.lock,NULL);
-	g_player.state = STOPPED;
-	g_player.next_op = NONE;
+	g_player.state = ST_STOPPED;
+	g_player.next_op = OP_STOP;
 	InitQueue(TALK_QUEUE,BUFFER_NUM);
 	if(pthread_create(&g_player.playback_thread, NULL, talk_playback, NULL) != 0) {
 		perror("pthread_create");
@@ -185,10 +184,10 @@ Buffer *GetBuffer( BufferQueue *queue )
 {
 	Buffer *p = NULL;
 
-	if( queue->state == QUEUE_WORKING )
+	if( queue->state != QUEUE_STOPPING )
 	{
 		sem_wait(&queue->filled_buffer_ready);
-		if( queue->state == QUEUE_WORKING ) p = queue->list_filled.head;
+		if( queue->state != QUEUE_STOPPING ) p = queue->list_filled.head;
 	}
 	//printf("GetBuffer %x\n",p);
 	return p;
@@ -198,7 +197,7 @@ int EmptyBuffer( BufferQueue *queue )
 {
 	Buffer *p;
 	pthread_mutex_lock( &queue->lock );
-	if( queue->state == QUEUE_WORKING )
+	if( queue->state != QUEUE_STOPPING )
 	{
 		p = OutBufferList( &queue->list_filled );
 		InBufferList( &queue->list_empty, p );
@@ -213,11 +212,11 @@ Buffer *GetEmptyBuffer( BufferQueue *queue )
 {
 	Buffer *p = NULL;
 
-	if( queue->state == QUEUE_WORKING )
+	if( queue->state != QUEUE_STOPPING )
 	{
 		//printf("#wait is not full\n");
 		sem_wait(&queue->empty_buffer_ready);
-		if( queue->state == QUEUE_WORKING ) p = queue->list_empty.head;
+		if( queue->state != QUEUE_STOPPING ) p = queue->list_empty.head;
 	}
 	//printf("GetEmptyBuffer %x\n",p);
 	return p;
@@ -227,7 +226,7 @@ int FillBuffer( BufferQueue *queue )
 {
 	Buffer *p;
 	pthread_mutex_lock( &queue->lock );
-	if( queue->state == QUEUE_WORKING )
+	if( queue->state != QUEUE_STOPPING )
 	{
 		p = OutBufferList( &queue->list_empty );
 		InBufferList( &queue->list_filled, p );
@@ -251,8 +250,8 @@ void InitQueue( BufferQueue *queue, int num )
 	}
 	queue->buffer[i].next = NULL;
 
-	queue->state = QUEUE_WORKING;
-	queue->request = QUEUE_WORKING;
+	queue->state = QUEUE_STOPPED;
+	queue->request = QUEUE_STOPPED;
 	queue->list_filled.head = NULL;
 	queue->list_filled.tail = NULL;
 	queue->list_empty.head = queue->buffer;
@@ -332,7 +331,7 @@ int CloseBufferQueue( BufferQueue *queue, int port )
 			else if( val > num ) sem_trywait(&queue->empty_buffer_ready);
 		}
 		while( sem_trywait(&queue->filled_buffer_ready) == 0 );
-		queue->state = QUEUE_WORKING;
+		queue->state = QUEUE_STOPPED;
 		queue->closed_port = 0;
 		sem_post(&queue->closed);
 		pthread_mutex_unlock( &queue->lock );
@@ -462,7 +461,7 @@ void *talk_receive( void *arg )
 
 				send_talk_resp();
 				if (read_client(music_data_fd, buf, 8) != 8) {
-					perror("recv");
+					printf("Err: no file size!\n");
 					state = TALK_STOPPED;
 				}
 				else
@@ -471,7 +470,7 @@ void *talk_receive( void *arg )
 					read_left = file_size;
 					printf(">>>receive file size : %d×Ö½Ú\n", file_size);
 					if (read_client(music_data_fd, buf, 4) != 4) {
-						printf("Err: no file size!\n");
+						printf("Err: no audio param!\n");
 						state = TALK_STOPPED;
 					}
 					else
@@ -575,7 +574,12 @@ void EndPlayer()
 		close(music_data_fd);
 		music_data_fd = -1;
 	}
-	g_player.state = STOPPED;
+	g_player.state = ST_STOPPED;
+	if( g_player.next_op == OP_PLAY )
+	{
+		EnableBufferQueue(TALK_QUEUE);
+		g_player.state = ST_PLAYING;
+	}
 	pthread_mutex_unlock(&g_player.lock);
 	return;
 }
@@ -583,8 +587,12 @@ void StartPlayer()
 {
 	pthread_mutex_lock(&g_player.lock);
 	printf("ToStartPlayer\n");
-	EnableBufferQueue(TALK_QUEUE);
-	g_player.state = PLAYING;
+	g_player.next_op = OP_PLAY;
+	if( g_player.state == ST_STOPPED )
+	{
+		EnableBufferQueue(TALK_QUEUE);
+		g_player.state = ST_PLAYING;
+	}
 	pthread_mutex_unlock(&g_player.lock);
 	return;
 }
@@ -593,9 +601,10 @@ void StopPlayer()
 {
 	pthread_mutex_lock(&g_player.lock);
 	printf("ToStopPlayer\n");
-	if( g_player.state == PLAYING )
+	g_player.next_op = OP_STOP;
+	if( g_player.state == ST_PLAYING )
 	{
-		g_player.state = STOPPING;
+		g_player.state = ST_STOPPING;
 
 		DisableBufferQueue(TALK_QUEUE);
 		if(music_data_fd>0)

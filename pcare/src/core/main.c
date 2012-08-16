@@ -30,6 +30,7 @@ int main()
 		
 #endif
 	init_receive();
+	init_send();
 	init_motor();
 #if 0
 	int i=0;
