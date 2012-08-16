@@ -816,7 +816,7 @@ void network(void)
 	/* set server message */
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(SERVER_PORT);
-	server_addr.sin_addr.s_addr = inet_addr("192.168.100.100");
+	server_addr.sin_addr.s_addr = inet_addr("192.168.1.100");
 	bzero(&(server_addr.sin_zero), 8);
 	
 	/* bind port */

@@ -6,7 +6,7 @@ insmod /modules/rt3070ap.ko
 insmod /modules/rtnet3070ap.ko
 
 echo "--------Config ap IP-----------"
-ifconfig ra0 192.168.100.100
+ifconfig ra0 192.168.1.100
 
 #echo "----- ---Enable DHCP-----------"
 #/sbin/dhcpd -d ra0 &

@@ -380,11 +380,11 @@ int rt28xx_init(
 				
 
 			char tmpbuf[16]={0};
-			sprintf(tmpbuf, "CAR_%02X%02X%02X%02X%02X%02X", PRINT_MAC(pAd->CurrentAddress));
+			sprintf(tmpbuf, "BM-%02X%02X%02X%02X%02X%02X", PRINT_MAC(pAd->CurrentAddress));
 			NdisMoveMemory(pAd->ApCfg.MBSSID[BSS0].Ssid, tmpbuf , strlen(tmpbuf));
 			pAd->ApCfg.MBSSID[BSS0].Ssid[strlen(tmpbuf)] = '\0';
 			pAd->ApCfg.MBSSID[BSS0].SsidLen = strlen((PSTRING) pAd->ApCfg.MBSSID[BSS0].Ssid);
-			printk("new SSID=%s\n", pAd->ApCfg.MBSSID[BSS0].Ssid);
+			//printk("new SSID=%s\n", pAd->ApCfg.MBSSID[BSS0].Ssid);
 
 			APStartUp(pAd);
 			DBGPRINT(RT_DEBUG_OFF, ("Main bssid = %02x:%02x:%02x:%02x:%02x:%02x\n", 
