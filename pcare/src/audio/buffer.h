@@ -5,7 +5,6 @@ enum QueueState
 {
 	QUEUE_INIT = 0,
 	QUEUE_WORKING,
-	QUEUE_STOPPING,
 	QUEUE_STOPPED
 };
 
@@ -22,6 +21,8 @@ typedef struct
 {
 	Buffer *head;
 	Buffer *tail;
+	sem_t ready;
+	int wanted;
 }BufferList;
 
 #define IN_PORT		1
@@ -33,22 +34,22 @@ typedef struct
 	BufferList list_filled;
 	BufferList list_empty;
 	int buffer_num;
-	int state;
-	int request;
-	int closed_port;
-	sem_t filled_buffer_ready;
-	sem_t empty_buffer_ready;
-	sem_t closed;
+	int in_state;
+	int out_state;
+	sem_t in_ready;
+	sem_t out_ready;
 	pthread_mutex_t lock;
+	const char *name;
 }BufferQueue;
 
 Buffer *GetBuffer( BufferQueue *queue );
 int EmptyBuffer( BufferQueue *queue );
 Buffer *GetEmptyBuffer( BufferQueue *queue );
 int FillBuffer( BufferQueue *queue );
-void InitQueue( BufferQueue *queue, int num );
+void InitQueue( BufferQueue *queue, const char *name, int num );
+int OpenQueueIn( BufferQueue *queue );
+int OpenQueueOut( BufferQueue *queue );
 void EnableBufferQueue( BufferQueue *queue );
 void DisableBufferQueue( BufferQueue *queue );
-int CloseBufferQueue( BufferQueue *queue, int port );
 
 #endif

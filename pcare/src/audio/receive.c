@@ -34,7 +34,6 @@ enum PlayerOp
 struct Player
 {
 	enum PlayerState state;
-	enum PlayerOp next_op;
 	pthread_t receive_thread;
 	pthread_t playback_thread;
 	pthread_mutex_t lock;
@@ -88,9 +87,7 @@ void init_receive()
 {
 	sem_init(&start_talk,0,0);
 	pthread_mutex_init(&g_player.lock,NULL);
-	g_player.state = ST_STOPPED;
-	g_player.next_op = OP_STOP;
-	InitQueue(TALK_QUEUE,BUFFER_NUM);
+	InitQueue(TALK_QUEUE,"talk", BUFFER_NUM);
 	if(pthread_create(&g_player.playback_thread, NULL, talk_playback, NULL) != 0) {
 		perror("pthread_create");
 		return ;
@@ -146,6 +143,57 @@ void clear_recv_buf(int client_fd)
 #endif
 }
 
+static void InitBufferList( BufferList *list, Buffer *head, int len )
+{
+	Buffer *p = head;
+	int i;
+	for( i = 0; i < len-1; i++ )
+	{
+		p[i].next = &p[i+1];
+	}
+	if( len > 0 )
+	{
+		p[i].next = NULL;
+		list->head = head;
+		list->tail = &p[i];
+	}
+	else
+	{
+		list->head = NULL;
+		list->tail = NULL;
+	}
+	sem_init( &list->ready, 0, 0 );
+	list->wanted = 0;
+	return;
+}
+
+static void ResetBufferList( BufferList *list, Buffer *head, int len )
+{
+	Buffer *p = head;
+	int i;
+	for( i = 0; i < len-1; i++ )
+	{
+		p[i].next = &p[i+1];
+	}
+	if( len > 0 )
+	{
+		p[i].next = NULL;
+		list->head = head;
+		list->tail = &p[i];
+	}
+	else
+	{
+		list->head = NULL;
+		list->tail = NULL;
+	}
+	if( list->wanted )
+	{
+		sem_post( &list->ready );
+		list->wanted = 0;
+	}
+	return;
+}
+
 static inline void InBufferList( BufferList *list, Buffer *node )
 {
 	if( list->head == NULL )
@@ -184,11 +232,27 @@ Buffer *GetBuffer( BufferQueue *queue )
 {
 	Buffer *p = NULL;
 
-	if( queue->state != QUEUE_STOPPING )
+	pthread_mutex_lock( &queue->lock );
+	if( queue->out_state == QUEUE_WORKING )
 	{
-		sem_wait(&queue->filled_buffer_ready);
-		if( queue->state != QUEUE_STOPPING ) p = queue->list_filled.head;
+	p = queue->list_filled.head;
+	if( p == NULL )
+	{
+		queue->list_filled.wanted = 1;
+		pthread_mutex_unlock( &queue->lock );
+
+		sem_wait(&queue->list_filled.ready);
+		if( queue->out_state != QUEUE_WORKING )
+		{
+			//printf("GetBuffer Cancelled\n");
+			return NULL;
+		}
+
+		pthread_mutex_lock( &queue->lock );
+		p = queue->list_filled.head;
 	}
+	}
+	pthread_mutex_unlock( &queue->lock );
 	//printf("GetBuffer %x\n",p);
 	return p;
 }
@@ -197,12 +261,19 @@ int EmptyBuffer( BufferQueue *queue )
 {
 	Buffer *p;
 	pthread_mutex_lock( &queue->lock );
-	if( queue->state != QUEUE_STOPPING )
+	if( queue->out_state == QUEUE_WORKING )
 	{
 		p = OutBufferList( &queue->list_filled );
-		InBufferList( &queue->list_empty, p );
 		//printf("EmptyBuffer %x\n",p);
-		sem_post(&queue->empty_buffer_ready);
+		if( p != NULL )
+		{
+			InBufferList( &queue->list_empty, p );
+			if( queue->list_empty.wanted )
+			{
+				sem_post(&queue->list_empty.ready);
+				queue->list_empty.wanted = 0;
+			}
+		}
 	}
 	pthread_mutex_unlock( &queue->lock );
 	return 1;
@@ -212,12 +283,25 @@ Buffer *GetEmptyBuffer( BufferQueue *queue )
 {
 	Buffer *p = NULL;
 
-	if( queue->state != QUEUE_STOPPING )
+	pthread_mutex_lock( &queue->lock );
+	if( queue->in_state == QUEUE_WORKING )
 	{
-		//printf("#wait is not full\n");
-		sem_wait(&queue->empty_buffer_ready);
-		if( queue->state != QUEUE_STOPPING ) p = queue->list_empty.head;
+		p = queue->list_empty.head;
+		if( p == NULL )
+		{
+			queue->list_empty.wanted = 1;
+			pthread_mutex_unlock( &queue->lock );
+			sem_wait(&queue->list_empty.ready);
+			if( queue->in_state != QUEUE_WORKING )
+			{
+				//printf("GetEmptyBuffer Cancelled\n");
+				return NULL;
+			}
+			pthread_mutex_lock( &queue->lock );
+			p = queue->list_empty.head;
+		}
 	}
+	pthread_mutex_unlock( &queue->lock );
 	//printf("GetEmptyBuffer %x\n",p);
 	return p;
 }
@@ -226,122 +310,86 @@ int FillBuffer( BufferQueue *queue )
 {
 	Buffer *p;
 	pthread_mutex_lock( &queue->lock );
-	if( queue->state != QUEUE_STOPPING )
+	if( queue->in_state == QUEUE_WORKING )
 	{
 		p = OutBufferList( &queue->list_empty );
-		InBufferList( &queue->list_filled, p );
 		//printf("FillBuffer %x\n",p);
-		sem_post(&queue->filled_buffer_ready);
+		if( p != NULL )
+		{
+			InBufferList( &queue->list_filled, p );
+			if( queue->list_filled.wanted )
+			{
+				sem_post(&queue->list_filled.ready);
+				queue->list_filled.wanted = 0;
+			}
+		}
 	}
 	pthread_mutex_unlock( &queue->lock );
 	return 1;
 }
 
-void InitQueue( BufferQueue *queue, int num )
+void InitQueue( BufferQueue *queue, const char *name, int num )
 {
-	int i;
-
-	printf("InitQueue\n");
+	printf("InitQueue(%s)\n",name);
 	queue->buffer = (Buffer *)malloc(sizeof(Buffer)*num);
 	queue->buffer_num = num;
-	for( i = 0; i < num-1; i++ )
-	{
-		queue->buffer[i].next = &queue->buffer[i+1];
-	}
-	queue->buffer[i].next = NULL;
+	queue->name = name;
 
-	queue->state = QUEUE_STOPPED;
-	queue->request = QUEUE_STOPPED;
-	queue->list_filled.head = NULL;
-	queue->list_filled.tail = NULL;
-	queue->list_empty.head = queue->buffer;
-	queue->list_empty.tail = &queue->buffer[i];
-	queue->closed_port = 0;
+	queue->in_state = QUEUE_STOPPED;
+	queue->out_state = QUEUE_STOPPED;
+	InitBufferList( &queue->list_filled, NULL, 0 );
+	InitBufferList( &queue->list_empty, queue->buffer, num );
 
-	sem_init(&queue->filled_buffer_ready, 0, 0);
-	sem_init(&queue->empty_buffer_ready, 0, num);
-	sem_init(&queue->closed, 0, 0);
 	pthread_mutex_init(&queue->lock,NULL);
+	sem_init(&queue->in_ready,0,0);
+	sem_init(&queue->out_ready,0,0);
 
 	return;
 }
 
+int OpenQueueIn( BufferQueue *queue )
+{
+	sem_wait( &queue->in_ready );
+	//printf("Open Queue(%s) In\n", queue->name);
+	return ( queue->in_state == QUEUE_WORKING );
+}
+
+int OpenQueueOut( BufferQueue *queue )
+{
+	sem_wait( &queue->out_ready );
+	//printf("Open Queue(%s) Out\n", queue->name);
+	return ( queue->out_state == QUEUE_WORKING );
+}
+
 void EnableBufferQueue( BufferQueue *queue )
 {
-	printf("Enable queue\n");
-	pthread_mutex_lock( &queue->lock );
-	queue->request = QUEUE_WORKING;
-	if( queue->state == QUEUE_STOPPED )
-	{
-		queue->state = QUEUE_WORKING;
-	}
-	pthread_mutex_unlock( &queue->lock );
+	printf("Enable queue(%s)\n", queue->name);
+	queue->in_state = QUEUE_WORKING;
+	queue->out_state = QUEUE_WORKING;
+	sem_trywait( &queue->in_ready );
+	sem_post( &queue->in_ready );
+	sem_trywait( &queue->out_ready );
+	sem_post( &queue->out_ready );
 	return;
 }
 
 void DisableBufferQueue( BufferQueue *queue )
 {
-	Buffer *p;
-	printf("Disable queue\n");
+	printf("Disable queue(%s)\n",queue->name);
 	pthread_mutex_lock( &queue->lock );
-	queue->request = QUEUE_STOPPED;
-	if( queue->state == QUEUE_WORKING )
-	{
-		sem_post(&queue->empty_buffer_ready);
-		sem_post(&queue->filled_buffer_ready);
-		queue->state = QUEUE_STOPPING;
-	}
+	ResetBufferList( &queue->list_filled, NULL, 0 );
+	ResetBufferList( &queue->list_empty, queue->buffer, queue->buffer_num );
+	queue->in_state = QUEUE_STOPPED;
+	queue->out_state = QUEUE_STOPPED;
+	sem_trywait( &queue->in_ready );
+	sem_trywait( &queue->out_ready );
 	pthread_mutex_unlock( &queue->lock );
 	return;
 }
 
-int CloseBufferQueue( BufferQueue *queue, int port )
-{
-	Buffer *p;
-	int is_closed_all = 0;
-	printf("Close queue (p%d)\n",port);
-	pthread_mutex_lock( &queue->lock );
-	queue->closed_port |= port;
-	is_closed_all = (queue->closed_port == (IN_PORT|OUT_PORT));
-	if( !is_closed_all )
-	{
-		queue->state = QUEUE_STOPPING;
-		if( port == IN_PORT ) sem_post(&queue->filled_buffer_ready);
-		if( port == OUT_PORT ) sem_post(&queue->empty_buffer_ready);
-		pthread_mutex_unlock( &queue->lock );
-		sem_wait(&queue->closed);
-	}
-	else
-	{
-		int i, num = queue->buffer_num, val = 0;
-		for( i = 0; i < num-1; i++ )
-		{
-			queue->buffer[i].next = &queue->buffer[i+1];
-		}
-		queue->buffer[i].next = NULL;
-
-		queue->list_filled.head = NULL;
-		queue->list_filled.tail = NULL;
-		queue->list_empty.head = queue->buffer;
-		queue->list_empty.tail = &queue->buffer[i];
-		while( val < num )
-		{
-			sem_getvalue(&queue->empty_buffer_ready,&val);
-			if( val < num ) sem_post(&queue->empty_buffer_ready);
-			else if( val > num ) sem_trywait(&queue->empty_buffer_ready);
-		}
-		while( sem_trywait(&queue->filled_buffer_ready) == 0 );
-		queue->state = QUEUE_STOPPED;
-		queue->closed_port = 0;
-		sem_post(&queue->closed);
-		pthread_mutex_unlock( &queue->lock );
-	}
-	return 1;
-}
-
 void *talk_playback( void *arg )
 {
-	int state = PLAYER_INIT, i=0;
+	int state = PLAYER_STOPPED, i=0;
 	struct AUDIO_CFG cfg;
 	Buffer *buffer;
 	adpcm_state_t adpcm_state = {0, 0};
@@ -349,16 +397,15 @@ void *talk_playback( void *arg )
 	pthread_detach(pthread_self());
 	do
 	{
+		buffer = GetBuffer( TALK_QUEUE );
+		if( buffer == NULL )
+		{
+			state = PLAYER_STOPPED;
+		}
 		switch( state )
 		{
 			case PLAYER_INIT:
 				printf("player init\n");
-				buffer = GetBuffer( TALK_QUEUE );
-				if( buffer == NULL )
-				{
-					state = PLAYER_STOPPED;
-					break;
-				}
 				if( buffer->flag == START_TALK && buffer->len == sizeof(struct AUDIO_CFG) )
 				{
 					cfg = *(struct AUDIO_CFG *)(buffer->data);
@@ -404,13 +451,9 @@ void *talk_playback( void *arg )
 				break;
 			case PLAYER_PLAYBACK:
 				//printf("playback\n");
-				buffer = GetBuffer( TALK_QUEUE );
-				if( buffer == NULL )
-				{
+				if( buffer->flag == END_TALK )
 					state = PLAYER_STOPPED;
-					break;
-				}
-				if( oss_fd_play > 0 )
+				if( oss_fd_play > 0 && g_player.state == ST_PLAYING )
 				{
 					if( buffer->len <= 0 || buffer->len > ADPCM_MAX_READ_LEN )
 						printf("err buffer len %d\n", buffer->len);
@@ -424,15 +467,13 @@ void *talk_playback( void *arg )
 					}
 					i = !i;
 				}
-				if( buffer->flag == END_TALK )
-					state = PLAYER_STOPPED;
 				EmptyBuffer( TALK_QUEUE );
 				break;
 			case PLAYER_STOPPED:
 				printf("player stop\n");
-				CloseBufferQueue( TALK_QUEUE, OUT_PORT );
 				//close(oss_fd_play);
 				//oss_fd_play = 0;
+				OpenQueueOut( TALK_QUEUE );
 				state = PLAYER_INIT;
 				break;
 		}
@@ -443,7 +484,7 @@ void *talk_playback( void *arg )
 
 void *talk_receive( void *arg )
 {
-	int state = TALK_INIT;
+	int state = TALK_STOPPED;
 	Buffer *buffer;
 	int error_flag, read_left,file_size,error_num=0;
 	unsigned rate,channels,bit,ispk;
@@ -456,9 +497,7 @@ void *talk_receive( void *arg )
 		{
 			case TALK_INIT:
 				printf("Talk init\n");
-				sem_wait(&start_talk);
-				printf("after wait\n");
-
+				
 				send_talk_resp();
 				if (read_client(music_data_fd, buf, 8) != 8) {
 					printf("Err: no file size!\n");
@@ -488,6 +527,7 @@ void *talk_receive( void *arg )
 						else
 						{
 							struct AUDIO_CFG *cfg;
+							OpenQueueIn( TALK_QUEUE );
 							buffer = GetEmptyBuffer( TALK_QUEUE);
 							if( buffer == NULL )
 							{
@@ -555,8 +595,8 @@ void *talk_receive( void *arg )
 				break;
 			case TALK_STOPPED:
 				printf("Talk stop\n");
-				CloseBufferQueue( TALK_QUEUE, IN_PORT );
 				EndPlayer();
+				sem_wait(&start_talk);
 				state = TALK_INIT;
 				break;
 		}
@@ -574,12 +614,6 @@ void EndPlayer()
 		close(music_data_fd);
 		music_data_fd = -1;
 	}
-	g_player.state = ST_STOPPED;
-	if( g_player.next_op == OP_PLAY )
-	{
-		EnableBufferQueue(TALK_QUEUE);
-		g_player.state = ST_PLAYING;
-	}
 	pthread_mutex_unlock(&g_player.lock);
 	return;
 }
@@ -587,12 +621,7 @@ void StartPlayer()
 {
 	pthread_mutex_lock(&g_player.lock);
 	printf("ToStartPlayer\n");
-	g_player.next_op = OP_PLAY;
-	if( g_player.state == ST_STOPPED )
-	{
-		EnableBufferQueue(TALK_QUEUE);
-		g_player.state = ST_PLAYING;
-	}
+	EnableBufferQueue(TALK_QUEUE);
 	pthread_mutex_unlock(&g_player.lock);
 	return;
 }
@@ -601,18 +630,12 @@ void StopPlayer()
 {
 	pthread_mutex_lock(&g_player.lock);
 	printf("ToStopPlayer\n");
-	g_player.next_op = OP_STOP;
-	if( g_player.state == ST_PLAYING )
+	DisableBufferQueue(TALK_QUEUE);
+	if(music_data_fd>0)
 	{
-		g_player.state = ST_STOPPING;
-
-		DisableBufferQueue(TALK_QUEUE);
-		if(music_data_fd>0)
-		{
-			shutdown(music_data_fd,SHUT_RDWR);
-			close(music_data_fd);
-			music_data_fd =-1;
-		}
+		shutdown(music_data_fd,SHUT_RDWR);
+		close(music_data_fd);
+		music_data_fd =-1;
 	}
 	pthread_mutex_unlock(&g_player.lock);
 	return;

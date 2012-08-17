@@ -89,11 +89,8 @@ sem_t capture_is_start;
 
 void init_send()
 {
-	sem_init(&capture_is_start,0,0);
 	pthread_mutex_init(&g_recorder.lock,NULL);
-	g_recorder.state = ST_STOPPED;
-	g_recorder.next_op = OP_NONE;
-	InitQueue(CAPTURE_QUEUE,BUFFER_NUM);
+	InitQueue(CAPTURE_QUEUE,"audio capture",BUFFER_NUM);
 	if(pthread_create(&g_recorder.capture_thread, NULL, audio_capture, NULL) != 0) {
 		perror("pthread_create");
 		return ;
@@ -183,7 +180,9 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
  */
 static int record_oss_data(u8 *buffer, u32 oss_buf_size)
 {
-    return read(oss_fd_record, buffer, oss_buf_size);
+	int result, t1, t2;
+	result = read(oss_fd_record, buffer, oss_buf_size);
+    return result;
 }
 
 /* ---------------------------------------------------------- */
@@ -216,20 +215,23 @@ void *audio_capture( void *arg )
 	Buffer *buffer;
 
 	pthread_detach(pthread_self());
-	oss_fd_record = open(OSS_AUDIO_DEV,O_RDONLY);
-	if(oss_fd_record < 0)
-	{
-		printf("Err(audio_capture): Open audio(oss) device failed!\n");
-		pthread_exit(0);
-	}
-
+	oss_fd_record = -1;
 	do
 	{
 		switch( state )
 		{
 			case RECORDER_INIT:
 				printf("recorder init\n");
-				sem_wait(&capture_is_start);
+				OpenQueueIn(CAPTURE_QUEUE);
+				if( oss_fd_record < 0 )
+				{
+					oss_fd_record = open(OSS_AUDIO_DEV,O_RDONLY);
+					if(oss_fd_record < 0)
+					{
+						printf("Err(audio_capture): Open audio(oss) device failed!\n");
+						break;
+					}
+				}
     				set_oss_record_config(oss_fd_record,cfg.rate,cfg.channels,cfg.bit);
 				printf("recorder start\n");
 				state = RECORDER_CAPTURE;
@@ -245,6 +247,7 @@ void *audio_capture( void *arg )
 				{
 					printf("Err(audio_capture): set oss play config failed!\n");
 					close(oss_fd_record);
+					oss_fd_record = -1;
 					break;
 				}
 				state = RECORDER_CAPTURE;
@@ -270,7 +273,6 @@ void *audio_capture( void *arg )
 				break;
 			case RECORDER_STOPPED:
 				printf("recorder stop\n");
-				CloseBufferQueue( CAPTURE_QUEUE, IN_PORT );
 				//close(oss_fd_record);
 				//oss_fd_record = 0;
 				state = RECORDER_INIT;
@@ -282,6 +284,7 @@ void *audio_capture( void *arg )
 }
 
 //#define CAPTURE_PROFILE
+#define TIME_DIFF(t1,t2) (((t1).tv_sec-(t2).tv_sec)*1000+((t1).tv_usec-(t2).tv_usec)/1000)
 void *audio_send( void *arg )
 {
 	int state = SOCKET_INIT;
@@ -289,7 +292,7 @@ void *audio_send( void *arg )
 	int error_flag;
 	adpcm_state_t adpcm_state = {0, 0};
 #ifdef CAPTURE_PROFILE
-	int t1, t2, t3;
+	struct timeval t1, t2, t3;
 	int total_cap_time = 0, cap_cnt = 0, cap_time, max_cap_time = 0;
 	int total_send_time = 0, send_cnt = 0, send_time, max_send_time = 0;
 #endif
@@ -300,7 +303,8 @@ void *audio_send( void *arg )
 		switch( state )
 		{
 			case SOCKET_INIT:
-				printf("start send\n");
+				printf("send init\n");
+				OpenQueueOut(CAPTURE_QUEUE);
 				adpcm_state.valprev = 0;
 				adpcm_state.index = 0;
 				state = SOCKET_SEND;
@@ -308,7 +312,7 @@ void *audio_send( void *arg )
 			case SOCKET_SEND:
 				//printf("send audio\n");
 #ifdef CAPTURE_PROFILE
-				t1 = times(NULL);
+				gettimeofday(&t1,NULL);
 #endif
 				buffer = GetBuffer(CAPTURE_QUEUE);
 				if( buffer == NULL )
@@ -317,14 +321,14 @@ void *audio_send( void *arg )
 					break;
 				}
 #ifdef CAPTURE_PROFILE
-				t2 = times(NULL);
+				gettimeofday(&t2,NULL);
 #endif
 				memcpy((u8 *)&g_raw_buffer[0][RECORD_ADPCM_MAX_READ_LEN], (u8 *)(&adpcm_state), 3);
 				adpcm_coder( (short *)buffer->data, g_raw_buffer[0],RECORD_MAX_READ_LEN,&adpcm_state);
 				error_flag = send_audio_data(g_raw_buffer[0],RECORD_ADPCM_MAX_READ_LEN);
 #ifdef CAPTURE_PROFILE
-				t3 = times(NULL);
-				cap_time = t2 - t1;
+				gettimeofday(&t3,NULL);
+				cap_time = TIME_DIFF(t2,t1);
 				if( cap_time > max_cap_time ) max_cap_time = cap_time;
 				total_cap_time += cap_time;
 				cap_cnt++;
@@ -334,7 +338,7 @@ void *audio_send( void *arg )
 					total_cap_time = 0;
 					cap_cnt = 0;
 				}
-				send_time = t3 - t2;
+				send_time = TIME_DIFF(t3,t2);
 				if( send_time > max_send_time ) max_send_time = send_time;
 				total_send_time += send_time;
 				send_cnt++;
@@ -353,8 +357,6 @@ void *audio_send( void *arg )
 				break;
 			case SOCKET_STOPPED:
 				printf("send stop\n");
-				CloseBufferQueue( CAPTURE_QUEUE, OUT_PORT );
-				EndRecorder();
 				state = SOCKET_INIT;
 				break;
 		}
@@ -363,42 +365,17 @@ void *audio_send( void *arg )
 	pthread_exit(NULL);
 }
 
-void EndRecorder()
-{
-	pthread_mutex_lock(&g_recorder.lock);
-	printf("ToEndRecorder\n");
-	g_recorder.state = ST_STOPPED;
-	pthread_mutex_unlock(&g_recorder.lock);
-	if(g_recorder.next_op == OP_RECORD) StartRecorder();
-	return;
-}
 void StartRecorder()
 {
-	pthread_mutex_lock(&g_recorder.lock);
 	printf("ToStartRecorder\n");
-	g_recorder.next_op = OP_RECORD;
-	if(g_recorder.state == ST_STOPPED)
-	{ 
-		EnableBufferQueue(CAPTURE_QUEUE);
-		g_recorder.state = ST_RECORDING;
-		sem_post(&capture_is_start);
-	}
-	pthread_mutex_unlock(&g_recorder.lock);
+	EnableBufferQueue(CAPTURE_QUEUE);
 	return;
 }
 
 void StopRecorder()
 {
-	pthread_mutex_lock(&g_recorder.lock);
 	printf("ToStopRecorder\n");
-	g_recorder.next_op = OP_STOP;
-	if( g_recorder.state == ST_RECORDING )
-	{
-		g_recorder.state = ST_STOPPING;
-		sem_trywait(&capture_is_start);
-		DisableBufferQueue(CAPTURE_QUEUE);
-	}
-	pthread_mutex_unlock(&g_recorder.lock);
+	DisableBufferQueue(CAPTURE_QUEUE);
 	return;
 }
 /* ---------------------------------------------------------- */

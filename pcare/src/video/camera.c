@@ -36,6 +36,7 @@ static struct v4l2_buffer cur_buf;
 #undef PRINTFPS
 
 #ifdef PRINTFPS
+#define TIME_DIFF(t1,t2) (((t1).tv_sec-(t2).tv_sec)*1000+((t1).tv_usec-(t2).tv_usec)/1000)
 int send_cnt=0;
 int pic_cnt=0;
 int total_len=0;
@@ -85,7 +86,8 @@ static void *send_picture_thread(void *args)
 	while(!camera_stop)
 	{
 #ifdef PRINTFPS
-		int t1, t2, send_time;
+		struct timeval t1, t2;
+		int send_time;
 #endif
 		fm = use_frame();
 		if( fm == NULL )
@@ -94,13 +96,13 @@ static void *send_picture_thread(void *args)
 			break;
 		}
 #ifdef PRINTFPS
-		t1 = times(NULL);
+		gettimeofday(&t1,NULL);
 #endif
 		if( fm->data ) send_picture(fm->data, fm->length);
 		empty_frame( fm );
 #ifdef PRINTFPS
-		t2 = times(NULL);
-		send_time = t2 - t1;
+		gettimeofday(&t2,NULL);
+		send_time = TIME_DIFF(t2,t1);
 		if( send_time > max_send_time ) max_send_time = send_time;
 		total_send_time += send_time;
 		send_cnt++;
