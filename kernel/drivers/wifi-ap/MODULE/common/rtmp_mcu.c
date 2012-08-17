@@ -165,7 +165,9 @@ NDIS_STATUS RtmpAsicLoadFirmware(
 
 	/* init */
 	pFirmwareImage = NULL;
-	src = RTMP_FIRMWARE_FILE_NAME;
+	src = AP_RTMP_FIRMWARE_FILE_NAME;
+    printk("%s , %s \n",__FUNCTION__,AP_RTMP_FIRMWARE_FILE_NAME);
+	//src = RTMP_FIRMWARE_FILE_NAME;
 
 	RtmpOSFSInfoChange(&osFSInfo, TRUE);
 
