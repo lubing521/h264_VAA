@@ -359,30 +359,41 @@ void send_picture(char *data, u32 length)
 	av_command1->text_len = length + 13;			/* TODO */
 
 	video_data->pic_len = length;
-    video_data->time_stamp = times(NULL)*10;
+	video_data->time_stamp = times(NULL)*10;
 	video_data->frame_time = pic_num++;				/* test for time stamp */
 
-    pthread_mutex_lock(&AVsocket_mutex);
-    send_len = send(picture_fd, av_command1, 36, 0);
-    if (send_len <= 0) {
-        perror("send_header");
-        close(picture_fd);
-        printf("======= %s,%u ,%s ==========\n",__FILE__,__LINE__,__FUNCTION__);
-        exit(0);
-    }
-    if (send_len != 36)
-        printf("opcode header short send!\n");
-    send_len = send(picture_fd, (void *)data, length, 0);
-    if (send_len <= 0) {
-        perror("send_pic");
-        close(picture_fd);
-        printf("======= %s,%u ,%s ==========\n",__FILE__,__LINE__,__FUNCTION__);
-		exit(0);
+	pthread_mutex_lock(&AVsocket_mutex);
+	send_len = send(picture_fd, av_command1, 36, 0);
+	if (send_len <= 0) {
+		perror("send_header");
+		printf("======= %s,%u ,%s ==========\n",__FILE__,__LINE__,__FUNCTION__);
+		goto err_exit;
 	}
-	if (send_len != length)
-		printf("picture short send!\n");
-
+	if (send_len != 36)
+	{
+		printf("opcode header short send!\n");
+		goto err_exit;
+	}
+	else
+	{
+		send_len = send(picture_fd, (void *)data, length, 0);
+		if (send_len <= 0) {
+			perror("send_pic");
+			printf("======= %s,%u ,%s ==========\n",__FILE__,__LINE__,__FUNCTION__);
+			goto err_exit;
+		}
+		if (send_len != length)
+		{
+			printf("picture short send!\n");
+			goto err_exit;
+		}
+	}
 	pthread_mutex_unlock(&AVsocket_mutex);
+	return;
+err_exit:
+	close(picture_fd);
+	exit(0);
+	return;
 }
 
 /*
@@ -884,7 +895,8 @@ void network(void)
             int timeout = 10000;
             flag = 2;
             AVcommand_fd = *client_fd;
-            setsockopt(*client_fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));
+		free(client_fd);
+            setsockopt(AVcommand_fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));
             /* ----------------------------------------------------------------- */
 
             led_flag = 0;
@@ -902,17 +914,19 @@ void network(void)
             setitimer(SIGALRM, &value, &ovalue); 
 #endif
             /* ----------------------------------------------------------------- */
-            if(pthread_create(&th1, NULL, deal_opcode_request, client_fd) != 0) {
+            if(pthread_create(&th1, NULL, deal_opcode_request, &AVcommand_fd) != 0) {
                 perror("pthread_create");
                 break;
             }
         } else if (flag == 2){
+		struct timeval timeout = {60,0};
             flag = 3;
             printf(">>>>>in video or record data connection<<<<<\n");
             /* ----------------------------------------------------------------- */
 
 			picture_fd = *client_fd;					
 			audio_data_fd = *client_fd;
+			free(client_fd);
 			
 			av_command1 = malloc(sizeof(struct command) + 13);
 			video_data = &av_command1->text[0].video_data;
@@ -926,6 +940,7 @@ void network(void)
 			av_command2->opcode = 2;
 			memset(audio_data, 0, 17);
 			
+			setsockopt(picture_fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 			/* ----------------------------------------------------------------- */
 #ifdef ENABLE_VIDEO
 			sem_post(&start_camera);		/* start video only when cellphone send request ! */
@@ -942,6 +957,7 @@ void network(void)
             }
             else{
                 music_data_fd = *client_fd;
+		free(client_fd);
                 /* TODO just want to erase the no using data int the new socket buffer */
                 //clear_recv_buf(music_data_fd);
                 /* when the new socket is connected, then tell the cellphone to start sending file */
