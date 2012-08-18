@@ -23,7 +23,7 @@ struct login_resp {
 	u16 result;				/* 0:ok; 2:connection down */
 
 	/* exist when result =0 */
-	u8 camera_ID[13];
+	u8 camera_ID[16];
 	u8 reserve1[4];
 	u8 reserve2[4];
 	u8 camera_version[4];

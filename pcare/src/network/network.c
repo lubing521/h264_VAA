@@ -49,6 +49,7 @@ int data_ID  = 7501;			/* AVdata command text[23:26] data connetion ID */
 char str_ctl[]	 = "MO_O";
 char str_data[]  = "MO_V";
 char str_camID[] = "yuanxiang7501";
+char str_SSID[16];
 char str_camVS[] = {0, 2, 0, 0};
 char str_tmp[14];
 
@@ -99,6 +100,16 @@ int picture_fd, audio_data_fd, music_data_fd=-1;
 
 pthread_mutex_t AVsocket_mutex;
 
+int getSSID()
+{
+    FILE *pfd;
+    const char cmd[]="/sbin/iwgetid -r";
+    pfd=popen(cmd, "r");
+    fgets(str_SSID,16,pfd);
+    printf("%s\n",str_SSID);
+    pclose(pfd);
+    return 0;
+}
 static void keep_alive_timeout(int signo )
 {
     printf("Err:keep alive timeout!\n");
@@ -521,7 +532,7 @@ void set_opcode_connection(u32 client_fd)
 
 	memset(login_resp, 0, text_size);
 	login_resp->result = 0;
-	memcpy(login_resp->camera_ID, str_camID, 13);
+	memcpy(login_resp->camera_ID, str_SSID, sizeof(str_SSID));
 	memcpy(login_resp->camera_version, str_camVS, sizeof(str_camVS));
 
 	/* write command1 to client */
@@ -543,7 +554,7 @@ void set_opcode_connection(u32 client_fd)
 
 	memset(login_resp, 0, 27);
 	login_resp->result = 0;
-	memcpy(login_resp->camera_ID, str_camID, 13);
+	memcpy(login_resp->camera_ID, str_SSID, sizeof(str_SSID));
 	memcpy(login_resp->camera_version, str_camVS, sizeof(str_camVS));
 
 	/* write command1 to client */
@@ -800,6 +811,7 @@ void network(void)
 	text = malloc(100);						/* TODO */
 
 
+    getSSID();
 	/* create socket */
 	server_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (-1 == server_fd) {
