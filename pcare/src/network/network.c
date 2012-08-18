@@ -545,20 +545,20 @@ void set_opcode_connection(u32 client_fd)
 
 #else
 	/* TODO send login response to user by command 1, contains camera's version and ID */
-	command1 = malloc(sizeof(struct command) + 27);
+	command1 = malloc(sizeof(struct command) + 30);
 	login_resp = &command1->text[0].login_resp;
 
 	memcpy(command1->protocol_head, str_ctl, 4);
 	command1->opcode = 1;
-	command1->text_len = 27;
+	command1->text_len = 30;
 
-	memset(login_resp, 0, 27);
+	memset(login_resp, 0, 30);
 	login_resp->result = 0;
 	memcpy(login_resp->camera_ID, str_SSID, sizeof(str_SSID));
 	memcpy(login_resp->camera_version, str_camVS, sizeof(str_camVS));
 
 	/* write command1 to client */
-	if ((n = send(client_fd, command1, 50, 0)) == -1) {
+	if ((n = send(client_fd, command1, 53, 0)) == -1) {
 		perror("send");
 		close(client_fd);
         printf("========%s,%u==========\n",__FILE__,__LINE__);
