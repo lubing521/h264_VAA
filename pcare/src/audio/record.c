@@ -6,6 +6,8 @@
 
 #include <linux/soundcard.h>		/* for oss  */
 #include <semaphore.h>
+#include <stdio.h>
+#include <string.h>
 #include "audio.h"
 #include "types.h"
 #include "protocol.h"
