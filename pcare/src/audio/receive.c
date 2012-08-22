@@ -498,7 +498,6 @@ void *talk_receive( void *arg )
 			case TALK_INIT:
 				printf("Talk init\n");
 				
-				send_talk_resp();
 				if (read_client(music_data_fd, buf, 8) != 8) {
 					printf("Err: no file size!\n");
 					state = TALK_STOPPED;
@@ -622,6 +621,7 @@ void StartPlayer()
 	pthread_mutex_lock(&g_player.lock);
 	printf("ToStartPlayer\n");
 	EnableBufferQueue(TALK_QUEUE);
+	send_talk_resp();
 	pthread_mutex_unlock(&g_player.lock);
 	return;
 }
