@@ -262,7 +262,7 @@ void swap(unsigned long * x,unsigned long * y)
     *y=temp;
 }
 void BlowfishKeyInit(char *,int);
-unsigned long F(const char Bytes[4]);
+unsigned long F(unsigned char Bytes[4]);
 void BlowfishEncipher(unsigned long * XL,unsigned long * XR);
 void BlowfishDecipher(unsigned long * XL,unsigned long * XR);
 
@@ -274,11 +274,6 @@ void BlowfishKeyInit(char* strKey,int nLen)
     int i,oldlen=nLen;
     char *cp=NULL;
     unsigned long xl=0,xr=0;
-    unsigned long test = pbox[0];
-    char * ptest;
-    ptest=(const char*)&test;
-    for(i=0;i<4;i++)
-        printf("ptest[%d] is %d\n",i,ptest[i]);
     memcpy(pKey,pbox,sizeof(long)*18);
     pKey+=18;
     memcpy(pKey,sbox,sizeof(long)*4*256);
@@ -314,19 +309,17 @@ void BlowfishKeyInit(char* strKey,int nLen)
         BlowfishEncipher(&xl,&xr);
         keybox[2*i]=xl;
         keybox[2*i+1]=xr;
-        //printf("keybox[%d] is %ld \n",i*2,keybox[i*2]);
-        //printf("keybox[%d] is %ld \n",i*2+1,keybox[i*2+1]);
     }
     free(cp);
 }
 void BlowfishEncipher(unsigned long * XL,unsigned long * XR)
 {
-    unsigned long xl=*XL,xr=*XR,temp=0;
+    unsigned long xl=*XL,xr=*XR;
     int i;
     for (i=0;i<16;i++)
     {
         xl^=keybox[i];
-        xr^=F((const char*)&xl);
+        xr^=F((unsigned char*)&xl);
         swap(&xl,&xr);
     }
     swap(&xl,&xr);
@@ -335,14 +328,12 @@ void BlowfishEncipher(unsigned long * XL,unsigned long * XR)
     *XR=xr;
     *XL=xl;
 }
-unsigned long F(const char Bytes[4])
+unsigned long F(unsigned char Bytes[4])
 {
     unsigned long temp;
-    int index;
     temp=keybox[SBOX_BEGIN+Bytes[3]]+keybox[SBOX_BEGIN+256+Bytes[2]];
     temp^=keybox[SBOX_BEGIN+256*2+Bytes[1]];
-    index=SBOX_BEGIN+256*3+Bytes[0];
-    temp+=keybox[index];
+    temp+=keybox[SBOX_BEGIN+256*3+Bytes[0]];
     return temp;
 }
 void BlowfishDecipher(unsigned long * XL,unsigned long * XR)
@@ -352,7 +343,7 @@ void BlowfishDecipher(unsigned long * XL,unsigned long * XR)
     for (i=17;i>1;i--)
     {
         xl^=keybox[i];
-        xr^=F((const char*)&xl);
+        xr^=F((unsigned char*)&xl);
         swap(&xl,&xr);
     }
     swap(&xl,&xr);
@@ -364,24 +355,18 @@ void BlowfishDecipher(unsigned long * XL,unsigned long * XR)
 void BlowfishEncrption(unsigned long *szMessage,int len)
 {
     int i;
-    for (i=0;i<len;i++)
-        printf("v[%d] is %lx\n",i,szMessage[i]);
     for (i=0;i<len;i+=2)
     {
-        BlowfishEncipher(&szMessage[i],&szMessage[i+1]);
+        BlowfishEncipher(&szMessage[i+1],&szMessage[i]);
     }
-    for (i=0;i<len;i++)
-        printf("v[%d] is %lx\n",i,szMessage[i]);
 }
 void BlowfishDecrption(unsigned long *szMessage,int len)
 {
     int i;
     for (i=0;i<len;i+=2)
     {
-        BlowfishDecipher(&szMessage[i],&szMessage[i+1]);
+        BlowfishDecipher(&szMessage[i+1],&szMessage[i]);
     }
-    for (i=0;i<len;i++)
-        printf("v[%d] is %lx\n",i,szMessage[i]);
 }
 #endif
 
@@ -391,7 +376,6 @@ int getSSID()
     const char cmd[]="/sbin/iwgetid -r";
     pfd=popen(cmd, "r");
     fgets(str_SSID,16,pfd);
-    printf("%s\n",str_SSID);
     pclose(pfd);
     return 0;
 }
@@ -943,6 +927,7 @@ void set_opcode_connection(u32 client_fd)
         else
         {
             verify_resp->result = 1;				/* verify failed */
+            printf("ERROR!! Receive_num[%d]= %ld,Send_num[%d]=%ld\n",i,i,Receive_num[i],Send_num[i]);
             break;
         }
 
