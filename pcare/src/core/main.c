@@ -21,9 +21,6 @@ pthread_t led_flash_id;
 int main()
 {
     int ret;
-#ifdef BLOWFISH
-    BlowfishKeyInit(BLOWFISH_KEY,strlen(BLOWFISH_KEY));
-#endif
     led_flag=1;
 	ret = pthread_create(&led_flash_id,NULL,(void *)led_flash,NULL); 
     if (ret != 0)

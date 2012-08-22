@@ -274,6 +274,11 @@ void BlowfishKeyInit(char* strKey,int nLen)
     int i,oldlen=nLen;
     char *cp=NULL;
     unsigned long xl=0,xr=0;
+    unsigned long test = pbox[0];
+    char * ptest;
+    ptest=(const char*)&test;
+    for(i=0;i<4;i++)
+        printf("ptest[%d] is %d\n",i,ptest[i]);
     memcpy(pKey,pbox,sizeof(long)*18);
     pKey+=18;
     memcpy(pKey,sbox,sizeof(long)*4*256);
@@ -298,7 +303,9 @@ void BlowfishKeyInit(char* strKey,int nLen)
     //用已处理的key和keybox中的前18个元素异或(也就是pbox的内容)
     pKey=(unsigned long*)cp;
     for (i=0;i<18;i++)
+    {
         keybox[i]^=pKey[i];
+    }
 
     ///////////////////////////////////////
     //用函数BlowfishEncipher迭代521=((18+256*4)/2)次，初始xl=xr=0,输出用来填充keybox;
@@ -307,6 +314,8 @@ void BlowfishKeyInit(char* strKey,int nLen)
         BlowfishEncipher(&xl,&xr);
         keybox[2*i]=xl;
         keybox[2*i+1]=xr;
+        //printf("keybox[%d] is %ld \n",i*2,keybox[i*2]);
+        //printf("keybox[%d] is %ld \n",i*2+1,keybox[i*2+1]);
     }
     free(cp);
 }
@@ -329,9 +338,11 @@ void BlowfishEncipher(unsigned long * XL,unsigned long * XR)
 unsigned long F(const char Bytes[4])
 {
     unsigned long temp;
+    int index;
     temp=keybox[SBOX_BEGIN+Bytes[3]]+keybox[SBOX_BEGIN+256+Bytes[2]];
     temp^=keybox[SBOX_BEGIN+256*2+Bytes[1]];
-    temp+=keybox[SBOX_BEGIN+256*3+Bytes[0]];
+    index=SBOX_BEGIN+256*3+Bytes[0];
+    temp+=keybox[index];
     return temp;
 }
 void BlowfishDecipher(unsigned long * XL,unsigned long * XR)
@@ -757,6 +768,7 @@ void set_opcode_connection(u32 client_fd)
 	battery_fd = client_fd;
 
 #ifdef BLOWFISH
+    BlowfishKeyInit(BLOWFISH_KEY,strlen(BLOWFISH_KEY));
 	/* TODO read first command 0 from client */
 	if ((n = recv(client_fd, buffer, 100, 0)) == -1) {
 		perror("recv");
