@@ -290,7 +290,6 @@ void *audio_capture( void *arg )
 void *audio_send( void *arg )
 {
 	int state = SOCKET_INIT;
-    int pre_state= state;
 	Buffer *buffer;
 	int error_flag;
 	adpcm_state_t adpcm_state = {0, 0};
@@ -310,7 +309,7 @@ void *audio_send( void *arg )
 				OpenQueueOut(CAPTURE_QUEUE);
 				adpcm_state.valprev = 0;
 				adpcm_state.index = 0;
-				pre_state=state = SOCKET_SEND;
+				state = SOCKET_SEND;
 				break;
 			case SOCKET_SEND:
 				//printf("send audio\n");
@@ -320,7 +319,7 @@ void *audio_send( void *arg )
 				buffer = GetBuffer(CAPTURE_QUEUE);
 				if( buffer == NULL )
 				{
-					pre_state = state = SOCKET_STOPPED;
+					state = SOCKET_STOPPED;
 					break;
 				}
 #ifdef CAPTURE_PROFILE
@@ -328,10 +327,6 @@ void *audio_send( void *arg )
 #endif
 				memcpy((u8 *)&g_raw_buffer[0][RECORD_ADPCM_MAX_READ_LEN], (u8 *)(&adpcm_state), 3);
 				adpcm_coder( (short *)buffer->data, g_raw_buffer[0],RECORD_MAX_READ_LEN,&adpcm_state);
-                if(pre_state != state){
-                    pre_state = state;
-                    break;
-                }
 				error_flag = send_audio_data(g_raw_buffer[0],RECORD_ADPCM_MAX_READ_LEN);
 #ifdef CAPTURE_PROFILE
 				gettimeofday(&t3,NULL);
@@ -358,13 +353,13 @@ void *audio_send( void *arg )
 #endif
 				if (error_flag < 0)
 				{
-					pre_state = state = SOCKET_STOPPED;
+					state = SOCKET_STOPPED;
 				}
 				EmptyBuffer(CAPTURE_QUEUE);
 				break;
 			case SOCKET_STOPPED:
 				printf("send stop\n");
-				pre_state= state = SOCKET_INIT;
+				state = SOCKET_INIT;
 				break;
 		}
 	}while(1);
