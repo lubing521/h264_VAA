@@ -385,6 +385,8 @@ int rt28xx_init(
 			pAd->ApCfg.MBSSID[BSS0].Ssid[strlen(tmpbuf)] = '\0';
 			pAd->ApCfg.MBSSID[BSS0].SsidLen = strlen((PSTRING) pAd->ApCfg.MBSSID[BSS0].Ssid);
 			//printk("new SSID=%s\n", pAd->ApCfg.MBSSID[BSS0].Ssid);
+            pAd->CommonCfg.Channel=((pAd->CurrentAddress[5] % 12)+1);
+            printk("set channel to %d\n",pAd->CommonCfg.Channel);
 
 			APStartUp(pAd);
 			DBGPRINT(RT_DEBUG_OFF, ("Main bssid = %02x:%02x:%02x:%02x:%02x:%02x\n", 

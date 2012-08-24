@@ -84,7 +84,7 @@ HAS_KTHREAD_SUPPORT=n
 
 
 #Support for Auto channel select enhance
-HAS_AUTO_CH_SELECT_ENHANCE=y
+HAS_AUTO_CH_SELECT_ENHANCE=n
 
 #Support statistics count
 HAS_STATS_COUNT=n
