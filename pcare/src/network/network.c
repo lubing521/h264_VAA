@@ -621,9 +621,13 @@ static int recv_AVcommand(u32 client_fd)
 	return 0;
 }
 
+#define MAX_RETRY_NUM	10
+#define TIME_DIFF(t1,t2) (((t1).tv_sec-(t2).tv_sec)*1000+((t1).tv_usec-(t2).tv_usec)/1000)
 void send_picture(char *data, u32 length)
 {
-	u32 send_len = 0;
+	long send_len = 0;
+	struct timeval t1,t2;
+	static int retry_num=0;
 
 	av_command1->text_len = length + 13;			/* TODO */
 
@@ -632,29 +636,47 @@ void send_picture(char *data, u32 length)
 	video_data->frame_time = pic_num++;				/* test for time stamp */
 
 	pthread_mutex_lock(&AVsocket_mutex);
+	gettimeofday(&t1,NULL);
 	send_len = send(picture_fd, av_command1, 36, 0);
+	gettimeofday(&t2,NULL);
 	if (send_len <= 0) {
-		perror("send_header");
-		printf("======= %s,%u ,%s ==========\n",__FILE__,__LINE__,__FUNCTION__);
+		perror("#send_header");
 		goto err_exit;
 	}
 	if (send_len != 36)
 	{
-		printf("opcode header short send!\n");
+		printf("#opcode header short send(%d/36)!\n",send_len);
 		goto err_exit;
 	}
 	else
 	{
-		send_len = send(picture_fd, (void *)data, length, 0);
-		if (send_len <= 0) {
-			perror("send_pic");
-			printf("======= %s,%u ,%s ==========\n",__FILE__,__LINE__,__FUNCTION__);
-			goto err_exit;
-		}
-		if (send_len != length)
+		long total_send_len = 0;
+		while( total_send_len < length )
 		{
-			printf("picture short send!\n");
-			goto err_exit;
+			gettimeofday(&t1,NULL);
+			send_len = send(picture_fd, (void *)&data[total_send_len], length-total_send_len, 0);
+			gettimeofday(&t2,NULL);
+			if (send_len <= 0) {
+				perror("#send_pic");
+				if( errno != EAGAIN || retry_num >= MAX_RETRY_NUM )
+				{
+					goto err_exit;
+				}
+				else
+				{
+					retry_num++;
+					usleep(500000);
+				}
+			}
+			else
+			{
+				total_send_len += send_len;
+				if (total_send_len < length)
+				{
+					printf("#picture short send(%d/%d)!\n",total_send_len,length);
+				}
+				retry_num = 0;
+			}
 		}
 	}
 	pthread_mutex_unlock(&AVsocket_mutex);
@@ -1212,7 +1234,7 @@ void network(void)
                 break;
             }
         } else if (flag == 2){
-		struct timeval timeout = {60,0};
+		struct timeval timeout = {0,500000};
             flag = 3;
             printf(">>>>>in video or record data connection<<<<<\n");
             /* ----------------------------------------------------------------- */
