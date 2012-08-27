@@ -979,13 +979,21 @@ void set_opcode_connection(u32 client_fd)
 		close(client_fd);
         printf("========%s,%u==========\n",__FILE__,__LINE__);
 		exit(0);
-	}
-    printf("Write Command 3 is OK!\n");
+    }
+    if(verify_resp->reserve)
+    {
+        printf("Verify Failed !!!!\n");
+        exit(0);
+    }
+    else
+    {
+        printf("Verify Success !!!!\n");
+    }
 
-	/* ------------------------------------------- */
+    /* ------------------------------------------- */
 
-	/* TODO if correct, user will send command 4 here, request for video connection */
-	memset(buffer, 0, 100);
+    /* TODO if correct, user will send command 4 here, request for video connection */
+    memset(buffer, 0, 100);
 
 	/* read command from client */
 	if ((n = recv(client_fd, buffer, 100, 0)) == -1) {
