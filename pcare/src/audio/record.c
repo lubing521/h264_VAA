@@ -124,22 +124,14 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 {
 	int status, arg;
     char volume = '7';
-    char state1[]="off";
-    if(speak_power(state1)<0)
-        printf("set speak_power off failed ! \n");
+//    char state1[]="off";
+//    if(speak_power(state1)<0)
+//        printf("set speak_power off failed ! \n");
     if(start_record == 1)
     {
         set_i2s_rate(rate);
         return;
     }
-#if 0
-    char state1[]="coff";
-    char state2[]="con";
-    if(speak_power(state1)<0)
-        printf("set codec off failed ! \n");
-    if(speak_power(state2)<0)
-        printf("set codec on failed ! \n");
-#endif
     if(ioctl(fd,SNDCTL_DSP_RESET) != 0)
         printf("OSS Reset Failed !\n");
     if(volume_set(volume)<0)
@@ -202,9 +194,6 @@ void start_capture(void)
  */
 void stop_capture(void)
 {
-	char state1[]="on";
-	if(speak_power(state1)<0)
-		printf("set speak_power on failed ! \n");
 	StopRecorder();
 	printf("<<<Stop capture audio ...\n");
 }

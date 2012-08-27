@@ -506,7 +506,7 @@ void *talk_receive( void *arg )
 				{
 					file_size = *((u32 *)&buf[0]);
 					read_left = file_size;
-					printf(">>>receive file size : %d×Ö½Ú\n", file_size);
+					printf(">>>receive file size : %d Bytes\n", file_size);
 					if (read_client(music_data_fd, buf, 4) != 4) {
 						printf("Err: no audio param!\n");
 						state = TALK_STOPPED;

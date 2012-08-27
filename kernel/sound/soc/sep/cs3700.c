@@ -624,12 +624,12 @@ static int cs3700_pcm_prepare(struct snd_pcm_substream *substream,
 	alsa_dbg("%s\n", __func__);
     sep0611_spk_out(0);
 	if(substream->stream == SNDRV_PCM_STREAM_PLAYBACK){
-		cs3700_set_audio_output(codec);			//Playback
-	}
+        cs3700_set_audio_output(codec);			//Playback
+        sep0611_spk_out(1);
+    }
 	else{
 		cs3700_set_audio_input(codec);			//Capture
 	}
-    sep0611_spk_out(1);
 	return 0;
 }
 
