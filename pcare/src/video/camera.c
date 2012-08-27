@@ -47,10 +47,6 @@ void sigalrm_handler(int sig)
 {
 	printf("fps=%d/%d,Bps=%dK\n", send_cnt, pic_cnt, total_len/1024);
 	printf("ave=%dms,max=%dms\n", total_send_time/send_cnt, max_send_time);
-	if (total_len == 0){
-		printf("Peers Must be disconnected!  \nRESET NOW!\n");
-		exit(1);
-	}
 	pic_cnt = 0;
 	send_cnt = 0;
 	total_len = 0;

@@ -332,7 +332,6 @@ static struct ch37x_td *schedule_td(struct ch37x *_ch37x)
 	for(i=0; i<=CH37X_MAX_EPNUM*2; i++){
 		if(++epnum_x2 > CH37X_MAX_EPNUM*2)
 			epnum_x2 = 0;
-
 		if(epnum_x2==0){
 			ch37x_dbg("->ep%d ", epnum_x2);
 			list = &ch37x->ep0.pipe_queue;
@@ -347,20 +346,21 @@ static struct ch37x_td *schedule_td(struct ch37x *_ch37x)
 			ch37x_dbg("->ep%d out", epnum + 1);
 			list = &ep_out[epnum].pipe_queue;
 		}
-
 		if(!(list_empty(list))){
 			ch37x_dbg("...get\n");
 			td = list_entry(list->next, struct ch37x_td, queue);
 
 			if(td->hold){
-				mod_timer(&ch37x->hold_timer, jiffies + msecs_to_jiffies(1)/2);
-				ch37x->current_td = NULL;
+				mod_timer(&ch37x->hold_timer, jiffies + msecs_to_jiffies(4)/2);
+				//ch37x->current_td = NULL;
 				td = NULL;
+				continue;
 			}
 
 			break;
 		}
 	}
+	if( td == NULL ) ch37x->current_td = NULL;
 	ch37x->epnum_x2 = epnum_x2;
 	spin_unlock_irqrestore(&ch37x->lock, flags);
 
@@ -387,13 +387,13 @@ static int start_transfer(struct ch37x *ch37x, struct ch37x_td *td)
 	if(td != tmp_td){
 		if(td != NULL){//change td
 			td->again = 0;
-			td->nak_times = 0;
+			if(td->pid != DEF_USB_PID_IN) td->nak_times = 0;
 		}
 		
 		tmp_td->again = 0;
 		td = tmp_td;
 	}
-	
+
 	if(td->again){
 		goto go;
 	}
@@ -409,6 +409,7 @@ static int start_transfer(struct ch37x *ch37x, struct ch37x_td *td)
 		}
 		ch37x_write_fifo_cpu(urb->setup_packet, 8);
 		ch37x_writeb(REG_USB_LENGTH, 8);
+		ch37x_writeb(REG_USB_ADDR, td->address);
 		break;
 
 	case DEF_USB_PID_OUT:
@@ -416,7 +417,7 @@ static int start_transfer(struct ch37x *ch37x, struct ch37x_td *td)
 			ch37x_writeb(REG_USB_LENGTH, 0);
 		}
 		else{
-		    if( td->epnum ) td->tog = ch37x->ep_out[td->epnum-1].tog;    
+			if( td->epnum ) td->tog = ch37x->ep_out[td->epnum-1].tog;    
 			packet_write(ch37x);
 			return 0;
 		}
@@ -433,8 +434,7 @@ static int start_transfer(struct ch37x *ch37x, struct ch37x_td *td)
 	}
 
 go:
-	ch37x_writeb(REG_USB_ADDR, td->address);
-	ch37x_writeb(REG_USB_H_PID, M_MK_HOST_PID_ENDP(td->pid, td->epnum));
+	if(!td->again) ch37x_writeb(REG_USB_H_PID, M_MK_HOST_PID_ENDP(td->pid, td->epnum));
 	td->state = 1;
 	ch37x_writeb(REG_USB_H_CTRL, td->tog ? ( BIT_HOST_START | BIT_HOST_TRAN_TOG | BIT_HOST_RECV_TOG ) : BIT_HOST_START);
 	
@@ -538,6 +538,7 @@ out:
 		td->short_packet = 1;
 }
 
+static int out_again = 0;
 /* write a packet to ch37x's FIFO from urb buffer */
 static int packet_write(struct ch37x *ch37x)
 {
@@ -560,20 +561,30 @@ static int packet_write(struct ch37x *ch37x)
 
 	if(size == 0){
 		ch37x_writeb(REG_USB_LENGTH, 0);
-		ch37x_writeb(REG_USB_ADDR, td->address);
+		//ch37x_writeb(REG_USB_ADDR, td->address);
 		ch37x_writeb(REG_USB_H_PID, M_MK_HOST_PID_ENDP(td->pid, td->epnum));
 		td->state = 1;
 		ch37x_writeb(REG_USB_H_CTRL, td->tog ? ( BIT_HOST_START | BIT_HOST_TRAN_TOG | BIT_HOST_RECV_TOG ) : BIT_HOST_START);
 		return 0;
 	}
 
-	/* write fifo */
-    	td->state = 3;
-	td->use_dma = 1;
-	td->length = size;
-	urb->actual_length += size;
-	ch37x_write_fifo_dma(buf, size);
-	
+	if(!out_again)
+	{
+		/* write fifo */
+		td->state = 3;
+		td->use_dma = 1;
+		td->length = size;
+		urb->actual_length += size;
+		ch37x_write_fifo_dma(buf, size);
+	}
+	else
+	{
+		ch37x_writeb(REG_USB_LENGTH, size);
+		ch37x_writeb(REG_USB_H_PID, M_MK_HOST_PID_ENDP(td->pid, td->epnum));
+		td->state = 1;
+		urb->actual_length += size;
+		ch37x_writeb(REG_USB_H_CTRL, td->tog ? ( BIT_HOST_START | BIT_HOST_TRAN_TOG | BIT_HOST_RECV_TOG ) : BIT_HOST_START);
+	}
 	return size;
 }
 
@@ -681,7 +692,7 @@ static void check_next_phase(struct ch37x *ch37x, int status)
 
 	if(status == -EAGAIN && td->nak_times < max_nak){
 		td->nak_times++;
-		if(usb_pipein(pipe) && td->nak_times > 20){
+		if(usb_pipein(pipe) && td->nak_times > 4){
 			td->hold = 1;
 		}
 		else{
@@ -837,14 +848,19 @@ static void ch37x_work(struct ch37x *_ch37x)
 			if(r == DEF_USB_PID_ACK)
 			{	
 				err = 0; 
+				out_again = 0;
 				if(epnum) out_cnt++;
 				if(!(status & BIT_STAT_TOG_MATCH)){
 					printk("ep %d out %d no match, tog %d\n",epnum, out_cnt,td->tog);
 					err = -EAGAIN;
+					out_again = 1;
 				}
 			}
 			else if(r == DEF_USB_PID_NAK)
+			{
 				err = -EAGAIN;
+				out_again = 1;
+			}
 			else
 				printk("unkown usb out packet response!\n");
 
