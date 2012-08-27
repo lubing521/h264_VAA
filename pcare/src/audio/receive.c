@@ -566,8 +566,10 @@ void *talk_receive( void *arg )
 					buffer->len = read_len;
 					if (buffer->len == 0)
 					{
-						printf("###no data read###\n");	
-						state = TALK_STOPPED;;
+                        printf("###no data read###\n");	
+						if(!ispk)
+                        confirm_stop();
+                        state = TALK_STOPPED;;
 					}
 					else
 					{
@@ -576,9 +578,10 @@ void *talk_receive( void *arg )
 							read_left -= buffer->len;
 							if( read_left <= 0 )
 							{
-								printf("music play over\n");
-								buffer->flag = END_TALK;
-							}
+                                printf("music play over\n");
+                                confirm_stop();
+                                buffer->flag = END_TALK;
+                            }
 							else
 							{
 								buffer->flag = KEEP_TALK;

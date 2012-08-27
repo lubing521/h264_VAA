@@ -507,7 +507,7 @@ void enable_audio_send()
 }
 
 /*
- *stepper motor stop confirm
+ * stop confirm
  */
 void confirm_stop()
 {
@@ -816,7 +816,11 @@ void set_opcode_connection(u32 client_fd)
     Receive_num[1]=login_req->ch_num2;
 	Receive_num[2]=login_req->ch_num3;
     Receive_num[3]=login_req->ch_num4;
+    //for(i=0;i<4;i++)
+    //    printf("Receive_num[%d] is %ld\n",i,Receive_num[i]);
     BlowfishEncrption(Receive_num,sizeof(Receive_num)/4);
+    //for(i=0;i<4;i++)
+    //    printf("Receive_num[%d] is %ld\n",i,Receive_num[i]);
 	/* ------------------------------------------- */
 	/* TODO send login response to user by command 1, contains v1, v2, v3, v4 */
 	text_size = sizeof(struct login_resp);
@@ -980,7 +984,7 @@ void set_opcode_connection(u32 client_fd)
         printf("========%s,%u==========\n",__FILE__,__LINE__);
 		exit(0);
     }
-    if(verify_resp->reserve)
+    if(verify_resp->result != 0)
     {
         printf("Verify Failed !!!!\n");
         exit(0);
@@ -1234,7 +1238,7 @@ void network(void)
             int timeout = 10000;
             flag = 2;
             AVcommand_fd = *client_fd;
-		free(client_fd);
+            free(client_fd);
             setsockopt(AVcommand_fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));
             /* ----------------------------------------------------------------- */
 
