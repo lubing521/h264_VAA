@@ -621,7 +621,7 @@ static int recv_AVcommand(u32 client_fd)
 	return 0;
 }
 
-#define MAX_RETRY_NUM	10
+#define MAX_RETRY_NUM	60
 #define TIME_DIFF(t1,t2) (((t1).tv_sec-(t2).tv_sec)*1000+((t1).tv_usec-(t2).tv_usec)/1000)
 void send_picture(char *data, u32 length)
 {
