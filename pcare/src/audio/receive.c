@@ -451,8 +451,6 @@ void *talk_playback( void *arg )
 				break;
 			case PLAYER_PLAYBACK:
 				//printf("playback\n");
-				if( buffer->flag == END_TALK )
-					state = PLAYER_STOPPED;
 				if( oss_fd_play > 0 && g_player.state == ST_PLAYING )
 				{
 					if( buffer->len <= 0 || buffer->len > ADPCM_MAX_READ_LEN )
@@ -467,6 +465,11 @@ void *talk_playback( void *arg )
 					}
 					i = !i;
 				}
+				if( buffer->flag == END_TALK )
+                {
+                    state = PLAYER_STOPPED;
+                    confirm_stop();
+                }
 				EmptyBuffer( TALK_QUEUE );
 				break;
 			case PLAYER_STOPPED:
@@ -505,7 +508,7 @@ void *talk_receive( void *arg )
 				else
 				{
 					file_size = *((u32 *)&buf[0]);
-					read_left = file_size;
+					read_left = file_size - 4;
 					printf(">>>receive file size : %d Bytes\n", file_size);
 					if (read_client(music_data_fd, buf, 4) != 4) {
 						printf("Err: no audio param!\n");
@@ -566,9 +569,7 @@ void *talk_receive( void *arg )
 					buffer->len = read_len;
 					if (buffer->len == 0)
 					{
-                        printf("###no data read###\n");	
-						if(!ispk)
-                        confirm_stop();
+                        printf("###no data read###,read_left is %d\n",read_left);	
                         state = TALK_STOPPED;;
 					}
 					else
@@ -579,7 +580,6 @@ void *talk_receive( void *arg )
 							if( read_left <= 0 )
 							{
                                 printf("music play over\n");
-                                confirm_stop();
                                 buffer->flag = END_TALK;
                             }
 							else
