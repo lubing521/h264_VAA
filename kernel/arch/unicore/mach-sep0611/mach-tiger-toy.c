@@ -101,7 +101,7 @@ static struct mtd_partition __initdata sep0611_mtd_parts[] = {
                 .name   = "kernel",
                 .offset = MTDPART_OFS_NXTBLK,
                 .size   = MTD_SIZE_1MiB * 8,
-                .mask_flags = MTD_WRITEABLE,
+//                .mask_flags = MTD_WRITEABLE,
         },
 
         [2] = {
