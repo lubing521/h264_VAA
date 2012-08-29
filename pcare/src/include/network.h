@@ -11,7 +11,7 @@ void enable_t_rh_sent(void);
 void confirm_stop(void);
 #define BLOWFISH
 #ifdef BLOWFISH
-#define BLOWFISH_KEY "seuic"
+#define BLOWFISH_KEY "-shanghai-hangzhou"
 void BlowfishKeyInit(char* strKey,int nLen);
 #endif
 
