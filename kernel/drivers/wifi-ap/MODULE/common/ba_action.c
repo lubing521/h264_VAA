@@ -426,9 +426,9 @@ void ba_flush_reordering_timeout_mpdus(
 		 &&(pBAEntry->list.qlen > 1)
 		)
 	{
-		DBGPRINT(RT_DEBUG_TRACE,("timeout[%d] (%08lx-%08lx = %d > %d): %x, flush all!\n ", pBAEntry->list.qlen, Now32, (pBAEntry->LastIndSeqAtTimer), 
-			   (int)((long) Now32 - (long)(pBAEntry->LastIndSeqAtTimer)), MAX_REORDERING_PACKET_TIMEOUT,
-			   pBAEntry->LastIndSeq));
+		//DBGPRINT(RT_DEBUG_TRACE,("timeout[%d] (%08lx-%08lx = %d > %d): %x, flush all!\n ", pBAEntry->list.qlen, Now32, (pBAEntry->LastIndSeqAtTimer), 
+	//		   (int)((long) Now32 - (long)(pBAEntry->LastIndSeqAtTimer)), MAX_REORDERING_PACKET_TIMEOUT,
+	//		   pBAEntry->LastIndSeq));
 		ba_refresh_reordering_mpdus(pAd, pBAEntry);
 		pBAEntry->LastIndSeqAtTimer = Now32;
 	}
@@ -437,7 +437,7 @@ void ba_flush_reordering_timeout_mpdus(
 		&& (pBAEntry->list.qlen > 0)
 	   )
 		{
-		DBGPRINT(RT_DEBUG_OFF, ("timeout[%d] (%lx-%lx = %d > %d): %x, ", pBAEntry->list.qlen, Now32, (pBAEntry->LastIndSeqAtTimer), 
+		//DBGPRINT(RT_DEBUG_OFF, ("timeout[%d] (%lx-%lx = %d > %d): %x, ", pBAEntry->list.qlen, Now32, (pBAEntry->LastIndSeqAtTimer), 
 			   (int)((long) Now32 - (long)(pBAEntry->LastIndSeqAtTimer)), REORDERING_PACKET_TIMEOUT,
 			   pBAEntry->LastIndSeq));
     		//
@@ -456,7 +456,7 @@ void ba_flush_reordering_timeout_mpdus(
     			pBAEntry->LastIndSeq = Sequence;
     		}
 
-		DBGPRINT(RT_DEBUG_OFF, ("%x, flush one!\n", pBAEntry->LastIndSeq));
+		//DBGPRINT(RT_DEBUG_OFF, ("%x, flush one!\n", pBAEntry->LastIndSeq));
 
 	}
 }
@@ -678,7 +678,7 @@ BOOLEAN BARecSessionAdd(
 		ba_refresh_reordering_mpdus(pAd, pBAEntry);
 	}
 
-	DBGPRINT(RT_DEBUG_TRACE,("%s(%ld): Idx = %d, BAWinSize(req %d) = %d\n", __FUNCTION__, pAd->BATable.numAsRecipient, Idx, 
+	//DBGPRINT(RT_DEBUG_TRACE,("%s(%ld): Idx = %d, BAWinSize(req %d) = %d\n", __FUNCTION__, pAd->BATable.numAsRecipient, Idx, 
 							 pFrame->BaParm.BufSize, BAWinSize));
 
 	// Start fill in parameters.
