@@ -699,6 +699,7 @@ void send_picture(char *data, u32 length)
 	return;
 err_exit:
 	close(picture_fd);
+	printf("#send picture failed, exit to restart!\n");
 	exit(0);
 	return;
 }
@@ -708,27 +709,85 @@ err_exit:
  */
 int send_audio_data(u8 *audio_buf, u32 data_len)
 {
+	long send_len = 0;
+	long total_send_len = 0;
+	long length = data_len+3;
+	struct timeval t1,t2;
+	char *p;
+	static int retry_num=0;
+
 	av_command2->text_len = data_len + 20;			/* contant sample and index */
 	audio_data->ado_len = data_len;
     audio_data->time_stamp = times(NULL)*10 - data_len/5;
+	p = (char *)av_command2;
     //printf("audio_data time_stamp is %lu\n",audio_data->time_stamp);
 
     audio_num++;
 	pthread_mutex_lock(&AVsocket_mutex);
 
-	if ((send(audio_data_fd, av_command2, 40, 0)) == -1) {
-		perror("send");
-		close(audio_data_fd);
-        printf("========%s,%u==========\n",__FILE__,__LINE__);
-		exit(0);
+	while( total_send_len < 40 )
+	{
+		gettimeofday(&t1,NULL);
+		send_len = send(audio_data_fd, (void *)&p[total_send_len], 40-total_send_len, 0);
+		gettimeofday(&t2,NULL);
+		if (send_len <= 0) {
+			perror("#send_audio_header");
+			if( errno != EAGAIN || retry_num >= MAX_RETRY_NUM )
+			{
+				goto err_exit;
+			}
+			else
+			{
+				retry_num++;
+				usleep(500000);
+			}
+		}
+		else
+		{
+			total_send_len += send_len;
+			if (total_send_len < 40)
+			{
+				printf("#opcode audio header short send(%d/40)!\n",total_send_len);
+			}
+			retry_num = 0;
+		}
 	}
-	/* ------------------------------------------- */
-	//printf("audio_data_size = %d\n", data_len);
-	send(audio_data_fd, (void *)audio_buf, data_len + 3, 0);
+	total_send_len = 0;
+	p = audio_buf;
+	while( total_send_len < length )
+	{
+		send_len = send(audio_data_fd, (void *)&p[total_send_len], length-total_send_len, 0);
+		if (send_len <= 0) {
+			perror("#send_audio");
+			if( errno != EAGAIN || retry_num >= MAX_RETRY_NUM )
+			{
+				goto err_exit;
+			}
+			else
+			{
+				retry_num++;
+				usleep(500000);
+			}
+		}
+		else
+		{
+			total_send_len += send_len;
+			if (total_send_len < length)
+			{
+				printf("#audio short send(%d/%d)!\n",total_send_len,length);
+			}
+			retry_num = 0;
+		}
+	}
 
 	pthread_mutex_unlock(&AVsocket_mutex);
 
 	return 1;
+err_exit:
+	close(audio_data_fd);
+	printf("#send audio data failed, exit to restart!\n");
+	exit(0);
+	return;
 }
 
 /* TODO keep opcode connection, every 1 minute, or network will be disconnected */
