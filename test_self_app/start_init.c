@@ -81,7 +81,6 @@ int step_motor_leftright()
         printf("FAILED!!!\n");
         return -1;
     }
-    inplace_flag = 1;
     printf("OK!!!\n");
     for(n=0;n<STEPER_PHASE_LEFT && inplace_flag >= 0;n++ )
     {
@@ -122,16 +121,6 @@ int step_motor_updown()
     printf("OK!!!\n");
     for(n=0;n<STEPER_PHASE_UP && inplace_flag >= 0;n++ )
     {
-        for(i = 0;i<8;i++)
-        {
-            inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_DOWN,&i);
-            usleep(1000);
-        }
-    }
-    inplace_flag = 1;
-    printf("Stepper_Motor Turn Down .....OK!!!\n");
-    for(n=0;n<STEPER_PHASE_UP && inplace_flag >= 0;n++ )
-    {
         for(i = 7;i>=0;i--)
         {
             inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_UP,&i);
@@ -140,6 +129,16 @@ int step_motor_updown()
     }
     inplace_flag = 1;
     printf("Stepper_Motor Turn Up .....OK!!!\n");
+    for(n=0;n<STEPER_PHASE_UP && inplace_flag >= 0;n++ )
+    {
+        for(i = 0;i<8;i++)
+        {
+            inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_DOWN,&i);
+            usleep(1000);
+        }
+    }
+    inplace_flag = 1;
+    printf("Stepper_Motor Turn Down .....OK!!!\n");
     printf("Close Stepper_Motor UPDOWN.....");
     ioctl(stepper_motor_fd,SMUPDOWN_POWER,NULL);
     close(stepper_motor_fd);
@@ -168,7 +167,7 @@ int camera()
 
 void main()
 {
-    int ret,err_fd;
+    int ret,err_fd,i;
     printf("\n===========================================\n");
     printf("========= Now Start Check Myself ==========\n");
     printf("===========================================\n");
@@ -188,7 +187,13 @@ void main()
 
 
 CAMERA_ERROR:
-    printf("Camera Cannot Work !!I Won't Go On !!!!\n\n\nPlease Try to Reset Me !!\n");
+    printf("Camera Cannot Work !!I Won't Go On !!!!\n\n\nI Will Reboot In 5 Seconds !!\n");
+    for(i=1;i<6;i++)
+    {
+        printf("%d....\n",i);
+        sleep(1);
+    }
+    system("reboot");
     while(1)
         ;
 STEPPER_MOTOR_ERROR:

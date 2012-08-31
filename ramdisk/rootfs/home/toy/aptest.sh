@@ -11,3 +11,4 @@ ifconfig ra0 192.168.1.100
 #echo "----- ---Enable DHCP-----------"
 #/sbin/dhcpd -d ra0 &
 /sbin/udhcpd &
+/sbin/udpsvd -hEv 0 69 /home/toy/update.sh &
