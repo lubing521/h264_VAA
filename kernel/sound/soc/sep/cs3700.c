@@ -146,6 +146,17 @@ static unsigned int cs3700_read_reg(struct snd_soc_codec *codec, unsigned char r
 
 	return value; 
 }
+//write reg
+void cs3700_write_reg_real (struct snd_soc_codec *codec,unsigned int reg, unsigned int value)
+{
+    unsigned int ret;
+    ret = cs3700_read_reg_cache(codec, reg);
+    if (value == ret)
+        return;
+    else{
+        ret = cs3700_write(codec,reg,value);
+    }
+}
 
 int cs3700_update_bits(struct snd_soc_codec *codec, unsigned int reg,
 		unsigned int mask, unsigned int value)
