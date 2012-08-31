@@ -106,15 +106,27 @@ void init_send()
 int set_i2s_rate(unsigned int rate)
 {
     int fd,ret;
-    char ch_rate1[]="11025";
-    char ch_rate2[]="44100";
+    char ch_rate_11025[]="11025";
+    char ch_rate_16000[]="16000";
+    char ch_rate_44100[]="44100";
     printf("%s to %d\n",__func__,rate);
     fd = open(I2S_RATE,O_WRONLY);
-    if(rate == 11025)
-        write(fd,ch_rate1,sizeof(ch_rate1));
-    else
-        write(fd,ch_rate2,sizeof(ch_rate2));
-
+    switch(rate)
+    {
+    case 11025:
+        write(fd,ch_rate_11025,sizeof(ch_rate_11025));
+        break;
+    case 16000:
+        write(fd,ch_rate_16000,sizeof(ch_rate_16000));
+        break;
+    case 44100:
+        write(fd,ch_rate_44100,sizeof(ch_rate_44100));
+        break;
+    default:
+        printf("Unsported Rate !! Set to default 44100\n");
+        write(fd,ch_rate_44100,sizeof(ch_rate_44100));
+    }
+    close(fd);
 }
 /* ---------------------------------------------------------- */
 /*
