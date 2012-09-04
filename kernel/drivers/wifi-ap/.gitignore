@@ -1,0 +1,6 @@
+MODULE/os/linux/Makefile
+MODULE/os/linux/Module.symvers
+NETIF/os/linux/Makefile
+NETIF/os/linux/Module.symvers
+UTIL/os/linux/Makefile
+UTIL/os/linux/Module.symvers

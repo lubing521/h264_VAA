@@ -44,6 +44,11 @@ lib/asm-offsets.s
 tools/gen_eth_addr
 tools/img2srec
 tools/mkimage
+arch/unicore/include/asm/arch
+arch/unicore/include/asm/proc
+include/asm
+include/config.h
+include/config.mk
 
 # stgit generated dirs
 patches-*
