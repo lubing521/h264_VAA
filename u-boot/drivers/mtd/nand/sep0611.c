@@ -111,6 +111,16 @@ const struct nand_features STMICRO_NAND_DevInfo[] = {
 	// [1GB] NAND08GW3B2CN6
     {{0x20, 0xD3, 0x51, 0x95, 0x58, 0x00},  "Stmicro NAND 1G 3.3V 8-bit", 1024, 128, 2048, 64,  2, 3,  15, 15, 25, 15, 10, 25, 15, 10,  A_08BIT},
 };
+#define MAX_SUPPORTED_ESMT_NAND 1 
+const struct nand_features ESMT_NAND_DevInfo[] = { 
+    //*================================================================================================================================================================
+    //*[             ID            ][ Name ][                     Size                      ][   Address Cycle  ][           Timing Sequence             ][ Attribute ]
+    //*----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //* 1st, 2nd, 3rd, 4th, 5th, 6th, name, ChipSize(MB), BlockSize(KB), PageSize, SpareSize, ColCycle, RowCycle, tCLS, tALS, tWC, tWP, tWH, tRC, tRP, tREH 
+    //*================================================================================================================================================================
+	// [128MB] F59L1G81A
+    {{0x92, 0xF1, 0x80, 0x95, 0x40, 0x00},  "ESMT NAND 128M 3.3V 8-bit", 128, 128, 2048, 64,  2, 2,  12, 12, 25, 12, 10, 25, 12, 10,  A_08BIT},
+};
 
 struct dev_info DevSupported = {
 	/* nand maker code */
@@ -118,21 +128,24 @@ struct dev_info DevSupported = {
 	NAND_MFR_HYNIX,
 	NAND_MFR_MICRON,
 	NAND_MFR_TOSHIBA,
-	NAND_MFR_STMICRO},
+	NAND_MFR_STMICRO,
+    NAND_MFR_ESMT},
 	
 	/* max supported nand flash of each maker */
 	{MAX_SUPPORTED_SAMSUNG_NAND,
 	MAX_SUPPORTED_HYNIX_NAND,
 	MAX_SUPPORTED_MICRON_NAND,
 	MAX_SUPPORTED_TOSHIBA_NAND,
-	MAX_SUPPORTED_STMICRO_NAND},
+	MAX_SUPPORTED_STMICRO_NAND,
+    MAX_SUPPORTED_ESMT_NAND},
 
 	/* pointer of nand flash information */
 	{(struct nand_features *)SAMSUNG_NAND_DevInfo,
 	(struct nand_features *)HYNIX_NAND_DevInfo,
 	(struct nand_features *)MICRON_NAND_DevInfo,
 	(struct nand_features *)TOSHIBA_NAND_DevInfo,
-	(struct nand_features *)STMICRO_NAND_DevInfo}
+	(struct nand_features *)STMICRO_NAND_DevInfo,
+	(struct nand_features *)ESMT_NAND_DevInfo}
 };
 
 static uint8_t sep_nand_readbyte(struct mtd_info *mtd)
@@ -999,7 +1012,7 @@ static int erase_first_block(void)
 static int erase_first_four_blocks(void)
 {
     unsigned int i=0;
-    for(i;i<4;i++)
+    for(i=0;i<4;i++)
     {
         writel(0x60, NAND_CMD);
         send_colrow_address(-1, i*(nfc.nand->BlockSize/(nfc.nand->PageSize >> 10)));

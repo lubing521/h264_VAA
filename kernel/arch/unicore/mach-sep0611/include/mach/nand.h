@@ -80,6 +80,7 @@ enum SupportedNandMaker {
 	MICRON,
 	TOSHIBA,
 	ST,
+	ESMT,
 	MAX_SUPPORTED_NAND_MAKER
 };
 

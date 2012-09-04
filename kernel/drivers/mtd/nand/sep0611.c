@@ -227,6 +227,16 @@ const NAND_FEATURES STMICRO_NAND_DevInfo[] = {
 	// [1GB] NAND08GW3B2CN6
     {{0x20, 0xD3, 0x51, 0x95, 0x58, 0x00},  "Stmicro NAND 1G 3.3V 8-bit", 1024, 128, 2048, 64,  2, 3,  15, 15, 25, 15, 10, 25, 15, 10,  A_08BIT},
 };
+#define MAX_SUPPORTED_ESMT_NAND 1 
+const NAND_FEATURES ESMT_NAND_DevInfo[] = { 
+    //*================================================================================================================================================================
+    //*[             ID            ][ Name ][                     Size                      ][   Address Cycle  ][           Timing Sequence             ][ Attribute ]
+    //*----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //* 1st, 2nd, 3rd, 4th, 5th, 6th, name, ChipSize(MB), BlockSize(KB), PageSize, SpareSize, ColCycle, RowCycle, tCLS, tALS, tWC, tWP, tWH, tRC, tRP, tREH 
+    //*================================================================================================================================================================
+	// [1GB] F59L1G81A
+    {{0x92, 0xf1, 0x80, 0x95, 0x40, 0x00},  "ESMT NAND 128M 3.3V 8-bit", 128, 128, 2048, 64,  2, 2,  12, 12, 25, 12, 10, 25, 12, 10,  A_08BIT},
+};
 
 const DEV_INFO DevSupported = {
 	/* nand maker code */
@@ -234,21 +244,24 @@ const DEV_INFO DevSupported = {
 	NAND_MFR_HYNIX,
 	NAND_MFR_MICRON,
 	NAND_MFR_TOSHIBA,
-	NAND_MFR_STMICRO},
+	NAND_MFR_STMICRO,
+    NAND_MFR_ESMT},
 	
 	/* max supported nand flash of each maker */
 	{MAX_SUPPORTED_SAMSUNG_NAND,
 	MAX_SUPPORTED_HYNIX_NAND,
 	MAX_SUPPORTED_MICRON_NAND,
 	MAX_SUPPORTED_TOSHIBA_NAND,
-	MAX_SUPPORTED_STMICRO_NAND},
+	MAX_SUPPORTED_STMICRO_NAND,
+    MAX_SUPPORTED_ESMT_NAND},
 
 	/* pointer of nand flash information */
 	{(NAND_FEATURES *)SAMSUNG_NAND_DevInfo,
 	(NAND_FEATURES *)HYNIX_NAND_DevInfo,
 	(NAND_FEATURES *)MICRON_NAND_DevInfo,
 	(NAND_FEATURES *)TOSHIBA_NAND_DevInfo,
-	(NAND_FEATURES *)STMICRO_NAND_DevInfo}
+	(NAND_FEATURES *)STMICRO_NAND_DevInfo,
+	(NAND_FEATURES *)ESMT_NAND_DevInfo}
 };
 
 static uint8_t sep_nand_read_byte(struct mtd_info *mtd)
