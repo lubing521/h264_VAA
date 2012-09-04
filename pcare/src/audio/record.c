@@ -141,6 +141,9 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 //        printf("set speak_power off failed ! \n");
     if(start_record == 1)
     {
+	status = ioctl(fd, SOUND_PCM_SYNC, 0);
+	if (status == -1)
+		printf("SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
         set_i2s_rate(rate);
         return;
     }
@@ -211,9 +214,10 @@ void stop_capture(void)
 }
 
 
+#define TIME_DIFF(t1,t2) (((t1).tv_sec-(t2).tv_sec)*1000+((t1).tv_usec-(t2).tv_usec)/1000)
 void *audio_capture( void *arg )
 {
-	int state = RECORDER_INIT, i=0;
+	int state = RECORDER_INIT, i=0, length;
 	struct AUDIO_CFG cfg = {RECORD_RATE,RECORD_CHANNELS,RECORD_BIT,0};
 	Buffer *buffer;
 
@@ -263,7 +267,8 @@ void *audio_capture( void *arg )
 					state = RECORDER_STOPPED;
 					break;
 				}
-				if( record_oss_data( buffer->data, RECORD_MAX_READ_LEN) <= 0 )
+				length =  record_oss_data( buffer->data, RECORD_MAX_READ_LEN);
+				if( length <= 0 )
 				{
 					printf("record ret error !\n");
 					state = RECORDER_RESET;
@@ -287,7 +292,6 @@ void *audio_capture( void *arg )
 }
 
 //#define CAPTURE_PROFILE
-#define TIME_DIFF(t1,t2) (((t1).tv_sec-(t2).tv_sec)*1000+((t1).tv_usec-(t2).tv_usec)/1000)
 void *audio_send( void *arg )
 {
 	int state = SOCKET_INIT;
