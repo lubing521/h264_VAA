@@ -438,8 +438,8 @@ void ba_flush_reordering_timeout_mpdus(
 	   )
 		{
 		//DBGPRINT(RT_DEBUG_OFF, ("timeout[%d] (%lx-%lx = %d > %d): %x, ", pBAEntry->list.qlen, Now32, (pBAEntry->LastIndSeqAtTimer), 
-			   (int)((long) Now32 - (long)(pBAEntry->LastIndSeqAtTimer)), REORDERING_PACKET_TIMEOUT,
-			   pBAEntry->LastIndSeq));
+			   //(int)((long) Now32 - (long)(pBAEntry->LastIndSeqAtTimer)), REORDERING_PACKET_TIMEOUT,
+			  // pBAEntry->LastIndSeq));
     		//
 		// force LastIndSeq to shift to LastIndSeq+1
     		// 
@@ -679,7 +679,7 @@ BOOLEAN BARecSessionAdd(
 	}
 
 	//DBGPRINT(RT_DEBUG_TRACE,("%s(%ld): Idx = %d, BAWinSize(req %d) = %d\n", __FUNCTION__, pAd->BATable.numAsRecipient, Idx, 
-							 pFrame->BaParm.BufSize, BAWinSize));
+							 //pFrame->BaParm.BufSize, BAWinSize));
 
 	// Start fill in parameters.
 	if (pBAEntry != NULL)
