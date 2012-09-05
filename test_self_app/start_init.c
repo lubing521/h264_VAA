@@ -64,9 +64,9 @@ void led_flash()
     while(1)
     {
         led_on();
-        usleep(50000);
+        sleep(2);
         led_off();
-        sleep(1);
+        sleep(2);
     }
     return;
 }
