@@ -1245,20 +1245,22 @@ void network(void)
 	bzero(&(server_addr.sin_zero), 8);
 	
 	/* bind port */
-	if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1) {
-		perror("bind");
+    if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1) {
+        perror("bind");
+        close(server_fd);
         printf("========%s,%u==========\n",__FILE__,__LINE__);
-		exit(1);
-	}
+        exit(1);
+    }
 
-	/* start listening */
-	if (listen(server_fd, BACKLOG) == -1) {
-		perror("listen");
+    /* start listening */
+    if (listen(server_fd, BACKLOG) == -1) {
+        perror("listen");
+        close(server_fd);
         printf("========%s,%u==========\n",__FILE__,__LINE__);
-		exit(1);
-	}
+        exit(1);
+    }
 
-	/* ---------------------------------------------------------------------------- */
+    /* ---------------------------------------------------------------------------- */
 	pthread_t th1;				/* main thread for opcode command */
 
 	if (pthread_mutex_init(&AVsocket_mutex, NULL) != 0) {
