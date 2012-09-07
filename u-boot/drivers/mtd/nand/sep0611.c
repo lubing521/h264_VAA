@@ -24,6 +24,7 @@
 #include "sep0611.h"
 
 #define		BUS_CLK_FREQ	240000000
+#define     UBOOT_SIZE      512
 
 /* This is the most important data structure on SEPXXXX nand driver */
 struct nfc_info nfc;
@@ -977,7 +978,7 @@ static void send_colrow_address(int col, int row)
 		}
 	}
 }
-
+#if 0 //comment by xuejilong 2012.9.7
 static int erase_first_block(void)
 {
     writel(0x60, NAND_CMD);
@@ -1007,12 +1008,15 @@ static int erase_first_block(void)
 
     return 0;
 }
-
-//erase_first_four_blocks 512 bytes
-static int erase_first_four_blocks(void)
+#endif
+//add by xuejilong 2012.9.7
+//erase_blocks 512 KiB
+static int erase_blocks(int blk_num)
 {
     unsigned int i=0;
-    for(i=0;i<4;i++)
+    if(blk_num == 0)//when BlockSize > UBOOT_SIZE, blk_num can be 0,then erase one block
+        blk_num = 1;
+    for(i=0;i<blk_num;i++)
     {
         writel(0x60, NAND_CMD);
         send_colrow_address(-1, i*(nfc.nand->BlockSize/(nfc.nand->PageSize >> 10)));
@@ -1024,14 +1028,14 @@ static int erase_first_four_blocks(void)
         switch (nfc.bus_type) {	
         case SINGLE_CHAN_8BITS:	
             if (readl(NAND_SDATA) & 0x1) {
-                printk("Erase first four blocks fail!\n");
+                printk("Erase blocks fail!\n");
                 return -1;
             }
             break;
 
         case DOUBLE_CHANS_16BITS:
             if (readl(NAND_SDATA) & 0x0101) {
-                printk("Erase first four blocks fail!\n");
+                printk("Erase blocks fail!\n");
                 return -1;
             }
             break;	
@@ -1234,37 +1238,47 @@ int burn_nandboot(u_char *buf)
     }
 
 
-    if(nfc.nand->BlockSize < 512)//make sure to scrub 512 bytes for u-boot (320KiB)
+#if 0 //comment by xuejilong 2012.9.7
+    if(nfc.nand->BlockSize < 512)
         erase_first_four_blocks();
     else
         erase_first_block();
-	
+#endif
+    //make sure to scrub 512 KiB for u-boot (320KiB)
+    erase_blocks(UBOOT_SIZE/nfc.nand->BlockSize);
+
 	//writel((readl(NAND_CFG) & 0xe7ffffff), NAND_CFG); //modify hoursjl
 
-	/* write 8K bytes data */
-	switch (nfc.write_size) {
+	/* write 512KiB u-boot data */
+    for (i = 0; i < UBOOT_SIZE/nfc.ecc_steps; i++){//one ecc steps means 1KiB 
+        if (write_page(&buf[nfc.write_size * i], i))
+            return 1;
+    }
+#if 0 //comment by xuejilong 2012.9.7
+    switch (nfc.write_size) {
 		case 2048:
-			for (i = 0; i < 512; i++)
-				if (write_page(&buf[2048 * i], i))
+			for (i = 0; i < 256; i++)
+				if (write_page(&buf[nfc.write_size * i], i))
 					return 1;
 			break;
 		case 4096:
-			for (i = 0; i < 256; i++)
-				if (write_page(&buf[4096 * i], i))
+			for (i = 0; i < 128; i++)
+				if (write_page(&buf[nfc.write_size * i], i))
 					return 1;
 			break;
 		case 8192:
-			for (i = 0; i < 128; i++)
-				if (write_page(&buf[8192 * i], i))
+			for (i = 0; i < 64; i++)
+				if (write_page(&buf[nfc.write_size * i], i))
 					return 1;
 			break;
 		case 16384:
-			for (i = 0; i < 64; i++)
-				if (write_page(&buf[16384 * i], i))
+			for (i = 0; i < 32; i++)
+				if (write_page(&buf[nfc.write_size * i], i))
 					return 1;
 			break;
 		default: printk("Not supported write size\n");	return 1;	
 	}
+#endif
 
 	return 0;
 }

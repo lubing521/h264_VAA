@@ -21,7 +21,7 @@
 
 /* Size of malloc() pool */
 #define CONFIG_MONITOR_LEN			(256 * 1024)		/* Reserve 256 kB for Monitor	*/
-#define CONFIG_ENV_SIZE				0x4000				/* 1024 bytes may be used for env vars*/
+#define CONFIG_ENV_SIZE				    0x4000				/* 1024 bytes may be used for env vars*/
 #define CONFIG_SYS_MALLOC_LEN			(CONFIG_ENV_SIZE + 128*1024 )
 #define CONFIG_SYS_GBL_DATA_SIZE		128					/* size in bytes reserved for initial data */
 #define CFG_MALLOC_LEN	CONFIG_SYS_MALLOC_LEN
@@ -133,7 +133,15 @@
 #define PHYS_SDRAM_1_SIZE		0x02000000 	/* 32 MB */
 
 #define CONFIG_SYS_MAX_FLASH_SECT	1
+#if 0
 #define CONFIG_ENV_IS_NOWHERE		1
+#else
+#define CONFIG_ENV_IS_IN_NAND		1
+#define CONFIG_ENV_OFFSET				0x000e0000
+#define CONFIG_ENV_ADDR    CONFIG_ENV_OFFSET 
+#define CONFIG_ENV_SECT_SIZE   0x20000 //this is nand' block size
+#define CONFIG_SYS_ENV_OVERWRITE 1
+#endif
 #define CONFIG_SYS_MAX_FLASH_BANKS	1
 
 /*-----------------------------------------------------------------------
@@ -152,20 +160,24 @@
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define CONFIG_SYS_NAND_MAX_CHIPS	1
 #define CONFIG_NAND_SEP0611
-
+#if 0 // 1:complie YAFFS
 //#define CONFIG_CMD_NAND_YAFFS
 //#define CONFIG_YAFFS2
+#endif
 #define CONFIG_CMD_MTDPARTS
 #define CONFIG_MTD_DEVICE
+#if 0 // 1:complie UBI
 //#define CONFIG_MTD_PARTITIONS                                                                                                   
 //#define CONFIG_CMD_UBI                                                                                                          
 //#define CONFIG_LZO                                                                                                              
 //#define CONFIG_RBTREE
+#endif
 
 #define MTDIDS_DEFAULT			"nand0=nand0"
 
 #define MTDPARTS_DEFAULT		"mtdparts=nand0:"	\
-									"1M(uboot)ro,"	\
+									"896K(uboot)ro,"	\
+									"128K(env)ro,"	\
 									"8M(kernel)ro,"	\
 									"110M(root),"	
 /*-----------------------------------------------------------------------
