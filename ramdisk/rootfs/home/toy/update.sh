@@ -6,7 +6,7 @@ if [ $log -gt 1 ]; then
 	rm -rf log.txt
 elif [ $uimg -gt 5 ]; then
 	rm -rf log.txt                       
-	mtd_debug erase /dev/mtd1 0 0x800000 
+	mtd_debug erase /dev/mtd2 0 0x800000 
 	nandwrite -p /dev/mtd1 /tmp/uImage 
 	reboot 
 fi

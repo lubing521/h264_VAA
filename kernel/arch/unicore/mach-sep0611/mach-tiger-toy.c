@@ -93,18 +93,25 @@ static struct mtd_partition __initdata sep0611_mtd_parts[] = {
         [0] = {
                 .name   = "u-boot",
                 .offset = 0,
-                .size   = MTD_SIZE_1MiB * 1,
+                .size   = MTD_SIZE_1KiB * 896,
                 .mask_flags = MTD_WRITEABLE,
         },
 
         [1] = {
+                .name   = "env",
+                .offset = MTDPART_OFS_NXTBLK,
+                .size   = MTD_SIZE_1KiB * 128,
+//                .mask_flags = MTD_WRITEABLE,
+        },
+
+        [2] = {
                 .name   = "kernel",
                 .offset = MTDPART_OFS_NXTBLK,
                 .size   = MTD_SIZE_1MiB * 8,
 //                .mask_flags = MTD_WRITEABLE,
         },
 
-        [2] = {
+        [3] = {
                 .name   = "root",
                 .offset = MTDPART_OFS_NXTBLK,
                 .size   = MTDPART_SIZ_FULL,

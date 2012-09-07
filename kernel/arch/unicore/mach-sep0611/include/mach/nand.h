@@ -162,6 +162,7 @@ typedef struct {
 } SEP_NFC_INFO;
 
 #define MTD_SIZE_1MiB 	(1ull << 20)
+#define MTD_SIZE_1KiB 	(1ull << 10)
 typedef struct {
 	struct mtd_partition *table;
 	int num;
