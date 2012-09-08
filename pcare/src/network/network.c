@@ -220,6 +220,7 @@ int send_audio_flag = 1;
 
 /* audio param */
 static int AVcommand_fd;
+static struct timeval av_start_time={0,0};
 
 /* TODO commands list */
 static struct command *command1;
@@ -631,10 +632,11 @@ void send_picture(char *data, u32 length)
 	char *p;
 	static int retry_num=0;
 
+	gettimeofday(&t1,NULL);
 	av_command1->text_len = length + 13;			/* TODO */
 
 	video_data->pic_len = length;
-	video_data->time_stamp = times(NULL)*10;
+	video_data->time_stamp = TIME_DIFF(t1,av_start_time);
 	video_data->frame_time = pic_num++;				/* test for time stamp */
 
 	pthread_mutex_lock(&AVsocket_mutex);
@@ -716,9 +718,10 @@ int send_audio_data(u8 *audio_buf, u32 data_len)
 	char *p;
 	static int retry_num=0;
 
+	gettimeofday(&t1,NULL);
 	av_command2->text_len = data_len + 20;			/* contant sample and index */
 	audio_data->ado_len = data_len;
-    audio_data->time_stamp = times(NULL)*10 - data_len/5;
+    audio_data->time_stamp = TIME_DIFF(t1,av_start_time);
 	p = (char *)av_command2;
     //printf("audio_data time_stamp is %lu\n",audio_data->time_stamp);
 
@@ -1345,6 +1348,7 @@ void network(void)
 			memset(audio_data, 0, 17);
 			
 			setsockopt(picture_fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+			gettimeofday(&av_start_time,NULL);
 			/* ----------------------------------------------------------------- */
 #ifdef ENABLE_VIDEO
 			sem_post(&start_camera);		/* start video only when cellphone send request ! */
