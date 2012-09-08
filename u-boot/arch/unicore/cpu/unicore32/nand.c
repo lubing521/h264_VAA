@@ -35,7 +35,7 @@ static inline void send_colrow_addr(int col, int row)
 	int i;
 
 #define 	COL_CYCLE	2
-#define 	ROW_CYCLE	3
+#define 	ROW_CYCLE	2
 	/* Write column address */
 	if (col != -1) {
 		for (i = 0; i < COL_CYCLE; i++) {
