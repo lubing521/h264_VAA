@@ -296,6 +296,7 @@ union context {
 	struct verify_resp verify_resp;
 	struct audio_start_resp audio_start_resp;
 	struct video_start_resp video_start_resp;
+    struct video_framInterval video_framInterval;
 	struct talk_start_resp talk_start_resp;
 	struct fetch_battery_power_resp fetch_battery_power_resp;
 	struct tem_rh_data tem_rh_data;

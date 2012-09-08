@@ -26,6 +26,7 @@ static pthread_t camera_ntid;
 static pthread_t send_ntid;
 static int camera_fd;
 static int camera_stop = 0;
+unsigned long video_frameinterval = 0;
 sem_t start_camera;
 
 sem_t new_pict;
@@ -95,6 +96,8 @@ static void *send_picture_thread(void *args)
 		gettimeofday(&t1,NULL);
 #endif
 		if( fm->data ) send_picture(fm->data, fm->length);
+        if(video_frameinterval)
+            usleep(video_frameinterval*1000);
 		empty_frame( fm );
 #ifdef PRINTFPS
 		gettimeofday(&t2,NULL);
