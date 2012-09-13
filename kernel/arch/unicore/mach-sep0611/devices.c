@@ -460,6 +460,11 @@ static struct resource sep0611_rtc_resource[] = {
 	    .end   = INTSRC_RTC,
 	    .flags = IORESOURCE_IRQ,
 	},
+   	[2] = {
+	    .start = INTSRC_WDT,
+	    .end   = INTSRC_WDT,
+	    .flags = IORESOURCE_IRQ,
+	},
 };
 
 struct platform_device sep0611_device_rtc = {
