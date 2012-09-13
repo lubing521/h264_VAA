@@ -32,6 +32,22 @@ static void __iomem *sep0611_rtc_base;
 static int sep0611_rtc_irq;
 static int samp_count;
 
+//add wdt irq by xuejilong
+static int sep0611_wdt_irq;
+//add wdt irq by xuejilong
+
+static irqreturn_t sep0611_wdt_isr(int irq, void *id)
+{
+	unsigned int int_stat;
+	void __iomem *base = sep0611_rtc_base;
+	int_stat = readl(base + RTC_INT_STS);
+	writel(int_stat, base + RTC_INT_STS);
+	//printk("wdt\n");
+	return IRQ_HANDLED;
+
+}
+
+
 static irqreturn_t sep0611_rtc_isr(int irq, void *id)
 {
 	unsigned int int_stat;
@@ -305,11 +321,16 @@ static void sep0611_rtc_release(struct device *dev)
 	struct rtc_device *rtc = platform_get_drvdata(pdev);
 	void __iomem *base = sep0611_rtc_base;
 
-	SEP0611_INT_DISABLE(sep0611_rtc_irq);
+    SEP0611_INT_DISABLE(sep0611_rtc_irq);
+    free_irq(sep0611_rtc_irq, rtc);
 
-	free_irq(sep0611_rtc_irq, rtc);
-	/*disable sample:set bit0 0*/
-	writel(0, base + RTC_CTR);
+    //add wdt irq by xuejilong
+    SEP0611_INT_DISABLE(sep0611_wdt_irq);
+    free_irq(sep0611_wdt_irq,rtc);
+    //add wdt irq by xuejilong
+    
+    /*disable sample:set bit0 0*/
+    writel(0, base + RTC_CTR);
 }
 
 static struct rtc_class_ops sep0611_rtc_ops = {
@@ -351,6 +372,15 @@ static int __devinit sep0611_rtc_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "no irq for rtc!\n");
 		return -ENOENT;
 	}
+
+    //add wdt irq by xuejilong
+    sep0611_wdt_irq = platform_get_irq(pdev,1);
+	if (sep0611_wdt_irq <= 0) {
+		dev_err(&pdev->dev, "no irq for rtc watchdog!\n");
+		return -ENOENT;
+	}
+    //add wdt irq by xuejilong
+    
 	/*get the memory region*/
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (res == NULL) {
@@ -382,6 +412,24 @@ static int __devinit sep0611_rtc_probe(struct platform_device *pdev)
 	/*initialize the periodic irq frequency*/
 	rtc->irq_freq = 256;
 	rtc->max_user_freq =256;
+
+    //add wdt irq by xuejilong
+	writel(0x80 << 16 , sep0611_rtc_base + RTC_WD_CNT);
+    //printk("RTC_WD_CNT is %lx\n",readl(sep0611_rtc_base + RTC_WD_CNT));
+	writel((0x3 << 24) | (0x20 << 8)|(0x1 << 2) | readl(sep0611_rtc_base + RTC_CTR), sep0611_rtc_base + RTC_CTR);
+    //printk("RTC_WD_CNT is %lx\n",readl(sep0611_rtc_base + RTC_CTR));
+	writel((0x1<<1) |(0x1<<5) | readl(sep0611_rtc_base + RTC_INT_EN), sep0611_rtc_base + RTC_INT_EN);
+    //printk("RTC_WD_CNT is %lx\n",readl(sep0611_rtc_base + RTC_INT_EN));
+    //printk("RTC_WD_CNT is %lx\n",readl(sep0611_rtc_base + RTC_WD_CNT));
+
+	ret = request_irq(sep0611_wdt_irq, sep0611_wdt_isr, IRQF_DISABLED, dev_name(&rtc->dev), rtc);
+	if(ret) {
+		pr_debug("%s: RTC interrupt IRQ%d already claimed\n",
+			pdev->name, sep0611_wdt_irq);
+		return ret;
+	}
+	SEP0611_INT_ENABLE(sep0611_wdt_irq);
+    //add wdt irq by xuejilong
 
 	platform_set_drvdata(pdev, rtc);
 	return 0;

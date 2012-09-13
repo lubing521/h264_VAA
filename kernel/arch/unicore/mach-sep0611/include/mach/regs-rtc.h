@@ -35,15 +35,18 @@
 #define TIC_YMD                	(0x48)
 
 /*SEP0611_RTC_INT_EN*/
+#define RST_CTRL                (1 << 5)
 #define ALARM_INT_EN        	(1 << 4)
 #define SEC_INT_EN				(1 << 2)
+#define MIN_INT_EN              (1 << 3)      
+#define WD_INT_EN               (1 << 1)
 #define SAMP_INT_EN            	(1 << 0)
 
 /*SEP0611_RTC_INT_STS*/
 #define ALARM_FLAG            	(1 << 4)
+#define MIN_FLAG				(1 << 3)
 #define SEC_FLAG				(1 << 2)
+#define WD_FLAG 				(1 << 1)
 #define SAMP_FLAG             	(1 << 0)
 
 #endif /* __ASM_ARCH_REGS_RTC_H */
-
-

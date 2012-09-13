@@ -53,7 +53,7 @@
 #define    INTSRC_DMAIRQ_A11    35
 #define    INTSRC_GPS           34
 #define    INTSRC_RTC           33
-#define    INTSRC_RESERVED16    32
+#define    INTSRC_WDT           32
 #define    INTSRC_PORTE12       31
 #define    INTSRC_PORTE11       30
 #define    INTSRC_PORTE10       29
