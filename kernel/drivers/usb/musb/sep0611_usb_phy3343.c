@@ -166,6 +166,12 @@ void musb_platform_try_idle(struct musb *musb, unsigned long timeout)
 /*init USB phy ,enable irq */    
 void musb_platform_enable(struct musb *musb)
 {
+    //add by xuejilong
+    sep0611_gpio_cfgpin(SEP0611_VBUS_EN,SEP0611_GPIO_IO);
+    sep0611_gpio_dirpin(SEP0611_VBUS_EN, SEP0611_GPIO_OUT);   /* AO_PORT output    */
+    sep0611_gpio_setpin(SEP0611_VBUS_EN, 0);                 /* AO_PORT output data */
+    msleep(15);  
+    //add by xuejilong
 #if 0
     int rc;
     printk("USB 3343 IRQ Init\n");
@@ -218,6 +224,8 @@ void musb_platform_enable(struct musb *musb)
     sep0611_gpio_cfgpin(SEP0611_PHY_RST, SEP0611_GPIO_IO);        
     sep0611_gpio_dirpin(SEP0611_PHY_RST, SEP0611_GPIO_OUT);
     sep0611_gpio_setpin(SEP0611_PHY_RST, 1); 
+
+    
     //msleep(30); 
     //sep0611_gpio_cfgpin(SEP0611_HUB_REST, SEP0611_GPIO_IO);       
     //sep0611_gpio_dirpin(SEP0611_HUB_REST, SEP0611_GPIO_OUT);
@@ -247,6 +255,13 @@ void musb_platform_enable(struct musb *musb)
 //
 //#endif
 
+    //add by xuejilong
+    msleep(15);  
+    sep0611_gpio_cfgpin(SEP0611_VBUS_EN,SEP0611_GPIO_IO);
+    sep0611_gpio_dirpin(SEP0611_VBUS_EN, SEP0611_GPIO_OUT);   /* AO_PORT output    */
+    sep0611_gpio_setpin(SEP0611_VBUS_EN, 1);                 /* AO_PORT output data */
+    msleep(15);  
+    //add by xuejilong
     SEP0611_INT_ENABLE(INTSRC_USB);
     SEP0611_INT_ENABLE(INTSRC_USBDMA);
 }
