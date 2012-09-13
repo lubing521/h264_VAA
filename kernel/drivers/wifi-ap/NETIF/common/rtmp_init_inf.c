@@ -383,13 +383,20 @@ int rt28xx_init(
 			sprintf(tmpbuf, "BM_%02X%02X%02X%02X%02X%02X", PRINT_MAC(pAd->CurrentAddress));
 			NdisMoveMemory(pAd->ApCfg.MBSSID[BSS0].Ssid, tmpbuf , strlen(tmpbuf));
 			pAd->ApCfg.MBSSID[BSS0].Ssid[strlen(tmpbuf)] = '\0';
-			pAd->ApCfg.MBSSID[BSS0].SsidLen = strlen((PSTRING) pAd->ApCfg.MBSSID[BSS0].Ssid);
-			//printk("new SSID=%s\n", pAd->ApCfg.MBSSID[BSS0].Ssid);
-            int mac_sum=0;
-            mac_sum =pAd->CurrentAddress[0] + pAd->CurrentAddress[1] + pAd->CurrentAddress[2] + pAd->CurrentAddress[3]
-                + pAd->CurrentAddress[4] + pAd->CurrentAddress[5];
-            pAd->CommonCfg.Channel=((mac_sum % 11)+1);
+            pAd->ApCfg.MBSSID[BSS0].SsidLen = strlen((PSTRING) pAd->ApCfg.MBSSID[BSS0].Ssid);
+            //changed by xuejilong 2012.9.13
+            //printk("new SSID=%s\n", pAd->ApCfg.MBSSID[BSS0].Ssid);
+            //int mac_sum=0;
+            //mac_sum =pAd->CurrentAddress[0] + pAd->CurrentAddress[1] + pAd->CurrentAddress[2] + pAd->CurrentAddress[3]
+            //    + pAd->CurrentAddress[4] + pAd->CurrentAddress[5];
+            switch(pAd->CurrentAddress[5] % 3)
+            {
+            case 0:pAd->CommonCfg.Channel=1;break;
+            case 1:pAd->CommonCfg.Channel=6;break;
+            case 2:pAd->CommonCfg.Channel=11;break;
+            }
             printk("set channel to %d\n",pAd->CommonCfg.Channel);
+            //changed by xuejilong 2012.9.13
 
 			APStartUp(pAd);
 			DBGPRINT(RT_DEBUG_OFF, ("Main bssid = %02x:%02x:%02x:%02x:%02x:%02x\n", 
