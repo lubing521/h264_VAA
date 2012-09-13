@@ -55,7 +55,7 @@ static struct platform_device sep0611_device_battery = {
 static struct sep0611_led_platdata sep0611_led1_pdata = {
 	.name		= "LED_Statue",
 	.gpio		= SEP0611_GPF19,
-	.flags		= SEP0611_LEDF_ACTLOW,
+	.flags		= SEP0611_LEDF_ACTHIGH,
 	.def_trigger	= "heartbeat",
 };
 
