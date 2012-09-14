@@ -83,9 +83,13 @@ void stepper_motor_updown()
         }
     }
 }
+#define TIME 0
 void stepper_motor_leftright()
 {
-    int i,get_cmd,inplace_flag=0,n=0,cur_tim=0,pre_tim=times(NULL);
+    int i,get_cmd,inplace_flag=0;
+#if TIME
+    int n=0,cur_tim=0,pre_tim=times(NULL);
+#endif
     while(1)
     {
         get_cmd=GetNextOp(LEFTRIGHT_SMID);
@@ -98,7 +102,9 @@ void stepper_motor_leftright()
                 inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_RIGHT,&i);
                 usleep(1000);
             }
+#if TIME
             n++;
+#endif
             break;
         case MOTOR_BACKWARD:
             for(i = 0;i<8;i++)
@@ -106,16 +112,22 @@ void stepper_motor_leftright()
                 inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_LEFT,&i);
                 usleep(1000);
             }
+#if TIME
             n++;
+#endif
             break;
         case MOTOR_STOP:
             ioctl(stepper_motor_fd,SMLEFTRIGHT_POWER,NULL);
             inplace_flag = 0;
+#if TIME
             cur_tim = times(NULL);
             printf("time=%d n=%d\n", cur_tim-pre_tim,n);
+#endif
             WaitNextOp(LEFTRIGHT_SMID);
+#if TIME
             pre_tim= times(NULL);
             n=0;
+#endif
             break;
         default:
             printf("GetNextOp ERROR!!!\n");

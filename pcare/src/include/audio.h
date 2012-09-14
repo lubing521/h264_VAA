@@ -1,6 +1,7 @@
 #ifndef _AUDIO_H
 #define _AUDIO_H
 
+#include <pthread.h>
 #include "types.h"
 
 /* --------------------------------------------------------- */
@@ -94,6 +95,7 @@ int parse_wav_header(u8 *buf, u32 fd);
 int playback_buf(int fd,u8 *play_buf, int len);
 
 /* set oss configuration */
+pthread_mutex_t i2c_mutex_lock;
 int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit);
 void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit);
 int set_i2s_rate(unsigned int rate);

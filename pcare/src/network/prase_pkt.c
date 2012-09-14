@@ -19,6 +19,7 @@ extern int start_measure();
 extern void enable_t_rh_sent();
 extern u32 audio_num;
 extern unsigned long video_frameinterval;
+//int next_op=0;
 /* prase opcode command text */
 int prase_packet(int opcode, u8 *buf)
 {
@@ -38,6 +39,22 @@ int prase_packet(int opcode, u8 *buf)
 			opt.opt_code = 14;
 			opt.param[0] = buf[0];
 			opt.param[1] = 0;
+   //         if(next_op){
+   //             if(next_op != opt.param[0]){
+   //                 printf("Last Op is runing,plese stop it and go on !\n");
+   //                 break;
+   //             }
+   //             else{
+   //                 next_op = 0;
+   //                 printf("Last Op will be stopped,you can do other op now !\n");
+   //             }
+   //         }
+   //         else{
+   //             if((opt.param[0] % 2) != 0)
+   //                 break;
+   //             next_op = opt.param[0] + 1;
+   //             printf("Next Op must be STOP or I won't go !\n");
+   //         }
             DispatchMotorOp( &opt );
             break;
         case 7:

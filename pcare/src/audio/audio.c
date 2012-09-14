@@ -11,5 +11,4 @@
 
 int oss_fd_play=0;
 int oss_fd_record=0;
-
-
+pthread_mutex_t i2c_mutex_lock = PTHREAD_MUTEX_INITIALIZER;

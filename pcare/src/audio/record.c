@@ -134,53 +134,56 @@ int set_i2s_rate(unsigned int rate)
  */
 void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 {
-	int status, arg;
+    int status, arg;
     char volume = '7';
-//    char state1[]="off";
-//    if(speak_power(state1)<0)
-//        printf("set speak_power off failed ! \n");
+    pthread_mutex_lock(&i2c_mutex_lock);
+    //    char state1[]="off";
+    //    if(speak_power(state1)<0)
+    //        printf("set speak_power off failed ! \n");
     if(start_record == 1)
     {
-	status = ioctl(fd, SOUND_PCM_SYNC, 0);
-	if (status == -1)
-		printf("SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
+        status = ioctl(fd, SOUND_PCM_SYNC, 0);
+        if (status == -1)
+            printf("SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
         set_i2s_rate(rate);
+        pthread_mutex_unlock(&i2c_mutex_lock);
         return;
     }
     if(ioctl(fd,SNDCTL_DSP_RESET) != 0)
         printf("OSS Reset Failed !\n");
     if(volume_set(volume)<0)
-       printf("volume set failed !\n");
-	/* set audio rate */
-	arg	= rate;
-	//arg	= 8000;
-	status = ioctl(fd, SNDCTL_DSP_SPEED, &arg);
-	//status = ioctl(fd, SOUND_PCM_WRITE_RATE, &arg);
-//	printf("status is %d   arg is %d\n",status,arg);
-	if (status == -1)
-		printf("SOUND_PCM_WRITE_WRITE ioctl failed,status is %d\n",status);
-	if (arg != rate)
-		printf("unable to set number of rate\n");
-	/* set audio bit */
-	arg = bit;
-	status = ioctl(fd, SOUND_PCM_WRITE_BITS, &arg);
-//	printf("status is %d   arg is %d\n",status,arg);
-	if (status == -1)
-		printf("SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
-	if (arg != bit)
-    	printf("unable to set sample size\n");
-    
+        printf("volume set failed !\n");
+    /* set audio rate */
+    arg	= rate;
+    //arg	= 8000;
+    status = ioctl(fd, SNDCTL_DSP_SPEED, &arg);
+    //status = ioctl(fd, SOUND_PCM_WRITE_RATE, &arg);
+    //	printf("status is %d   arg is %d\n",status,arg);
+    if (status == -1)
+        printf("SOUND_PCM_WRITE_WRITE ioctl failed,status is %d\n",status);
+    if (arg != rate)
+        printf("unable to set number of rate\n");
+    /* set audio bit */
+    arg = bit;
+    status = ioctl(fd, SOUND_PCM_WRITE_BITS, &arg);
+    //	printf("status is %d   arg is %d\n",status,arg);
+    if (status == -1)
+        printf("SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
+    if (arg != bit)
+        printf("unable to set sample size\n");
+
     /* set audio channels */
-	arg = channels;	
-	status = ioctl(fd, SOUND_PCM_WRITE_CHANNELS, &arg);
-//	printf("status is %d   arg is %d\n",status,arg);
-	if (status == -1)
-		printf("SOUND_PCM_WRITE_CHANNELS ioctl failed,status is %d\n",status);
-	if (arg != channels)
-		printf("unable to set number of channels\n");
+    arg = channels;	
+    status = ioctl(fd, SOUND_PCM_WRITE_CHANNELS, &arg);
+    //	printf("status is %d   arg is %d\n",status,arg);
+    if (status == -1)
+        printf("SOUND_PCM_WRITE_CHANNELS ioctl failed,status is %d\n",status);
+    if (arg != channels)
+        printf("unable to set number of channels\n");
     start_record = 1;
-	printf("rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
-	
+    printf("rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
+    pthread_mutex_unlock(&i2c_mutex_lock);
+
 }
 
 /* ------------------------------------------------------------------------------ */
