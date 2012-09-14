@@ -71,6 +71,8 @@ void *audio_capture_thread(void *args);
 void *audio_playback_thread(void *args);
 int volume_set(char );
 int speak_power(char *state);
+int speak_power_off();
+int speak_power_on();
 
 /* --------------------------------------------------------- */
 

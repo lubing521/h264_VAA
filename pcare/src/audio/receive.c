@@ -598,6 +598,7 @@ void *talk_receive( void *arg )
 			case TALK_STOPPED:
 				printf("Talk stop\n");
 				EndPlayer();
+                speak_power_off();
 				sem_wait(&start_talk);
 				state = TALK_INIT;
 				break;

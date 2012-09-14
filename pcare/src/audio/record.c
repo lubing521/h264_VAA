@@ -135,11 +135,11 @@ int set_i2s_rate(unsigned int rate)
 void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 {
     int status, arg;
-    char volume = '7';
+    char volume = '5';
     pthread_mutex_lock(&i2c_mutex_lock);
-    //    char state1[]="off";
-    //    if(speak_power(state1)<0)
-    //        printf("set speak_power off failed ! \n");
+    if(volume_set(volume)<0)
+        printf("volume set failed !\n");
+    speak_power_off();
     if(start_record == 1)
     {
         status = ioctl(fd, SOUND_PCM_SYNC, 0);
@@ -151,8 +151,6 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
     }
     if(ioctl(fd,SNDCTL_DSP_RESET) != 0)
         printf("OSS Reset Failed !\n");
-    if(volume_set(volume)<0)
-        printf("volume set failed !\n");
     /* set audio rate */
     arg	= rate;
     //arg	= 8000;

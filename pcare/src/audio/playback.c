@@ -96,6 +96,18 @@ int speak_power(char *state)
     close(speak_power_fd);
     return 0;
 }
+int speak_power_off()
+{
+    char state1[]="off";
+    if(speak_power(state1)<0)
+        printf("set speak_power off failed ! \n");
+}
+int speak_power_on()
+{
+    char state1[]="on";
+    if(speak_power(state1)<0)
+        printf("set speak_power off failed ! \n");
+}
 int volume_set(char volume)
 {
     int volume_fd;
@@ -118,14 +130,14 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
     int status, arg;
     char volume = '5';
     pthread_mutex_lock(&i2c_mutex_lock);
+    if(volume_set(volume))
+        printf("volume set failed !\n");
     if(stat_play == 1)
     {
         set_i2s_rate(rate);
         pthread_mutex_unlock(&i2c_mutex_lock);
         return;
     }
-    if(volume_set(volume))
-        printf("volume set failed !\n");
     if(ioctl(fd,SNDCTL_DSP_RESET) != 0)
         printf("OSS Reset Failed !\n");
     /* set audio rate */
