@@ -13,6 +13,7 @@ typedef struct s_Buffer
 {
 	struct s_Buffer *next;
 	u8 data[MAX_BUF_LEN];
+    struct timeval time_stamp;
 	int len;
 	int flag;
 }Buffer;

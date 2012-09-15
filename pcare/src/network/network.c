@@ -624,11 +624,11 @@ static int recv_AVcommand(u32 client_fd)
 
 #define MAX_RETRY_NUM	60
 #define TIME_DIFF(t1,t2) (((t1).tv_sec-(t2).tv_sec)*1000+((t1).tv_usec-(t2).tv_usec)/1000)
-void send_picture(char *data, u32 length)
+void send_picture(char *data, u32 length,struct timeval t1)
 {
 	long send_len = 0;
 	long total_send_len = 0;
-	struct timeval t1,t2;
+	struct timeval t2;
 	char *p;
 	static int retry_num=0;
 
@@ -709,12 +709,12 @@ err_exit:
 /*
  * send audio data
  */
-int send_audio_data(u8 *audio_buf, u32 data_len)
+int send_audio_data(u8 *audio_buf, u32 data_len,struct timeval t1)
 {
 	long send_len = 0;
 	long total_send_len = 0;
 	long length = data_len+3;
-	struct timeval t1,t2;
+	struct timeval t2;
 	char *p;
 	static int retry_num=0;
 

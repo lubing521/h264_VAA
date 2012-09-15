@@ -113,6 +113,7 @@ int get_frame(struct v4l2_buffer *v4l_buf)
 	fm->length = v4l_buf->bytesused;
     	if(fm->data) memcpy(fm->data, buffers[v4l_buf->index].start, fm->length);
 	pthread_mutex_lock(&frame_list_lock);
+    gettimeofday(&fm->time_stamp,NULL);
 	fm->flag = FRAME_READY;
 	//printf("@data ready\n");
 	sem_post(&pict_ready);

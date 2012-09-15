@@ -14,6 +14,7 @@ typedef struct frame{
 	struct frame *next;
 	int flag;
 	char *data;
+	struct timeval time_stamp;
 	unsigned long length;
 } frame_t;
 

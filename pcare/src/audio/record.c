@@ -268,8 +268,9 @@ void *audio_capture( void *arg )
 					state = RECORDER_STOPPED;
 					break;
 				}
-				length =  record_oss_data( buffer->data, RECORD_MAX_READ_LEN);
-				if( length <= 0 )
+                length =  record_oss_data( buffer->data, RECORD_MAX_READ_LEN);
+                gettimeofday(&buffer->time_stamp,NULL);
+                if( length <= 0 )
 				{
 					printf("record ret error !\n");
 					state = RECORDER_RESET;
@@ -333,7 +334,7 @@ void *audio_send( void *arg )
 #endif
 				memcpy((u8 *)&g_raw_buffer[0][RECORD_ADPCM_MAX_READ_LEN], (u8 *)(&adpcm_state), 3);
 				adpcm_coder( (short *)buffer->data, g_raw_buffer[0],RECORD_MAX_READ_LEN,&adpcm_state);
-				error_flag = send_audio_data(g_raw_buffer[0],RECORD_ADPCM_MAX_READ_LEN);
+				error_flag = send_audio_data(g_raw_buffer[0],RECORD_ADPCM_MAX_READ_LEN,buffer->time_stamp);
 #ifdef CAPTURE_PROFILE
 				gettimeofday(&t3,NULL);
 				cap_time = TIME_DIFF(t2,t1);

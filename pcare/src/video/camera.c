@@ -95,7 +95,7 @@ static void *send_picture_thread(void *args)
 #ifdef PRINTFPS
 		gettimeofday(&t1,NULL);
 #endif
-		if( fm->data ) send_picture(fm->data, fm->length);
+		if( fm->data ) send_picture(fm->data, fm->length,fm->time_stamp);
         if(video_frameinterval)
             usleep(video_frameinterval*1000);
 		empty_frame( fm );
