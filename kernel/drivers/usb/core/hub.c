@@ -1969,6 +1969,7 @@ static int hub_port_reset(struct usb_hub *hub, int port1,
 
 	/* Reset the port */
 	for (i = 0; i < PORT_RESET_TRIES; i++) {
+		//dev_info(hub->intfdev,"###t%d:USB_PORT_FEAT_RESET\n",jiffies_to_msecs(jiffies));
 		status = set_port_feature(hub->hdev,
 				port1, USB_PORT_FEAT_RESET);
 		if (status)
@@ -2013,6 +2014,7 @@ static int hub_port_reset(struct usb_hub *hub, int port1,
 
  done:
 	up_read(&ehci_cf_port_reset_rwsem);
+	msleep(50);
 	return status;
 }
 
@@ -2675,7 +2677,7 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
 		udev->tt = &hub->tt;
 		udev->ttport = port1;
 	}
- 
+
 	/* Why interleave GET_DESCRIPTOR and SET_ADDRESS this way?
 	 * Because device hardware and firmware is sometimes buggy in
 	 * this area, and this is how Linux has done it for ages.
@@ -2710,6 +2712,7 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
 			 */
 			for (j = 0; j < 3; ++j) {
 				buf->bMaxPacketSize0 = 0;
+				//dev_info(&udev->dev,"###t%d:get GET_DESCRIPTOR_BUFSIZE\n",jiffies_to_msecs(jiffies)); 
 				r = usb_control_msg(udev, usb_rcvaddr0pipe(),
 					USB_REQ_GET_DESCRIPTOR, USB_DIR_IN,
 					USB_DT_DEVICE << 8, 0,
@@ -2735,6 +2738,7 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
 					buf->bMaxPacketSize0;
 			kfree(buf);
 
+			//printk("###t%d:reset port\n",jiffies_to_msecs(jiffies)); 
 			retval = hub_port_reset(hub, port1, udev, delay);
 			if (retval < 0)		/* error or disconnect */
 				goto fail;
@@ -2761,6 +2765,7 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
  		 */
 		if (udev->wusb == 0) {
 			for (j = 0; j < SET_ADDRESS_TRIES; ++j) {
+				//dev_info(&udev->dev,"###t%d:set address\n",jiffies_to_msecs(jiffies)); 
 				retval = hub_set_address(udev, devnum);
 				if (retval >= 0)
 					break;
@@ -2789,6 +2794,7 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
 				break;
   		}
 
+		//dev_info(&udev->dev,"###t%d:get descriptor 8\n",jiffies_to_msecs(jiffies)); 
 		retval = usb_get_device_descriptor(udev, 8);
 		if (retval < 8) {
 			dev_err(&udev->dev,
@@ -2821,6 +2827,7 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
 		usb_ep0_reinit(udev);
 	}
   
+	//dev_info(&udev->dev,"###t%d:get descriptor USB_DT_DEVICE_SIZE\n",jiffies_to_msecs(jiffies)); 
 	retval = usb_get_device_descriptor(udev, USB_DT_DEVICE_SIZE);
 	if (retval < (signed)sizeof(udev->descriptor)) {
 		dev_err(&udev->dev, "device descriptor read/all, error %d\n",

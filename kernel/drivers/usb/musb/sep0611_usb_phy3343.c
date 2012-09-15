@@ -166,6 +166,7 @@ void musb_platform_try_idle(struct musb *musb, unsigned long timeout)
 /*init USB phy ,enable irq */    
 void musb_platform_enable(struct musb *musb)
 {
+#if 0
     //add by xuejilong
     sep0611_gpio_cfgpin(SEP0611_VBUS_EN,SEP0611_GPIO_IO);
     sep0611_gpio_dirpin(SEP0611_VBUS_EN, SEP0611_GPIO_OUT);   /* AO_PORT output    */
@@ -262,8 +263,11 @@ void musb_platform_enable(struct musb *musb)
     sep0611_gpio_setpin(SEP0611_VBUS_EN, 1);                 /* AO_PORT output data */
     msleep(15);  
     //add by xuejilong
+#endif
+
     SEP0611_INT_ENABLE(INTSRC_USB);
     SEP0611_INT_ENABLE(INTSRC_USBDMA);
+
 }
 
 #if 0
@@ -429,6 +433,15 @@ printk("after setup_timer \n");
     musb->port_index = 0;               
 #endif
     test_musb = musb;
+    sep0611_gpio_cfgpin(SEP0611_PHY_RST, SEP0611_GPIO_IO);        
+    sep0611_gpio_dirpin(SEP0611_PHY_RST, SEP0611_GPIO_OUT);
+    sep0611_gpio_setpin(SEP0611_PHY_RST, 0);
+    msleep(100);  
+    sep0611_gpio_cfgpin(SEP0611_PHY_RST, SEP0611_GPIO_IO);        
+    sep0611_gpio_dirpin(SEP0611_PHY_RST, SEP0611_GPIO_OUT);
+    sep0611_gpio_setpin(SEP0611_PHY_RST, 1);
+	//printk("###t%d:reset usbphy\n",jiffies_to_msecs(jiffies)); 
+    msleep(300);  
     return 0;
 }
 
