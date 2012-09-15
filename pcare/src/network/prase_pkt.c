@@ -177,6 +177,8 @@ int prase_packet(int opcode, u8 *buf)
 			start_measure();
 			enable_t_rh_sent();
 			break;
+        case 22:
+            volume_set(buf[0]);
 		default:
 			//printf(">>>opcode = %d\n", opcode);
 			printf("Unsupported opcode from user!\n");
@@ -198,8 +200,3 @@ int prase_AVpacket(int opcode, u8 *buf)
 		};
 	return 0;
 }
-
-
-
-
-
