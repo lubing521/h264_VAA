@@ -476,6 +476,7 @@ void *talk_playback( void *arg )
 				printf("player stop\n");
 				//close(oss_fd_play);
 				//oss_fd_play = 0;
+                speak_power_off();
 				OpenQueueOut( TALK_QUEUE );
 				state = PLAYER_INIT;
 				break;
