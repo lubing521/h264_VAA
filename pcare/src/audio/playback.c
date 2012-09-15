@@ -101,6 +101,7 @@ int speak_power_off()
     char state1[]="off";
     if(speak_power(state1)<0)
         printf("set speak_power off failed ! \n");
+    printf("Close Speaker !!\n");
 }
 int speak_power_on()
 {
