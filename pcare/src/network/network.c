@@ -797,13 +797,14 @@ err_exit:
 void keep_connect(void)
 {
 	int client_fd = AVcommand_fd;
-	int n;
+    struct keep_alive_resp *keep_alive_resp;
 	
+    keep_alive_resp = &command254->text[0].keep_alive_resp;
 	command254->opcode = 254;
 	command254->text_len = 0;
 
 	/* write command to client --- keep alive */
-	if ((n = send(client_fd, command254, 23, 0)) == -1) {
+	if (send(client_fd, command254, 23, 0) == -1) {
 		perror("send");
 		close(client_fd);
         printf("========%s,%u==========\n",__FILE__,__LINE__);
@@ -1308,6 +1309,8 @@ void network(void)
 
             led_flag = 0;
             led_on();
+            command254 = malloc(sizeof(struct command));
+            memcpy(command254->protocol_head, str_ctl, 4);
             /* ----------------------------------------------------------------- */
             if(pthread_create(&th1, NULL, deal_opcode_request, &AVcommand_fd) != 0) {
                 perror("pthread_create");
