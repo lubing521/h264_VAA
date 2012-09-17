@@ -30,6 +30,7 @@ static unsigned long stepper_motor_up_flag=0,stepper_motor_down_flag=0,stepper_m
 static int dc_motor_fd;
 static int stepper_motor_fd;
 static unsigned long tick1=0 ,tick2=0; 
+int step_is_work = 0;
 int init_motor(void)
 {
 	int ret;
@@ -56,6 +57,7 @@ void stepper_motor_updown()
     while(1)
     {
         get_cmd=GetNextOp(UPDOWN_SMID);
+        step_is_work = 1;
         if( inplace_flag < 0 ) get_cmd = MOTOR_STOP;
         switch (get_cmd)
         {
@@ -76,6 +78,7 @@ void stepper_motor_updown()
         case MOTOR_STOP:
             ioctl(stepper_motor_fd,SMUPDOWN_POWER,NULL);
             inplace_flag = 0;
+            step_is_work = 0;
             WaitNextOp(UPDOWN_SMID);
             break;
         default:
@@ -93,6 +96,7 @@ void stepper_motor_leftright()
     while(1)
     {
         get_cmd=GetNextOp(LEFTRIGHT_SMID);
+        step_is_work = 1;
         if( inplace_flag < 0 ) get_cmd = MOTOR_STOP;
         switch (get_cmd)
         {
@@ -123,6 +127,7 @@ void stepper_motor_leftright()
             cur_tim = times(NULL);
             printf("time=%d n=%d\n", cur_tim-pre_tim,n);
 #endif
+            step_is_work = 0;
             WaitNextOp(LEFTRIGHT_SMID);
 #if TIME
             pre_tim= times(NULL);
