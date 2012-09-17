@@ -225,7 +225,7 @@ static struct timeval av_start_time={0,0};
 /* TODO commands list */
 static struct command *command1;
 static struct command *command3;
-static struct command *command255;
+static struct command *command254;
 static struct command *command5;
 static struct command *av_command1;
 static struct command *av_command2;
@@ -799,11 +799,11 @@ void keep_connect(void)
 	int client_fd = AVcommand_fd;
 	int n;
 	
-	command255->opcode = 255;
-	command255->text_len = 0;
+	command254->opcode = 254;
+	command254->text_len = 0;
 
 	/* write command to client --- keep alive */
-	if ((n = send(client_fd, command255, 23, 0)) == -1) {
+	if ((n = send(client_fd, command254, 23, 0)) == -1) {
 		perror("send");
 		close(client_fd);
         printf("========%s,%u==========\n",__FILE__,__LINE__);
@@ -1167,7 +1167,7 @@ free_buf:
 	/* malloc in the connect() */
 	free(command1);
 	free(command3);
-	free(command255);
+	free(command254);
 	/* malloc in the main() */
 	free(arg);
 	/* buffer malloc */
@@ -1308,18 +1308,6 @@ void network(void)
 
             led_flag = 0;
             led_on();
-            /* TODO keep connection ever 1 minute */
-            command255 = malloc(sizeof(struct command));
-            memcpy(command255->protocol_head, str_ctl, 4);
-#if 0
-            signal(SIGALRM,keep_alive_timeout); 
-            alarm(10);
-            value.it_value.tv_sec = 10;
-            value.it_value.tv_usec = 0;
-            value.it_interval.tv_sec = 10;
-            value.it_interval.tv_usec = 0;
-            setitimer(SIGALRM, &value, &ovalue); 
-#endif
             /* ----------------------------------------------------------------- */
             if(pthread_create(&th1, NULL, deal_opcode_request, &AVcommand_fd) != 0) {
                 perror("pthread_create");

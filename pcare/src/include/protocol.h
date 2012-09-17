@@ -65,6 +65,11 @@ struct keep_alive {
 	/* has no text */
 }__attribute__((packed));
 
+/* camera <-> user */
+struct keep_alive_resp {
+	/* opcode = 254 */
+	/* has no text */
+}__attribute__((packed));
 /* -------------------------- */
 
 /* user -> camera */
@@ -295,6 +300,7 @@ union context {
 	struct verify_req verify_req;
 	struct verify_resp verify_resp;
 	struct audio_start_resp audio_start_resp;
+    struct keep_alive_resp keep_alive_resp;
 	struct video_start_resp video_start_resp;
     struct video_framInterval video_framInterval;
 	struct talk_start_resp talk_start_resp;
