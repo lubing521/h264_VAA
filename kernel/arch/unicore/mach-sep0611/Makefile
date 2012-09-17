@@ -4,7 +4,7 @@
 
 # Object file lists.
 
-obj-y			:= irq.o io.o time.o devices.o gpio.o clock.o sep_misc.o
+obj-y			:= irq.o io.o time.o devices.o gpio.o clock.o sep_misc.o i2c_error_recovery.o
 obj-m			:=
 obj-n			:=
 obj-			:=

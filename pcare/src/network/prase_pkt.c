@@ -138,7 +138,7 @@ int prase_packet(int opcode, u8 *buf)
                 printf("Unsupported video_frameinterval !! Set to Default 0 \n");
                 video_frameinterval = 0;
             }
-            //printf("video_frameinterval is %ld \n",video_frameinterval);
+            printf("video_frameinterval is %ld \n",video_frameinterval);
 
             break;
         case 8:

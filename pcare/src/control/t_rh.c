@@ -25,6 +25,7 @@ int get_tem()
     {
         tem_integer=-1;
         tem_decimal=-1;
+        pthread_mutex_unlock(&i2c_mutex_lock);
         return -1;
     }
     tem0 = atoi(buf);
@@ -51,6 +52,7 @@ int get_rh()
     if(size < 0)
     {
         rh = -1;
+        pthread_mutex_unlock(&i2c_mutex_lock);
         return -1;
     }
     rh0 = atoi(buf);
