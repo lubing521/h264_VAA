@@ -19,6 +19,8 @@ extern int start_measure();
 extern void enable_t_rh_sent();
 extern u32 audio_num;
 extern unsigned long video_frameinterval;
+int pre_sound = 0; //0:init ; 1:record ; 2:play
+int cur_sound = 0; //0:init ; 1:record ; 2:play
 //int next_op=0;
 /* prase opcode command text */
 int prase_packet(int opcode, u8 *buf)
@@ -144,6 +146,7 @@ int prase_packet(int opcode, u8 *buf)
         case 8:
 #ifdef ENABLE_CAPTURE_AUDIO
             audio_num = 0;
+            cur_sound = 1;
 			start_capture();			/* !!!must be called first */
 			enable_audio_send();
 #else
@@ -162,6 +165,7 @@ int prase_packet(int opcode, u8 *buf)
 		case 11:
 			/* TODO enable talk audio */
 			//start_playback();
+            cur_sound = 2;
             StartPlayer();
 			printf(">>>Start playbacking ...\n");
 			break;

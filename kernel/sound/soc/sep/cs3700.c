@@ -36,6 +36,7 @@
 
 #define cs3700_write_reg(a, b) cs3700_write(codec, a, b)
 extern void sep0611_spk_out(bool enable);
+static unsigned int cs3700_read_reg(struct snd_soc_codec *codec, unsigned char reg);
 
 /* codec private data */
 struct cs3700_priv {
@@ -114,17 +115,19 @@ static int cs3700_write(struct snd_soc_codec *codec, unsigned int reg,
 
 //    printk("cs3700 write reg %d=%x", reg, value);
     cs3700_write_reg_cache (codec, reg, value);
-    if (codec->hw_write(codec->control_data, data, 3) == 3)
-    {
-        //      printk("..ok\n");
-        udelay(500);
-        return 0;
-    }
-    else
-    {
-        printk("..failed\n");
-		return -EIO;
-    }
+    /*do {*/
+        if (codec->hw_write(codec->control_data, data, 3) == 3)
+        {
+            //      printk("..ok\n");
+            udelay(500);
+        }
+        else
+        {
+            printk("..failed\n");
+            return -EIO;
+        }
+    /*} while ( cs3700_read_reg(codec,reg) != value );				[> -----  end do-while  ----- <]*/
+    return 0;
 }
 
 static unsigned int cs3700_read_reg(struct snd_soc_codec *codec, unsigned char reg)
@@ -527,6 +530,9 @@ static int cs3700_set_audio_output(struct snd_soc_codec *codec)
 	cs3700_write_reg(0x3A, 0x00CC);				//
 	cs3700_write_reg(0x3A, 0x00C8);				//
 	cs3700_write_reg(0x3A, 0x00C0);				//
+
+    cs3700_write_reg(0x0B, 0x01B0);
+    cs3700_write_reg(0x0C, 0x01B0);
 #endif
 
 	return 0;
@@ -574,6 +580,9 @@ static int cs3700_set_audio_input(struct snd_soc_codec *codec)
     cs3700_write_reg(0x0B, 0x01C0);
     cs3700_write_reg(0x0C, 0x01C0);
 
+    cs3700_write_reg(0x0B, 0x01B0);
+    cs3700_write_reg(0x0C, 0x01B0);
+
 #endif
 
 	return 0;
@@ -598,8 +607,14 @@ static int cs3700_change_vol(char vol)
 			break;
 		case '5':
 			cs3700_write_reg(0x0B, 0x01B0);
-			cs3700_write_reg(0x0C, 0x01B0);
-			break;
+            while ( cs3700_read_reg(codec,0x0B) == 0x01B0 ) {
+                cs3700_write_reg(0x0B, 0x01B0);
+            }
+            cs3700_write_reg(0x0C, 0x01B0);
+            while ( cs3700_read_reg(codec,0x0C) == 0x01B0 ) {
+                cs3700_write_reg(0x0C, 0x01B0);
+            }
+            break;
 		case '4':
 			cs3700_write_reg(0x0B, 0x01A8);
 			cs3700_write_reg(0x0C, 0x01A8);

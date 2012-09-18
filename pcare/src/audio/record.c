@@ -22,6 +22,8 @@
 static void *audio_capture( void *arg );
 static void *audio_send( void *arg );
 extern int step_is_work;
+extern int cur_sound;
+extern int pre_sound;
 
 enum RecordState
 {
@@ -137,6 +139,12 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 {
     int status, arg;
     char volume = '5';
+    if(pre_sound == cur_sound){
+        return 0;
+    }
+    else{
+        pre_sound = cur_sound;
+    }
     pthread_mutex_lock(&i2c_mutex_lock);
     if(volume_set(volume)<0)
         printf("volume set failed !\n");

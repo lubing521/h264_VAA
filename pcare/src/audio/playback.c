@@ -49,6 +49,8 @@ int playback_on = 0;		/* TODO (FIX ME) now the software on cellphone may not sup
 
 extern int oss_fd_play;
 extern sem_t start_music;
+extern int cur_sound;
+extern int pre_sound;
 /* ---------------------------------------------------------- */
 /* 
  * playback buffer data (double buffer, be called from ./receive.c)
@@ -111,16 +113,16 @@ int speak_power_on()
 }
 int volume_set(char volume)
 {
-    int volume_fd;
-	volume_fd=open(CS3700_VOLUME,O_WRONLY);
-    if(volume_fd<0)
-    {
-        //printf("volume_fd open failed !!!\n");
-        return -1;
-    }
-    write(volume_fd,&volume);//0~7
-    printf("set volume to %c\n",volume);
-    close(volume_fd);
+    /*int volume_fd;*/
+	/*volume_fd=open(CS3700_VOLUME,O_WRONLY);*/
+    /*if(volume_fd<0)*/
+    /*{*/
+        /*//printf("volume_fd open failed !!!\n");*/
+        /*return -1;*/
+    /*}*/
+    /*write(volume_fd,&volume);//0~7*/
+    /*printf("set volume to %c\n",volume);*/
+    /*close(volume_fd);*/
     return 0;
 }
 /*
@@ -130,6 +132,12 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
 {
     int status, arg;
     char volume = '5';
+    if(pre_sound == cur_sound){
+        return 0;
+    }
+    else{
+        pre_sound = cur_sound;
+    }
     pthread_mutex_lock(&i2c_mutex_lock);
     if(volume_set(volume))
         printf("volume set failed !\n");
