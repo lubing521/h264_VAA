@@ -343,11 +343,10 @@ void *audio_send( void *arg )
 #endif
                 memcpy((u8 *)&g_raw_buffer[0][RECORD_ADPCM_MAX_READ_LEN], (u8 *)(&adpcm_state), 3);
                 if(step_is_work == 1){
-                    memset(g_raw_buffer[0],0,RECORD_ADPCM_MAX_READ_LEN);
+                    //memset(g_raw_buffer[0],0,RECORD_ADPCM_MAX_READ_LEN);
+                    memset((short *)buffer->data,0,RECORD_MAX_READ_LEN);
                 }
-                else{
-                    adpcm_coder( (short *)buffer->data, g_raw_buffer[0],RECORD_MAX_READ_LEN,&adpcm_state);
-                }
+                adpcm_coder( (short *)buffer->data, g_raw_buffer[0],RECORD_MAX_READ_LEN,&adpcm_state);
 				error_flag = send_audio_data(g_raw_buffer[0],RECORD_ADPCM_MAX_READ_LEN,buffer->time_stamp);
 #ifdef CAPTURE_PROFILE
 				gettimeofday(&t3,NULL);
