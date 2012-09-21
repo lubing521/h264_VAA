@@ -507,8 +507,7 @@ static int sep0611_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[], int
 	/* We have an error */
 	if (i2c->cmd_err == I2C_ERR_TX_ABRT) {
 		ret = sep0611_i2c_handle_tx_abort(i2c);
-        if(ret == -EAGAIN)
-            arb_lost_recovery(SEP0611_GPE21,SEP0611_GPE20);
+        arb_lost_recovery(SEP0611_GPE21,SEP0611_GPE20);
 		goto done;
 	}
 	ret = -EIO;

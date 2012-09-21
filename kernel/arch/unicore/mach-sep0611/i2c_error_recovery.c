@@ -34,6 +34,7 @@ unsigned long arb_lost_recovery(unsigned long scl_gpio, unsigned long sda_gpio)
 	int recovered_successfully = 0;
 	int val;
 
+    printk("%s\n",__func__);
 	if ((!scl_gpio) || (!sda_gpio)) {
 		pr_err("not proper input:scl_gpio 0x%08lx,"
 			"sda_gpio 0x%08lx\n", scl_gpio, sda_gpio);
