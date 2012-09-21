@@ -185,7 +185,7 @@ int prase_packet(int opcode, u8 *buf)
             volume_set(buf[0]);
 		default:
 			//printf(">>>opcode = %d\n", opcode);
-			printf("Unsupported opcode from user!\n");
+			printf("Unsupported opcode[ %d ] from user!\n",opcode);
 			return -1;
 	}
 	return 0;
