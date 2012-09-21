@@ -508,28 +508,53 @@ void enable_audio_send()
 }
 
 /*
- * stop confirm
+ * send music player over
  */
-void confirm_stop()
+void send_music_played_over()
 {
-    int stepper_stop_fd = AVcommand_fd;
+    int music_played_over_fd = AVcommand_fd;
     struct command *command15;
-    struct step_stop_resp *step_stop_resp;
+    struct music_played_over *music_played_over;
     command15 = malloc(sizeof(struct command));
     memcpy(command15->protocol_head, str_ctl, 4);
-    step_stop_resp = &command15->text[0].step_stop_resp;
+    music_played_over = &command15->text[0].music_played_over;
     command15->opcode = 15; 
     command15->text_len = 0;
-    printf("confirm_stop******\n");
-    if (send(stepper_stop_fd, command15, 23, 0) == -1){ 
+    printf("-->Music Is Played Over !\n");
+    if (send(music_played_over_fd, command15, 23, 0) == -1){ 
         perror("send");
-        close(stepper_stop_fd);
+        close(music_played_over_fd);
         printf("========%s,%u========\n",__FILE__,__LINE__);
         exit(0);
     }   
     
     free(command15);
     command15 = NULL;
+    return;
+}                           
+/*
+ *confirm_stop 
+ */
+void send_talk_end_resp()
+{
+    int talk_end_fd = AVcommand_fd;
+    struct command *command22;
+    struct talk_end_resp *talk_end_resp;
+    command22 = malloc(sizeof(struct command));
+    memcpy(command22->protocol_head, str_ctl, 4);
+    talk_end_resp = &command22->text[0].talk_end_resp;
+    command22->opcode = 22; 
+    command22->text_len = 0;
+    printf("-->Send Talk Stop Resp !\n");
+    if (send(talk_end_fd, command22, 23, 0) == -1){ 
+        perror("send");
+        close(talk_end_fd);
+        printf("========%s,%u========\n",__FILE__,__LINE__);
+        exit(0);
+    }   
+    
+    free(command22);
+    command22 = NULL;
     return;
 }                           
 /* enable talk data */
@@ -1284,12 +1309,12 @@ void network(void)
 			continue;
 		}
 
-		printf("server: got connection from %s,,,,%d\n", inet_ntoa(client_addr.sin_addr),client_fd);
+		printf("-->Got Connection From %s\n", inet_ntoa(client_addr.sin_addr));
         if(current_client_address == 0)
             current_client_address =client_addr.sin_addr.s_addr;
         else if (current_client_address != client_addr.sin_addr.s_addr)
         {
-            printf("Rejected !!!! Already a client conected!\n");
+            printf("-->Rejected !!!! Already a client conected!\n");
             free(client_fd);
             continue;
         }
@@ -1352,7 +1377,7 @@ void network(void)
             {
                 close(*client_fd);
                 free(client_fd);
-                printf("muisc is working now ! reject request!\n");
+                printf("-->Error: Muisc Is Working Now ! Reject Request!\n");
             }
             else{
                 music_data_fd = *client_fd;

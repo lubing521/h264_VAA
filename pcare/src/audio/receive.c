@@ -17,6 +17,16 @@ static void *talk_playback( void *arg );
 static void *talk_receive( void *arg );
 extern sem_t start_talk;
 extern oss_fd_play;
+int receiver_err_num;
+static char * receiver_err_string[]={
+    "No Fileszie Received !\n",
+    "No Audio Param Received !\n",
+    "Received Error Audio Param !\n",
+    "GetEmptyBuffer's result is NULL Pointer in Receiver Init !\n",
+    "GetEmptyBuffer's result is NULL Pointer When Receiving !\n",
+    "Read_all From Socket Error !\n",
+    "Music Played Over !\n"
+};
 /* --------------------------------------------------------- */
 enum PlayerState
 {
@@ -330,7 +340,7 @@ int FillBuffer( BufferQueue *queue )
 
 void InitQueue( BufferQueue *queue, const char *name, int num )
 {
-	printf("InitQueue(%s)\n",name);
+	printf("-->InitQueue(%s)\n",name);
 	queue->buffer = (Buffer *)malloc(sizeof(Buffer)*num);
 	queue->buffer_num = num;
 	queue->name = name;
@@ -350,20 +360,20 @@ void InitQueue( BufferQueue *queue, const char *name, int num )
 int OpenQueueIn( BufferQueue *queue )
 {
 	sem_wait( &queue->in_ready );
-	//printf("Open Queue(%s) In\n", queue->name);
+	printf("-->Open Queue(%s) In\n", queue->name);
 	return ( queue->in_state == QUEUE_WORKING );
 }
 
 int OpenQueueOut( BufferQueue *queue )
 {
 	sem_wait( &queue->out_ready );
-	//printf("Open Queue(%s) Out\n", queue->name);
+	printf("-->Open Queue(%s) Out\n", queue->name);
 	return ( queue->out_state == QUEUE_WORKING );
 }
 
 void EnableBufferQueue( BufferQueue *queue )
 {
-	printf("Enable queue(%s)\n", queue->name);
+	printf("-->Enable queue(%s)\n", queue->name);
 	queue->in_state = QUEUE_WORKING;
 	queue->out_state = QUEUE_WORKING;
 	sem_trywait( &queue->in_ready );
@@ -375,7 +385,7 @@ void EnableBufferQueue( BufferQueue *queue )
 
 void DisableBufferQueue( BufferQueue *queue )
 {
-	printf("Disable queue(%s)\n",queue->name);
+	printf("-->Disable queue(%s)\n",queue->name);
 	pthread_mutex_lock( &queue->lock );
 	ResetBufferList( &queue->list_filled, NULL, 0 );
 	ResetBufferList( &queue->list_empty, queue->buffer, queue->buffer_num );
@@ -405,7 +415,7 @@ void *talk_playback( void *arg )
 		switch( state )
 		{
 			case PLAYER_INIT:
-				printf("player init\n");
+				printf("-->player init\n");
 				if( buffer->flag == START_TALK && buffer->len == sizeof(struct AUDIO_CFG) )
 				{
 					cfg = *(struct AUDIO_CFG *)(buffer->data);
@@ -415,35 +425,35 @@ void *talk_playback( void *arg )
 					}
 					if(oss_fd_play < 0)
 					{
-						printf("Err(talkplayback): Open audio(oss) device failed!\n");
+						printf("-->Err(talkplayback): Open audio(oss) device failed!\n");
 					}
 					else if( set_oss_play_config(oss_fd_play, cfg.rate,cfg.channels, cfg.bit) < 0 )
 					{
-						printf("Err(talkplayback): set oss play config failed!\n");
+						printf("-->Err(talkplayback): set oss play config failed!\n");
 						close(oss_fd_play);
 						oss_fd_play = 0;
 					}
 					adpcm_state.valprev = 0;
 					adpcm_state.index = 0;
-					printf("player start\n");
+					printf("-->Init OK ! Player Started !\n");
 					state = PLAYER_PLAYBACK;
 				}
 				else
 				{
-					printf("Err(talkplayback): Bad start flag or config!\n");
+					printf("-->Err(talkplayback): Bad start flag or config!\n");
 				}
 				EmptyBuffer( TALK_QUEUE );
 				break;
 			case PLAYER_RESET:
-				printf("player reset\n");
+				printf("-->Error in OSS ! Player Will Reset\n");
 				oss_fd_play = open(OSS_AUDIO_DEV,O_WRONLY);
 				if(oss_fd_play < 0)
 				{
-					printf("Err(talkplayback): Open audio(oss) device failed!\n");
+					printf("-->Error Serious !: Open audio(oss) device failed!\n");
 				}
 				else if( set_oss_play_config(oss_fd_play, cfg.rate,cfg.channels, cfg.bit) < 0 )
 				{
-					printf("Err(talkplayback): set oss play config failed!\n");
+					printf("-->Err(talkplayback): set oss play config failed!\n");
 					close(oss_fd_play);
 					oss_fd_play = 0;
 				}
@@ -454,11 +464,11 @@ void *talk_playback( void *arg )
 				if( oss_fd_play > 0 && g_player.state == ST_PLAYING )
 				{
 					if( buffer->len <= 0 || buffer->len > ADPCM_MAX_READ_LEN )
-						printf("err buffer len %d\n", buffer->len);
+						printf("-->Error: buffer len %d is not equal to %d\n", buffer->len,ADPCM_MAX_READ_LEN);
 					adpcm_decoder( buffer->data, (short *)g_decoded_buffer[i],buffer->len, &adpcm_state);
 					if( playback_buf( oss_fd_play, g_decoded_buffer[i], buffer->len*4) < 0 )
 					{
-						printf("playback_buf ret error !\n");
+						printf("-->Error: Player Ret Rrror !\n");
 						close(oss_fd_play);
 						oss_fd_play = 0;
 						state = PLAYER_RESET;
@@ -468,12 +478,12 @@ void *talk_playback( void *arg )
 				if( buffer->flag == END_TALK )
                 {
                     state = PLAYER_STOPPED;
-                    confirm_stop();
+                    send_music_played_over();
                 }
 				EmptyBuffer( TALK_QUEUE );
 				break;
 			case PLAYER_STOPPED:
-				printf("player stop\n");
+				printf("-->Player stop\n");
 				//close(oss_fd_play);
 				//oss_fd_play = 0;
                 speak_power_off();
@@ -500,10 +510,11 @@ void *talk_receive( void *arg )
 		switch( state )
 		{
 			case TALK_INIT:
-				printf("Talk init\n");
+				printf("-->Receiver Init\n");
 				
 				if (read_client(music_data_fd, buf, 8) != 8) {
-					printf("Err: no file size!\n");
+//					printf("Err: no file size!\n");
+                    receiver_err_num = 0;
 					state = TALK_STOPPED;
 				}
 				else
@@ -512,7 +523,8 @@ void *talk_receive( void *arg )
 					read_left = file_size - 4;
 					printf(">>>receive file size : %d Bytes\n", file_size);
 					if (read_client(music_data_fd, buf, 4) != 4) {
-						printf("Err: no audio param!\n");
+//						printf("Err: no audio param!\n");
+                        receiver_err_num = 1;
 						state = TALK_STOPPED;
 					}
 					else
@@ -524,7 +536,8 @@ void *talk_receive( void *arg )
 						//printf("rate is %d,channels is %d,bit is %d,ispk is %d\n",rate,channels,bit,ispk);
 						if(channels !=1||bit!=16||buf[8]>7||file_size<0)
 						{
-							printf("Err: received file error !!\n");
+//							printf("Err: received audio param error !!\n");
+                            receiver_err_num = 2;
 							state = TALK_STOPPED;
 						}
 						else
@@ -535,6 +548,7 @@ void *talk_receive( void *arg )
 							if( buffer == NULL )
 							{
 								state = TALK_STOPPED;
+                                receiver_err_num = 3;
 								break;
 							}
 							buffer->len = sizeof(struct AUDIO_CFG);
@@ -544,7 +558,10 @@ void *talk_receive( void *arg )
 							cfg->bit=bit;
 							cfg->ispk=ispk;
 							buffer->flag = START_TALK;
-							printf("start talk\n");
+                            if(ispk)
+                                printf("-->Start Talk Receiver\n");
+                            else
+                                printf("-->Start Music Receiver\n");
 							FillBuffer( TALK_QUEUE );
 							state = TALK_RECEIVE;
 						}
@@ -557,6 +574,7 @@ void *talk_receive( void *arg )
 				if( buffer == NULL )
 				{
 					state = TALK_STOPPED;
+                    receiver_err_num = 4;
 					break;
 				}
 				int read_len = ADPCM_MAX_READ_LEN;
@@ -564,13 +582,15 @@ void *talk_receive( void *arg )
 				if (error_flag < 0)
 				{
 					state = TALK_STOPPED;
+                    receiver_err_num = 5;
 				}
 				else
 				{
 					buffer->len = read_len;
 					if (buffer->len == 0)
 					{
-                        printf("###no data read###,read_left is %d\n",read_left);	
+//                        printf("###no data read###,read_left is %d\n",read_left);	
+                        receiver_err_num = 6;
                         state = TALK_STOPPED;;
 					}
 					else
@@ -580,7 +600,7 @@ void *talk_receive( void *arg )
 							read_left -= buffer->len;
 							if( read_left <= 0 )
 							{
-                                printf("music play over\n");
+                                printf("-->music play over\n");
                                 buffer->flag = END_TALK;
                             }
 							else
@@ -597,9 +617,11 @@ void *talk_receive( void *arg )
 				}
 				break;
 			case TALK_STOPPED:
-				printf("Talk stop\n");
+                if(ispk)
+                    printf("-->Stop Talk Receiver\n");
+                else
+                    printf("-->Stop Music Receiver\n");
 				EndPlayer();
-                speak_power_off();
 				sem_wait(&start_talk);
 				state = TALK_INIT;
 				break;
@@ -612,7 +634,8 @@ void *talk_receive( void *arg )
 void EndPlayer()
 {
 	pthread_mutex_lock(&g_player.lock);
-	printf("ToEndPlayer\n");
+//	printf("End Player .... music over or something wrong !\n");
+    printf("-->Error[%d] %s",receiver_err_num,receiver_err_string[receiver_err_num]);
 	if(music_data_fd > 0)
 	{
 		close(music_data_fd);
@@ -624,7 +647,7 @@ void EndPlayer()
 void StartPlayer()
 {
 	pthread_mutex_lock(&g_player.lock);
-	printf("ToStartPlayer\n");
+	printf("<-- Start Player\n");
 	EnableBufferQueue(TALK_QUEUE);
 	send_talk_resp();
 	pthread_mutex_unlock(&g_player.lock);
@@ -634,7 +657,7 @@ void StartPlayer()
 void StopPlayer()
 {
 	pthread_mutex_lock(&g_player.lock);
-	printf("ToStopPlayer\n");
+	printf("<-- Stop Player\n");
 	DisableBufferQueue(TALK_QUEUE);
 	if(music_data_fd>0)
 	{
@@ -642,6 +665,7 @@ void StopPlayer()
 		close(music_data_fd);
 		music_data_fd =-1;
 	}
+    send_talk_end_resp();
 	pthread_mutex_unlock(&g_player.lock);
 	return;
 }

@@ -137,10 +137,10 @@ int prase_packet(int opcode, u8 *buf)
                 video_frameinterval = 5000; 
                 break;//5000ms，最大为 1fp5s
             default:
-                printf("Unsupported video_frameinterval !! Set to Default 0 \n");
+                printf("<--Error:Unsupported video_frameinterval !! Set to Default 0 \n");
                 video_frameinterval = 0;
             }
-            printf("video_frameinterval is %ld \n",video_frameinterval);
+            printf("<--Video_Frameinterval is %ld \n",video_frameinterval);
 
             break;
         case 8:

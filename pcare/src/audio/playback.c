@@ -12,6 +12,13 @@
 #include <sys/ioctl.h>
 #include <pthread.h>
 #include <semaphore.h>
+#define SAVE_PCM 0
+#if  SAVE_PCM
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#endif
+
 #include "types.h"
 #include "audio.h"
 
@@ -68,6 +75,13 @@ int playback_buf(int fd,u8 *play_buf, int len)
     }
     printf("\n");
 #endif
+#if  SAVE_PCM
+    int pfd;
+    int i;
+    pfd = open("/record.pcm",O_CREAT|O_RDWR|O_APPEND);
+    write (pfd,buf,left_len);
+    close(pfd);
+#endif     /* -----  SAVE_PCM  ----- */
 	if ((fd < 0) | play_buf == NULL)
 		return 0;
 	
@@ -103,7 +117,7 @@ int speak_power_off()
     char state1[]="off";
     if(speak_power(state1)<0)
         printf("set speak_power off failed ! \n");
-    printf("Close Speaker !!\n");
+    printf("-->Close Speaker !!\n");
 }
 int speak_power_on()
 {

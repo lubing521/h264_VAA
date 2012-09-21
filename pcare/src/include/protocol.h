@@ -145,6 +145,12 @@ struct talk_end {
 	/* has no text */
 }__attribute__((packed));
 
+/* camera -> user */
+struct talk_end_resp {
+	/* opcode = 22 */
+	/* has no text */
+}__attribute__((packed));
+
 /* -------------------------- */
 
 /* user -> camera */
@@ -153,8 +159,8 @@ struct decoder_control_req {
 	u8 cmd_code;			/* from 0-255 */
 }__attribute__((packed));
 
-/*stepper motor stop confirm*/
-struct step_stop_resp{
+/* music_played_over */
+struct music_played_over{
 	/* opcode = 15 */
 }__attribute__((packed));
 
@@ -304,9 +310,10 @@ union context {
 	struct video_start_resp video_start_resp;
     struct video_framInterval video_framInterval;
 	struct talk_start_resp talk_start_resp;
+	struct talk_end_resp talk_end_resp;
 	struct fetch_battery_power_resp fetch_battery_power_resp;
 	struct tem_rh_data tem_rh_data;
-	struct step_stop_resp step_stop_resp;
+	struct music_played_over music_played_over;
 	/* AVdata protocols */
 	struct video_data video_data;
 	struct audio_data audio_data;

@@ -8,7 +8,8 @@
 #define __NETWORK_H
 void network(void);
 void enable_t_rh_sent(void);
-void confirm_stop(void);
+void send_talk_end_resp(void);
+void send_music_played_over(void);
 #define BLOWFISH
 #ifdef BLOWFISH
 #define BLOWFISH_KEY "-shanghai-hangzhou"
