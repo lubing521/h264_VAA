@@ -499,8 +499,10 @@ void enable_audio_send()
 		perror("send");
 		close(audio_fd);
         printf("========%s,%u==========\n",__FILE__,__LINE__);
+        printf("-->Send Audio Resp ... Failed !!\n");
 		exit(0);
 	}
+    printf("-->Send Audio Resp !\n");
 
 	free(command9);
 	command9 = NULL;
@@ -520,13 +522,14 @@ void send_music_played_over()
     music_played_over = &command15->text[0].music_played_over;
     command15->opcode = 15; 
     command15->text_len = 0;
-    printf("-->Music Is Played Over !\n");
     if (send(music_played_over_fd, command15, 23, 0) == -1){ 
         perror("send");
         close(music_played_over_fd);
         printf("========%s,%u========\n",__FILE__,__LINE__);
+        printf("-->Send Music Is Played Over ... Failed \n");
         exit(0);
     }   
+    printf("-->Send Music Is Played Over !\n");
     
     free(command15);
     command15 = NULL;
@@ -545,13 +548,14 @@ void send_talk_end_resp()
     talk_end_resp = &command22->text[0].talk_end_resp;
     command22->opcode = 22; 
     command22->text_len = 0;
-    printf("-->Send Talk Stop Resp !\n");
     if (send(talk_end_fd, command22, 23, 0) == -1){ 
         perror("send");
         close(talk_end_fd);
         printf("========%s,%u========\n",__FILE__,__LINE__);
+        printf("-->Send Talk Stop Resp ... Failed \n");
         exit(0);
     }   
+    printf("-->Send Talk Stop Resp !\n");
     
     free(command22);
     command22 = NULL;
@@ -579,8 +583,10 @@ void send_talk_resp()
 		perror("send");
 		close(talk_fd);
         printf("========%s,%u==========\n",__FILE__,__LINE__);
+        printf("-->Send Talk Start Resp ... Failed\n");
 		exit(0);
 	}
+    printf("-->Send Talk Start Resp !\n");
 
 	free(command12);
 	command12 = NULL;
