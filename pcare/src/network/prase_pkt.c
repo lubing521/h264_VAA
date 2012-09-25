@@ -25,7 +25,7 @@ int cur_sound = 0; //0:init ; 1:record ; 2:play
 /* prase opcode command text */
 int prase_packet(int opcode, u8 *buf)
 {
-	//printf(">>>opcode = %d\n", opcode);
+	//printf("opcode = %d\n", opcode);
 	
 	switch (opcode) {
 		case 250:
@@ -155,7 +155,7 @@ int prase_packet(int opcode, u8 *buf)
 			break;
 		case 10:
 #ifdef ENABLE_CAPTURE_AUDIO
-            printf("send audio packages num is %lu\n",audio_num);
+            printf("   send audio packages num is %lu\n",audio_num);
 			stop_capture();
 			disable_audio_send();
 #else
@@ -167,7 +167,7 @@ int prase_packet(int opcode, u8 *buf)
 			//start_playback();
             cur_sound = 2;
             StartPlayer();
-			printf(">>>Start playbacking ...\n");
+			printf("   Start playbacking ...\n");
 			break;
 		case 13:
 			/* TODO disable talk audio */
@@ -184,8 +184,8 @@ int prase_packet(int opcode, u8 *buf)
         case 22:
             volume_set(buf[0]);
 		default:
-			//printf(">>>opcode = %d\n", opcode);
-			printf("Unsupported opcode[ %d ] from user!\n",opcode);
+			//printf("opcode = %d\n", opcode);
+			printf("   Unsupported opcode[ %d ] from user!\n",opcode);
 			return -1;
 	}
 	return 0;

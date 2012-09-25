@@ -33,7 +33,7 @@ mount /dev/pts
 cd /etc/dropbear
 /sbin/dropbearkey -t rsa -f dropbear_rsa_host_key
 /sbin/dropbear -p 22
-echo 4 > /proc/sys/kernel/printk
+#echo 4 > /proc/sys/kernel/printk
 #
 #/home/toy/leds.sh&
 /home/toy/aptest.sh&

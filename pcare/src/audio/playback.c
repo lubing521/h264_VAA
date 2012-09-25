@@ -91,7 +91,7 @@ int playback_buf(int fd,u8 *play_buf, int len)
     //printf("playback_buf>>>>>> rc= %d,left_len=%d\n",rc,left_len);
 	if (rc < 0)
     {
-		printf("oss write error! error num is %d\n",rc);
+		printf("   oss write error! error num is %d\n",rc);
         return -1;
     }
 	if (rc != left_len)
@@ -116,14 +116,14 @@ int speak_power_off()
 {
     char state1[]="off";
     if(speak_power(state1)<0)
-        printf("set speak_power off failed ! \n");
-    printf("-->Close Speaker !!\n");
+        printf("   set speak_power off failed ! \n");
+    printf("   Close Speaker !!\n");
 }
 int speak_power_on()
 {
     char state1[]="on";
     if(speak_power(state1)<0)
-        printf("set speak_power off failed ! \n");
+        printf("   set speak_power off failed ! \n");
 }
 int volume_set(char volume)
 {
@@ -154,7 +154,7 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
     }
     pthread_mutex_lock(&i2c_mutex_lock);
     if(volume_set(volume))
-        printf("volume set failed !\n");
+        printf("   volume set failed !\n");
     if(stat_play == 1)
     {
         set_i2s_rate(rate);
@@ -162,7 +162,7 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
         return;
     }
     if(ioctl(fd,SNDCTL_DSP_RESET) != 0)
-        printf("OSS Reset Failed !\n");
+        printf("   OSS Reset Failed !\n");
     /* set audio rate */
     //rate =8000;
     arg	= rate;
@@ -170,13 +170,13 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
     //	printf("status is %d   arg is %d\n",status,arg);
     if (status == -1)
     {
-        printf("SNDCTL_DSP_SPEED ioctl failed,status is %d\n",status);
+        printf("   SNDCTL_DSP_SPEED ioctl failed,status is %d\n",status);
         pthread_mutex_unlock(&i2c_mutex_lock);
         return -5;
     }
     if (arg != rate)
     {
-        printf("unable to set number of rate\n");
+        printf("   unable to set number of rate\n");
         pthread_mutex_unlock(&i2c_mutex_lock);
         return -6;
     }
@@ -186,13 +186,13 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
     //	printf("status is %d   arg is %d\n",status,arg);
     if (status == -1)
     {
-        printf("SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
+        printf("   SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
         pthread_mutex_unlock(&i2c_mutex_lock);
         return -1;
     }
     if (arg != bit)
     {
-        printf("unable to set sample size\n");
+        printf("   unable to set sample size\n");
         pthread_mutex_unlock(&i2c_mutex_lock);
         return -2;
     }
@@ -205,19 +205,19 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
     //	printf("status is %d   arg is %d\n",status,arg);
     if (status == -1)
     {
-        printf("SOUND_PCM_WRITE_CHANNELS ioctl failed,status is %d\n",status);
+        printf("   SOUND_PCM_WRITE_CHANNELS ioctl failed,status is %d\n",status);
         pthread_mutex_unlock(&i2c_mutex_lock);
         return -3;
     }
     if (arg != channels)
     {
-        printf("unable to set number of channels\n");
+        printf("   unable to set number of channels\n");
         pthread_mutex_unlock(&i2c_mutex_lock);
         return -4;
     }
 
     stat_play = 1;
-    printf("rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
+    printf("   rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
     pthread_mutex_unlock(&i2c_mutex_lock);
     return 0;
 }
@@ -235,7 +235,7 @@ int parse_wav_header(u8 *buf, u32 fd)
 
 	if( set_oss_play_config(fd, phdr->sample_rate, phdr->num_channels, phdr->bits_per_sample) < 0 )
     {
-        printf("Err: set oss play config failed!\n");
+        printf("   Err: set oss play config failed!\n");
         return -1;
     }
 
@@ -269,11 +269,11 @@ void stop_playback()
     {
 		close(oss_fd_play);
 		oss_fd_play = 0;
-		printf("<<<Close playback audio device\n");
+		printf("   Close playback audio device\n");
 	}
 	pthread_mutex_unlock(&stop_playback_lock);
 
-	printf("<<<Stop playback audio ...\n");
+	printf("   Stop playback audio ...\n");
 }
 
 

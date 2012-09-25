@@ -484,7 +484,11 @@ static int sep0611_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[], int
 	/* wait for tx to complete */
 	ret = wait_for_completion_interruptible_timeout(&i2c->cmd_complete, HZ);
 	if (ret == 0) {
-		dev_err(i2c->dev, "controller timed out\n");
+		dev_err(i2c->dev, "controller timed out,ret is %d\n",ret);
+        /* add by xuejilong */
+		writel(0, i2c->base + I2C_INTR_MASK);
+		complete(&i2c->cmd_complete);
+        /* add by xuejilong */
 		sep0611_i2c_init(i2c);
 		ret = -ETIMEDOUT;
 		goto done;
@@ -507,7 +511,6 @@ static int sep0611_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[], int
 	/* We have an error */
 	if (i2c->cmd_err == I2C_ERR_TX_ABRT) {
 		ret = sep0611_i2c_handle_tx_abort(i2c);
-        arb_lost_recovery(SEP0611_GPE21,SEP0611_GPE20);
 		goto done;
 	}
 	ret = -EIO;

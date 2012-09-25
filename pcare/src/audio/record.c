@@ -239,31 +239,31 @@ void *audio_capture( void *arg )
 		switch( state )
 		{
 			case RECORDER_INIT:
-				printf("-->Recorder Init\n");
+				printf("Recorder Init\n");
 				OpenQueueIn(CAPTURE_QUEUE);
 				if( oss_fd_record < 0 )
 				{
 					oss_fd_record = open(OSS_AUDIO_DEV,O_RDONLY);
 					if(oss_fd_record < 0)
 					{
-						printf("-->Err(audio_capture): Open audio(oss) device failed!\n");
+						printf("Err(audio_capture): Open audio(oss) device failed!\n");
 						break;
 					}
 				}
     				set_oss_record_config(oss_fd_record,cfg.rate,cfg.channels,cfg.bit);
-				printf("-->Recorder Start\n");
+				printf("Recorder Start\n");
 				state = RECORDER_CAPTURE;
 				break;
 			case RECORDER_RESET:
-				printf("-->Recorder Reset\n");
+				printf("Recorder Reset\n");
 				oss_fd_record = open(OSS_AUDIO_DEV,O_RDONLY);
 				if(oss_fd_record < 0)
 				{
-					printf("-->Err(audio_capture): Open audio(oss) device failed!\n");
+					printf("Err(audio_capture): Open audio(oss) device failed!\n");
 				}
 				else if( set_oss_play_config(oss_fd_record,cfg.rate,cfg.channels,cfg.bit) < 0 )
 				{
-					printf("-->Err(audio_capture): set oss play config failed!\n");
+					printf("Err(audio_capture): set oss play config failed!\n");
 					close(oss_fd_record);
 					oss_fd_record = -1;
 					break;
@@ -282,7 +282,7 @@ void *audio_capture( void *arg )
                 gettimeofday(&buffer->time_stamp,NULL);
                 if( length <= 0 )
 				{
-					printf("-->Record Ret Error !\n");
+					printf("Record Ret Error !\n");
 					state = RECORDER_RESET;
 				}
 				else
@@ -292,7 +292,7 @@ void *audio_capture( void *arg )
 				}
 				break;
 			case RECORDER_STOPPED:
-				printf("-->Recorder Stop\n");
+				printf("Recorder Stop\n");
 				//close(oss_fd_record);
 				//oss_fd_record = 0;
 				state = RECORDER_INIT;
@@ -322,7 +322,7 @@ void *audio_send( void *arg )
 		switch( state )
 		{
 			case SOCKET_INIT:
-				printf("-->Sender Init\n");
+				printf("Sender Init\n");
 				OpenQueueOut(CAPTURE_QUEUE);
 				adpcm_state.valprev = 0;
 				adpcm_state.index = 0;
@@ -357,7 +357,7 @@ void *audio_send( void *arg )
 				cap_cnt++;
 				if( cap_cnt == 10 )
 				{
-					printf("-->ave_cap=%d,max_cap=%d\n",total_cap_time/cap_cnt,max_cap_time);
+					printf("ave_cap=%d,max_cap=%d\n",total_cap_time/cap_cnt,max_cap_time);
 					total_cap_time = 0;
 					cap_cnt = 0;
 				}
@@ -367,7 +367,7 @@ void *audio_send( void *arg )
 				send_cnt++;
 				if( send_cnt == 10 )
 				{
-					printf("-->ave_send=%d,max_send=%d\n",total_send_time/send_cnt,max_send_time);
+					printf("ave_send=%d,max_send=%d\n",total_send_time/send_cnt,max_send_time);
 					total_send_time = 0;
 					send_cnt = 0;
 				}
@@ -379,7 +379,7 @@ void *audio_send( void *arg )
 				EmptyBuffer(CAPTURE_QUEUE);
 				break;
 			case SOCKET_STOPPED:
-				printf("-->Send Stop\n");
+				printf("Send Stop\n");
 				state = SOCKET_INIT;
 				break;
 		}

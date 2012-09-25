@@ -1315,7 +1315,7 @@ void network(void)
 			continue;
 		}
 
-		printf("-->Got Connection From %s\n", inet_ntoa(client_addr.sin_addr));
+		printf("<--Got Connection From %s\n", inet_ntoa(client_addr.sin_addr));
         if(current_client_address == 0)
             current_client_address =client_addr.sin_addr.s_addr;
         else if (current_client_address != client_addr.sin_addr.s_addr)
