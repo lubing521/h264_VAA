@@ -511,10 +511,6 @@ static int cs3700_set_audio_output(struct snd_soc_codec *codec)
 	cs3700_write_reg(0x09, 0x0020);				//DAC input
 
     cs3700_write_reg(0x0A, 0x0020);				//256*Fs;
-    cs3700_write_reg(0x0B, 0x01A8);
-    cs3700_write_reg(0x0C, 0x01A8);
-    //cs3700_write_reg(0x0B, 0x01C0);				//JGF2012-05-16 0x01C0		//0db
-    //cs3700_write_reg(0x0C, 0x01C0);				//
 
 	cs3700_write_reg(0x2C, 0x0150);				//
 	cs3700_write_reg(0x2D, 0x0150);				//
@@ -530,9 +526,14 @@ static int cs3700_set_audio_output(struct snd_soc_codec *codec)
 	cs3700_write_reg(0x3A, 0x00CC);				//
 	cs3700_write_reg(0x3A, 0x00C8);				//
 	cs3700_write_reg(0x3A, 0x00C0);				//
-
+#if 0
     cs3700_write_reg(0x0B, 0x01B0);
     cs3700_write_reg(0x0C, 0x01B0);
+#endif
+#if 1
+    cs3700_write_reg(0x0B, 0x01A8);
+    cs3700_write_reg(0x0C, 0x01A8);
+#endif
 #endif
 
 	return 0;
@@ -577,11 +578,17 @@ static int cs3700_set_audio_input(struct snd_soc_codec *codec)
 	cs3700_write_reg(0x08, 0x0000);				//ADC input
 
     cs3700_write_reg(0x0A, 0x0020);				//256*Fs;
+#if 0
     cs3700_write_reg(0x0B, 0x01C0);
     cs3700_write_reg(0x0C, 0x01C0);
 
     cs3700_write_reg(0x0B, 0x01B0);
     cs3700_write_reg(0x0C, 0x01B0);
+#endif
+#if 1
+    cs3700_write_reg(0x0B, 0x01A8);
+    cs3700_write_reg(0x0C, 0x01A8);
+#endif
 
 #endif
 
