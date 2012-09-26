@@ -663,7 +663,7 @@ void send_picture(char *data, u32 length,struct timeval t1)
 	char *p;
 	static int retry_num=0;
 
-	gettimeofday(&t1,NULL);
+	//gettimeofday(&t1,NULL);
 	av_command1->text_len = length + 13;			/* TODO */
 
 	video_data->pic_len = length;
@@ -749,7 +749,7 @@ int send_audio_data(u8 *audio_buf, u32 data_len,struct timeval t1)
 	char *p;
 	static int retry_num=0;
 
-	gettimeofday(&t1,NULL);
+	//gettimeofday(&t1,NULL);
 	av_command2->text_len = data_len + 20;			/* contant sample and index */
 	audio_data->ado_len = data_len;
     audio_data->time_stamp = TIME_DIFF(t1,av_start_time);
