@@ -65,7 +65,7 @@ int get_rh()
     rh0 = atoi(buf);
     rh1 = ((float)rh0)/65536*125-6;
     //printf("rh1 is %f\n",rh1);
-    rh1 = rh1 * exp2(4283.78 * tem_fix/(243.12 + tem1 - tem_fix)/(243.12 + tem1));
+    rh1 = rh1 * exp2(4283.78 * (-tem_fix)/(243.12 + tem1 - tem_fix)/(243.12 + tem1));
     //printf("fixed rh1 is %f ,fixed tem is %d\n",rh1,tem_integer);
     rh = ((int)rh1);
     close(fd);
