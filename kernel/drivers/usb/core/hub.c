@@ -2738,6 +2738,7 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
 					buf->bMaxPacketSize0;
 			kfree(buf);
 
+#if 0   // omit second reset. by longn_qi
 			//printk("###t%d:reset port\n",jiffies_to_msecs(jiffies)); 
 			retval = hub_port_reset(hub, port1, udev, delay);
 			if (retval < 0)		/* error or disconnect */
@@ -2755,6 +2756,7 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
 				retval = -EMSGSIZE;
 				continue;
 			}
+#endif
 #undef GET_DESCRIPTOR_BUFSIZE
 		}
 

@@ -98,6 +98,7 @@
 #include <linux/kobject.h>
 #include <linux/platform_device.h>
 #include <linux/io.h>
+#include <linux/reboot.h>
 
 //#ifdef	CONFIG_ARM
 #ifdef CONFIG_UNICORE
@@ -1507,6 +1508,12 @@ irqreturn_t musb_interrupt(struct musb *musb)
 	DBG(4, "** IRQ %s usb%04x tx%04x rx%04x\n",
 		(devctl & MUSB_DEVCTL_HM) ? "host" : "peripheral",
 		musb->int_usb, musb->int_tx, musb->int_rx);
+
+    if(!(devctl & MUSB_DEVCTL_HM)&&is_host_capable())
+    {
+        printk("###Error devctl state! Reboot!\n");
+        kernel_restart(NULL);
+    }
 
 	/* the core can interrupt us for multiple reasons; docs have
 	 * a generic interrupt flowchart to follow

@@ -255,7 +255,8 @@ void musb_platform_enable(struct musb *musb)
 //    sep0611_gpio_setpin(SEP0611_USB_DE_SEL, 0);
 //
 //#endif
-
+#endif
+#if 1
     //add by xuejilong
     msleep(15);  
     sep0611_gpio_cfgpin(SEP0611_VBUS_EN,SEP0611_GPIO_IO);
@@ -392,6 +393,17 @@ static int sep0611_set_peripheral(struct otg_transceiver *otg,struct usb_gadget 
 int __init musb_platform_init(struct musb *musb)
 {
    struct otg_transceiver *xceiv;
+
+   // reset usbphy
+    sep0611_gpio_cfgpin(SEP0611_PHY_RST, SEP0611_GPIO_IO);        
+    sep0611_gpio_dirpin(SEP0611_PHY_RST, SEP0611_GPIO_OUT);
+    sep0611_gpio_setpin(SEP0611_PHY_RST, 0);
+    msleep(15);  
+    sep0611_gpio_cfgpin(SEP0611_PHY_RST, SEP0611_GPIO_IO);        
+    sep0611_gpio_dirpin(SEP0611_PHY_RST, SEP0611_GPIO_OUT);
+    sep0611_gpio_setpin(SEP0611_PHY_RST, 1);
+    //printk("###t%d:reset usbphy\n",jiffies_to_msecs(jiffies)); 
+    msleep(200);  
 	
     xceiv = kzalloc(sizeof(struct otg_transceiver), GFP_KERNEL);
     if (!xceiv)
@@ -433,15 +445,6 @@ printk("after setup_timer \n");
     musb->port_index = 0;               
 #endif
     test_musb = musb;
-    sep0611_gpio_cfgpin(SEP0611_PHY_RST, SEP0611_GPIO_IO);        
-    sep0611_gpio_dirpin(SEP0611_PHY_RST, SEP0611_GPIO_OUT);
-    sep0611_gpio_setpin(SEP0611_PHY_RST, 0);
-    msleep(100);  
-    sep0611_gpio_cfgpin(SEP0611_PHY_RST, SEP0611_GPIO_IO);        
-    sep0611_gpio_dirpin(SEP0611_PHY_RST, SEP0611_GPIO_OUT);
-    sep0611_gpio_setpin(SEP0611_PHY_RST, 1);
-	//printk("###t%d:reset usbphy\n",jiffies_to_msecs(jiffies)); 
-    msleep(300);  
     return 0;
 }
 
