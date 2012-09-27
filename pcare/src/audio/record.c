@@ -261,7 +261,7 @@ void *audio_capture( void *arg )
                     if(oss_fd_record < 0)
                     {
                         printf("   Err(audio_capture): Open audio(oss) device failed! Sleep 100ms And Try Again !\n");
-                        msleep(100);
+                        usleep(100000);
                     }
                 }while(oss_fd_record < 0);
 				if( set_oss_play_config(oss_fd_record,cfg.rate,cfg.channels,cfg.bit) < 0 )
