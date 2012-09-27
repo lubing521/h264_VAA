@@ -12,7 +12,7 @@
 unsigned int tem_integer;
 unsigned int tem_decimal;
 unsigned int rh;
-unsigned int tem_fix;
+int tem_fix;
 float tem1;
 struct timeval t_rh_time;
 float exp1(float x);
@@ -36,7 +36,8 @@ int get_tem()
     }
     tem0 = atoi(buf);
     tem1 = ((float)tem0)/65536*175.72-46.85;
-    tem_integer = ((int)tem1) - tem_fix;/* tem_fix */
+    tem1 += (float)tem_fix;/* tem_fix */
+    tem_integer = ((int)tem1);
     //	printf("%f",tem1-tem_integer);
     tem_decimal = (int)((tem1 - tem_integer)*10);
     //	printf("%d %d\n",tem_integer,tem_decimal);
@@ -63,7 +64,9 @@ int get_rh()
     }
     rh0 = atoi(buf);
     rh1 = ((float)rh0)/65536*125-6;
-    rh1 = rh1 * exp1(4283.78 * tem_fix/(243.12 + tem1)/(243.12 + tem1 - tem_fix));
+    //printf("rh1 is %f\n",rh1);
+    rh1 = rh1 * exp2(4283.78 * tem_fix/(243.12 + tem1 - tem_fix)/(243.12 + tem1));
+    //printf("fixed rh1 is %f ,fixed tem is %d\n",rh1,tem_integer);
     rh = ((int)rh1);
     close(fd);
     pthread_mutex_unlock(&i2c_mutex_lock);
@@ -72,17 +75,24 @@ int get_rh()
 
 int start_measure(void)
 {
-    gettimeofday(&t_rh_time,NULL);
     /* tem_fix */
-    if((t_rh_time.tv_sec/60 > 10) && (t_rh_time.tv_sec/60 <= 20))
-        tem_fix = 1;
-    if((t_rh_time.tv_sec/60 > 20) && (t_rh_time.tv_sec/60 <= 30))
-        tem_fix = 2;
-    else if(t_rh_time.tv_sec/60 > 30)
-        tem_fix = 3;
-    else
-        tem_fix = 0;
-    /* tem_fix */
+    if(tem_fix > -3)
+    {
+        gettimeofday(&t_rh_time,NULL);
+        if((t_rh_time.tv_sec/60 > 10) && (t_rh_time.tv_sec/60 <= 20)){
+            tem_fix = -1;
+        }
+        else if((t_rh_time.tv_sec/60 > 20) && (t_rh_time.tv_sec/60 <= 30)){
+            tem_fix = -2;
+        }
+        else if(t_rh_time.tv_sec/60 > 30){
+            tem_fix = -3;
+        }
+        else{
+            tem_fix = 0;
+        }
+        //printf("tem_fix is %d\n",tem_fix);
+    } /* tem_fix */
     if((get_tem() < 0) | (get_rh() < 0 ))
         return -1;
     return 0;
@@ -101,7 +111,7 @@ float exp1(float x)
 }
 float exp2(float x)
 {
-    float tmp=1,sum=0,sum2,i=1;
+    double tmp=1,sum=0,sum2,i=1;
     sum+=1;
     while(tmp>1e-6)
     {
@@ -109,5 +119,5 @@ float exp2(float x)
         sum+=tmp;
         i++;
     }
-    return sum;
+    return (float)sum;
 }
