@@ -112,7 +112,7 @@ int set_i2s_rate(unsigned int rate)
     char ch_rate_11025[]="11025";
     char ch_rate_16000[]="16000";
     char ch_rate_44100[]="44100";
-    printf("%s to %d\n",__func__,rate);
+    printf("   %s to %d\n",__func__,rate);
     fd = open(I2S_RATE,O_WRONLY);
     switch(rate)
     {
@@ -126,7 +126,7 @@ int set_i2s_rate(unsigned int rate)
         write(fd,ch_rate_44100,sizeof(ch_rate_44100));
         break;
     default:
-        printf("Unsported Rate !! Set to default 44100\n");
+        printf("   Unsported Rate !! Set to default 44100\n");
         write(fd,ch_rate_44100,sizeof(ch_rate_44100));
     }
     close(fd);
@@ -147,19 +147,19 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
     }
     pthread_mutex_lock(&i2c_mutex_lock);
     if(volume_set(volume)<0)
-        printf("volume set failed !\n");
+        printf("   volume set failed !\n");
     speak_power_off();
     if(start_record == 1)
     {
         status = ioctl(fd, SOUND_PCM_SYNC, 0);
         if (status == -1)
-            printf("SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
+            printf("   SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
         set_i2s_rate(rate);
         pthread_mutex_unlock(&i2c_mutex_lock);
         return;
     }
     if(ioctl(fd,SNDCTL_DSP_RESET) != 0)
-        printf("OSS Reset Failed !\n");
+        printf("   OSS Reset Failed !\n");
     /* set audio rate */
     arg	= rate;
     //arg	= 8000;
@@ -167,28 +167,28 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
     //status = ioctl(fd, SOUND_PCM_WRITE_RATE, &arg);
     //	printf("status is %d   arg is %d\n",status,arg);
     if (status == -1)
-        printf("SOUND_PCM_WRITE_WRITE ioctl failed,status is %d\n",status);
+        printf("   SOUND_PCM_WRITE_WRITE ioctl failed,status is %d\n",status);
     if (arg != rate)
-        printf("unable to set number of rate\n");
+        printf("   unable to set number of rate\n");
     /* set audio bit */
     arg = bit;
     status = ioctl(fd, SOUND_PCM_WRITE_BITS, &arg);
     //	printf("status is %d   arg is %d\n",status,arg);
     if (status == -1)
-        printf("SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
+        printf("   SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
     if (arg != bit)
-        printf("unable to set sample size\n");
+        printf("   unable to set sample size\n");
 
     /* set audio channels */
     arg = channels;	
     status = ioctl(fd, SOUND_PCM_WRITE_CHANNELS, &arg);
     //	printf("status is %d   arg is %d\n",status,arg);
     if (status == -1)
-        printf("SOUND_PCM_WRITE_CHANNELS ioctl failed,status is %d\n",status);
+        printf("   SOUND_PCM_WRITE_CHANNELS ioctl failed,status is %d\n",status);
     if (arg != channels)
-        printf("unable to set number of channels\n");
+        printf("   unable to set number of channels\n");
     start_record = 1;
-    printf("rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
+    printf("   rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
     pthread_mutex_unlock(&i2c_mutex_lock);
 
 }
@@ -239,31 +239,34 @@ void *audio_capture( void *arg )
 		switch( state )
 		{
 			case RECORDER_INIT:
-				printf("Recorder Init\n");
+				printf("   Recorder Init\n");
 				OpenQueueIn(CAPTURE_QUEUE);
 				if( oss_fd_record < 0 )
 				{
 					oss_fd_record = open(OSS_AUDIO_DEV,O_RDONLY);
 					if(oss_fd_record < 0)
 					{
-						printf("Err(audio_capture): Open audio(oss) device failed!\n");
+						printf("   Err(audio_capture): Open audio(oss) device failed!\n");
 						break;
 					}
 				}
     				set_oss_record_config(oss_fd_record,cfg.rate,cfg.channels,cfg.bit);
-				printf("Recorder Start\n");
+				printf("   Recorder Start\n");
 				state = RECORDER_CAPTURE;
 				break;
 			case RECORDER_RESET:
-				printf("Recorder Reset\n");
-				oss_fd_record = open(OSS_AUDIO_DEV,O_RDONLY);
-				if(oss_fd_record < 0)
+				printf("   Recorder Reset\n");
+                do{
+                    oss_fd_record = open(OSS_AUDIO_DEV,O_RDONLY);
+                    if(oss_fd_record < 0)
+                    {
+                        printf("   Err(audio_capture): Open audio(oss) device failed! Sleep 100ms And Try Again !\n");
+                        msleep(100);
+                    }
+                }while(oss_fd_record < 0);
+				if( set_oss_play_config(oss_fd_record,cfg.rate,cfg.channels,cfg.bit) < 0 )
 				{
-					printf("Err(audio_capture): Open audio(oss) device failed!\n");
-				}
-				else if( set_oss_play_config(oss_fd_record,cfg.rate,cfg.channels,cfg.bit) < 0 )
-				{
-					printf("Err(audio_capture): set oss play config failed!\n");
+					printf("   Err(audio_capture): set oss play config failed!\n");
 					close(oss_fd_record);
 					oss_fd_record = -1;
 					break;
@@ -282,7 +285,7 @@ void *audio_capture( void *arg )
                 gettimeofday(&buffer->time_stamp,NULL);
                 if( length <= 0 )
 				{
-					printf("Record Ret Error !\n");
+					printf("   Record Ret Error !\n");
 					state = RECORDER_RESET;
 				}
 				else
@@ -292,7 +295,7 @@ void *audio_capture( void *arg )
 				}
 				break;
 			case RECORDER_STOPPED:
-				printf("Recorder Stop\n");
+				printf("   Recorder Stop\n");
 				//close(oss_fd_record);
 				//oss_fd_record = 0;
 				state = RECORDER_INIT;
@@ -322,7 +325,7 @@ void *audio_send( void *arg )
 		switch( state )
 		{
 			case SOCKET_INIT:
-				printf("Sender Init\n");
+				printf("   Sender Init\n");
 				OpenQueueOut(CAPTURE_QUEUE);
 				adpcm_state.valprev = 0;
 				adpcm_state.index = 0;
@@ -357,7 +360,7 @@ void *audio_send( void *arg )
 				cap_cnt++;
 				if( cap_cnt == 10 )
 				{
-					printf("ave_cap=%d,max_cap=%d\n",total_cap_time/cap_cnt,max_cap_time);
+					printf("   ave_cap=%d,max_cap=%d\n",total_cap_time/cap_cnt,max_cap_time);
 					total_cap_time = 0;
 					cap_cnt = 0;
 				}
@@ -367,7 +370,7 @@ void *audio_send( void *arg )
 				send_cnt++;
 				if( send_cnt == 10 )
 				{
-					printf("ave_send=%d,max_send=%d\n",total_send_time/send_cnt,max_send_time);
+					printf("   ave_send=%d,max_send=%d\n",total_send_time/send_cnt,max_send_time);
 					total_send_time = 0;
 					send_cnt = 0;
 				}
@@ -379,7 +382,7 @@ void *audio_send( void *arg )
 				EmptyBuffer(CAPTURE_QUEUE);
 				break;
 			case SOCKET_STOPPED:
-				printf("Send Stop\n");
+				printf("   Send Stop\n");
 				state = SOCKET_INIT;
 				break;
 		}
