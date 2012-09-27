@@ -420,6 +420,11 @@ ddr_datatraining_3fc:
     beq    fcwrong
     bne    training 
 fcwrong:
+@software reset	
+    ldw r1,=0xb0001040
+    ldw r0,=0x1
+    stw r0,[r1]
+
     mov.a   r9,   #1	
     ldw r1,=0x31000000
     mov.a r0,#0x66
