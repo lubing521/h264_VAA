@@ -406,7 +406,7 @@ static irqreturn_t sep0611_i2c_isr(int this_irq, void *dev_id)
 		 */
 		writel(0, i2c->base + I2C_INTR_MASK);
 		
-		//printk("abort!\n\n");
+		/*printk("abort!\n\n");*/
 		
 		goto tx_aborted;
 	}
@@ -427,6 +427,7 @@ tx_aborted:
 	if ((stat & (I2C_INTR_TX_ABRT | I2C_INTR_STOP_DET)) || i2c->msg_err)
 		complete(&i2c->cmd_complete);
 
+    udelay(100);
 	return IRQ_HANDLED;
 }
 
@@ -462,6 +463,7 @@ static int sep0611_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[], int
 
 	dev_dbg(i2c->dev, "%s: msgs: %d\n", __func__, num);
 	
+    /*printk("%s\n",__func__);*/
 	mutex_lock(&i2c->lock);
 
 	INIT_COMPLETION(i2c->cmd_complete);
@@ -485,10 +487,6 @@ static int sep0611_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[], int
 	ret = wait_for_completion_interruptible_timeout(&i2c->cmd_complete, HZ);
 	if (ret == 0) {
 		dev_err(i2c->dev, "controller timed out,ret is %d\n",ret);
-        /* add by xuejilong */
-		writel(0, i2c->base + I2C_INTR_MASK);
-		complete(&i2c->cmd_complete);
-        /* add by xuejilong */
 		sep0611_i2c_init(i2c);
 		ret = -ETIMEDOUT;
 		goto done;
@@ -503,7 +501,9 @@ static int sep0611_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[], int
 	/* no error */
 	if (likely(!i2c->cmd_err)) {
 		/* Disable the adapter */
-		writel(0, i2c->base + I2C_ENABLE);
+        /*ret = sep0611_i2c_wait_bus_not_busy(i2c);*/
+        udelay(100);
+        writel(0, i2c->base + I2C_ENABLE);
 		ret = num;
 		goto done;
 	}
@@ -511,11 +511,6 @@ static int sep0611_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[], int
 	/* We have an error */
 	if (i2c->cmd_err == I2C_ERR_TX_ABRT) {
 		ret = sep0611_i2c_handle_tx_abort(i2c);
-        if(ret == -EAGAIN){
-            writel(0, i2c->base + I2C_INTR_MASK);
-            complete(&i2c->cmd_complete);
-            arb_lost_recovery(SEP0611_GPE21,SEP0611_GPE20);
-        }
 		goto done;
 	}
 	ret = -EIO;

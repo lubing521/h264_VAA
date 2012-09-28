@@ -81,6 +81,10 @@ void sep0611_spk_out(bool enable)
     	sep0611_gpio_setpin(SEP0611_SPK_CTL, GPIO_LOW);		/* speaker power off */
 }
 EXPORT_SYMBOL_GPL(sep0611_spk_out);
+static ssize_t speak_power_show(struct device *dev, struct device_attribute *attr, char *buf)   //¿char¿¿int
+{
+    return sprintf(buf,"%d\n",sep0611_gpio_getpin(SEP0611_VOLUME_SET_INT));
+}
 static size_t speak_power_store(struct device *dev, struct device_attribute *attr,
         const char *buf, size_t count)
 {
@@ -91,6 +95,7 @@ static size_t speak_power_store(struct device *dev, struct device_attribute *att
     else if(sysfs_streq(buf,"on")){
         sep0611_spk_out(1);
     }
+#ifdef SEP0611_AUDIO_EN
     else if(sysfs_streq (buf,"coff")){
         sep0611_codec_enable(0);
         //printk(" set codec off !\n");
@@ -99,13 +104,14 @@ static size_t speak_power_store(struct device *dev, struct device_attribute *att
         sep0611_codec_enable(1);
         //printk(" set codec on !");
     }
+#endif
     else{
         //printk("speak_power set failed !");
         return -1;
     }
     return count;
 }
-static DEVICE_ATTR(speak_power, 0222, NULL, speak_power_store);
+static DEVICE_ATTR(speak_power, 0666, speak_power_show, speak_power_store);
 
 #endif
 

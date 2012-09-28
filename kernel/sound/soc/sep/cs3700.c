@@ -119,7 +119,7 @@ static int cs3700_write(struct snd_soc_codec *codec, unsigned int reg,
         if (codec->hw_write(codec->control_data, data, 3) == 3)
         {
             //      printk("..ok\n");
-            udelay(500);
+            udelay(100);
         }
         else
         {
@@ -530,7 +530,7 @@ static int cs3700_set_audio_output(struct snd_soc_codec *codec)
     cs3700_write_reg(0x0B, 0x01B0);
     cs3700_write_reg(0x0C, 0x01B0);
 #endif
-#if 1
+#if 0
     cs3700_write_reg(0x0B, 0x01A8);
     cs3700_write_reg(0x0C, 0x01A8);
 #endif
@@ -585,7 +585,7 @@ static int cs3700_set_audio_input(struct snd_soc_codec *codec)
     cs3700_write_reg(0x0B, 0x01B0);
     cs3700_write_reg(0x0C, 0x01B0);
 #endif
-#if 1
+#if 0
     cs3700_write_reg(0x0B, 0x01A8);
     cs3700_write_reg(0x0C, 0x01A8);
 #endif
