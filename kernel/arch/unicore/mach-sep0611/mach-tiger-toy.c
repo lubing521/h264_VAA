@@ -52,6 +52,29 @@ static struct platform_device sep0611_device_battery = {
 	.id = -1,
 };
 
+/*****************SEP0611 GPIO keyboard support**********************************************/
+static struct gpio_keys_button spdw_buttons[] = {
+	[0] = {
+		.gpio		= SEP0611_VOLUME_SET_INT,
+		.code		= 139,
+		.desc		= "volume",
+		.active_low	= 1,
+		.wakeup		= 0,
+	},
+};
+
+static struct gpio_keys_platform_data spdw_button_data = {
+	.buttons	= spdw_buttons,
+	.nbuttons	= ARRAY_SIZE(spdw_buttons),
+};
+
+static struct platform_device sep0611_device_button = {
+	.name	= "gpio-keys",
+	.id		= -1,
+	.dev	= {
+		.platform_data	= &spdw_button_data,
+	},
+};
 static struct sep0611_led_platdata sep0611_led1_pdata = {
 	.name		= "LED_Statue",
 	.gpio		= SEP0611_GPF19,
@@ -155,6 +178,7 @@ static struct platform_device *devices[] __initdata =
 	&ch37x_spi_device,
 	&sep0611_device_ch37x,
 	&sep0611_device_battery,
+    &sep0611_device_button,
 	&sep0611_device_led1,
 #ifdef CONFIG_ANDROID_PMEM
 	&android_pmem_device,
