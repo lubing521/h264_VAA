@@ -262,7 +262,7 @@ void musb_platform_enable(struct musb *musb)
     sep0611_gpio_cfgpin(SEP0611_VBUS_EN,SEP0611_GPIO_IO);
     sep0611_gpio_dirpin(SEP0611_VBUS_EN, SEP0611_GPIO_OUT);   /* AO_PORT output    */
     sep0611_gpio_setpin(SEP0611_VBUS_EN, 1);                 /* AO_PORT output data */
-    msleep(15);  
+    msleep(200);  
     //add by xuejilong
 #endif
 
@@ -389,6 +389,29 @@ static int sep0611_set_peripheral(struct otg_transceiver *otg,struct usb_gadget 
     otg->gadget = gadget;
     return 0;
 }
+u8 ulpi_read( struct musb *musb, int addr )
+{
+	u8 data;
+
+	musb_writeb(musb->mregs,0x75,addr);
+	musb_writeb(musb->mregs,0x76,0x5);
+	while(!(musb_readb(musb->mregs,0x76) & 0x2));
+	data = musb_readb(musb->mregs,0x74);
+	printk("###read ulpi%d=%x\n",addr,data);
+	musb_writeb(musb->mregs,0x76,0);
+	return data;
+}
+
+void ulpi_write( struct musb *musb, int addr, u8 data )
+{
+	musb_writeb(musb->mregs,0x75,addr);
+	musb_writeb(musb->mregs,0x74,data);
+	musb_writeb(musb->mregs,0x76,0x1);
+	while(!(musb_readb(musb->mregs,0x76) & 0x2));
+	printk("###write ulpi%d=%x\n",addr,data);
+	musb_writeb(musb->mregs,0x76,0);
+	return;
+}
 
 int __init musb_platform_init(struct musb *musb)
 {
@@ -404,6 +427,8 @@ int __init musb_platform_init(struct musb *musb)
     sep0611_gpio_setpin(SEP0611_PHY_RST, 1);
     //printk("###t%d:reset usbphy\n",jiffies_to_msecs(jiffies)); 
     msleep(200);  
+	ulpi_write(musb,0x4,0x45);
+	ulpi_write(musb,0xa,0x6);
 	
     xceiv = kzalloc(sizeof(struct otg_transceiver), GFP_KERNEL);
     if (!xceiv)

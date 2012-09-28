@@ -32,6 +32,7 @@
 #include <linux/wait.h>
 #include <asm/atomic.h>
 #include <asm/unaligned.h>
+#include <linux/reboot.h>
 
 #include <media/v4l2-common.h>
 
@@ -892,7 +893,10 @@ static int uvc_parse_standard_control(struct uvc_device *dev,
 				continue;
 			}
 
-			uvc_parse_streaming(dev, intf);
+			if( uvc_parse_streaming(dev, intf) < 0 )
+			{
+				kernel_restart(NULL);
+			}
 		}
 		break;
 
