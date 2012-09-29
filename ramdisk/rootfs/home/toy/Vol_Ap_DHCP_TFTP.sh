@@ -1,5 +1,6 @@
 #!/bin/sh
 
+/home/toy/volume_set &
 echo "--------Insmod ap ko-----------"
 insmod /modules/rtutil3070ap.ko
 insmod /modules/rt3070ap.ko
