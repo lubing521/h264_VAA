@@ -86,7 +86,7 @@
 //#define CONFIG_BOOTCOMMAND  "mtdparts default; nand read 0x41000000 0x1000000 0x400000; nand read 0x40008000 0x100000 0x300000; bootm 0x40008000;" 
 //#define CONFIG_BOOTCOMMAND  "mtdparts default; nand read 0x41000000 0x400000 0x800000; nand read 0x40008000 0x100000 0x300000; bootm 0x40008000;"
 
-#define CONFIG_BOOTCOMMAND  "mtdparts default; nand read 0x40008000 0x100000 0x800000; bootm 0x40008000;" 
+#define CONFIG_BOOTCOMMAND  "nand read 0x40008000 0x900000 0x800000; bootm 0x40008000;" 
 
 #define	CONFIG_CMD_NET 
 #define	CONFIG_CMD_PING 
