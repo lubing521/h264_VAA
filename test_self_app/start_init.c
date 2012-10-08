@@ -24,9 +24,11 @@
 #define SMLEFTRIGHT_RIGHT_IN_PLACE 10
 
 #define STEPPER_MOTOR_DEV  "/dev/steppermotor"
-#define LED_Statue "/sys/devices/platform/sep0611_led.1/leds/LED_Statue/brightness"
 #define CAMERA_DEV "/dev/video0"
 
+pthread_t smupdown_id,smleftright_id;
+#ifdef LED_FLASH //自检是否需要蓝灯闪烁
+#define LED_Statue "/sys/devices/platform/sep0611_led.1/leds/LED_Statue/brightness"
 pthread_t led_flash_id,smupdown_id,smleftright_id;
 
 void led_on()
@@ -70,6 +72,7 @@ void led_flash()
     }
     return;
 }
+#endif
 
 int step_motor_leftright()
 {
@@ -171,7 +174,9 @@ void main()
     printf("\n===========================================\n");
     printf("========= Now Start Check Myself ==========\n");
     printf("===========================================\n");
+#ifdef LED_FLASH //自检是否需要蓝灯闪烁
     ret = pthread_create(&led_flash_id,NULL,(void *)led_flash,NULL); 
+#endif
     if(camera() < 0)
         goto CAMERA_ERROR;
     ret = pthread_create(&smupdown_id,NULL,(void *)step_motor_updown,NULL); 
