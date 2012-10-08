@@ -702,7 +702,7 @@ static void check_next_phase(struct ch37x *ch37x, int status)
 		goto next;
 	}
 	else if(status){
-		printk("ep%d--pid=%d--nak=%d--status:%x\n", td->epnum, td->pid, td->nak_times, td->status);
+		printk(KERN_DEBUG,"ep%d--pid=%d--nak=%d--status:%x\n", td->epnum, td->pid, td->nak_times, td->status);
 		goto next;
 	}
 
