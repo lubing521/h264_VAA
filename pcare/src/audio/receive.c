@@ -622,6 +622,7 @@ void *talk_receive( void *arg )
                 else
                     printf("   Stop Music Receiver\n");
 				EndPlayer();
+                speak_power_off();
 				sem_wait(&start_talk);
 				state = TALK_INIT;
 				break;
