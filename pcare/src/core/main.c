@@ -17,10 +17,14 @@
 #include "led_control.h"
 #include <pthread.h>
 extern int led_flag;
+extern char str_camVS[];
 pthread_t led_flash_id;
 int main()
 {
     int ret;
+    printf("\n##########################################\n");
+    printf("# Current Firmware Version is %c.%c.%c.%c\n",str_camVS[0]+0x30,str_camVS[1]+0x30,str_camVS[2]+0x30,str_camVS[3]+0x30);
+    printf("##########################################\n\n");
     led_flag=1;
 	ret = pthread_create(&led_flash_id,NULL,(void *)led_flash,NULL); 
     if (ret != 0)
