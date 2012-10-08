@@ -59,7 +59,7 @@ int main()
     }
     while(1){
         read(key_fd,&ev,sizeof(ev));
-        /*printf("ev.code is %d,%d\n",ev.code,ev.value);*/
+        printf("ev.code is %d,%d\n",ev.code,ev.value);
         if(ev.code == 139){
             volume_fd = open(VOLUME_DEV_NAME,O_WRONLY);
             if(ev.value){
