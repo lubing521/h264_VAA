@@ -819,6 +819,7 @@ int send_audio_data(u8 *audio_buf, u32 data_len,struct timeval t1)
 	return 1;
 err_exit:
 	close(audio_data_fd);
+    printf("#errno is %d, retry_num is %d\n",errno,retry_num);
 	printf("#send audio data failed, exit to restart!\n");
 	exit(0);
 	return;
