@@ -90,9 +90,11 @@ static size_t speak_power_store(struct device *dev, struct device_attribute *att
 {
     if(sysfs_streq(buf,"off")){
         buf =NULL;
+        /*printk("\n#####Close Speaker!\n");*/
         sep0611_spk_out(0);
     }
     else if(sysfs_streq(buf,"on")){
+        /*printk("\n#####On Speaker!\n");*/
         sep0611_spk_out(1);
     }
 #ifdef SEP0611_AUDIO_EN
@@ -106,7 +108,7 @@ static size_t speak_power_store(struct device *dev, struct device_attribute *att
     }
 #endif
     else{
-        //printk("speak_power set failed !");
+        /*printk("\n#####speak_power set failed !\n");*/
         return -1;
     }
     return count;

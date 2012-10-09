@@ -260,7 +260,7 @@ void *audio_capture( void *arg )
                     oss_fd_record = open(OSS_AUDIO_DEV,O_RDONLY);
                     if(oss_fd_record < 0)
                     {
-                        printf("   Err(audio_capture): Open audio(oss) device failed! Sleep 100ms And Try Again !\n");
+                        printf("   Err(audio_capture): Open audio(oss) [%d]device failed! Sleep 100ms And Try Again !\n",oss_fd_record);
                         usleep(100000);
                     }
                 }while(oss_fd_record < 0);
@@ -285,7 +285,7 @@ void *audio_capture( void *arg )
                 gettimeofday(&buffer->time_stamp,NULL);
                 if( length <= 0 )
 				{
-					printf("   Record Ret Error !\n");
+					printf("   Record Ret Error ! length is %d\n",length);
 					state = RECORDER_RESET;
 				}
 				else

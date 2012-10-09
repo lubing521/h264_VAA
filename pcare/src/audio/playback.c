@@ -101,14 +101,17 @@ int playback_buf(int fd,u8 *play_buf, int len)
 }
 int speak_power(char *state)
 {
-    int speak_power_fd;
+    int speak_power_fd,ret;
 	speak_power_fd=open(SPEAK_POWER,O_WRONLY);
     if(speak_power_fd<0)
     {
+        printf("   %s open failed [%d]\n",__func__,speak_power_fd);
         return -1;
     }
-//    printf("set speak_power to %s\n",state);
-    write(speak_power_fd,state);//on/off
+    /*printf("set speak_power to %s\n",state);*/
+    ret = write(speak_power_fd,state,sizeof(state));
+    if(ret <= 0)
+        printf("   %s Write %s Error [%d]\n",__func__,state,ret);
     close(speak_power_fd);
     return 0;
 }

@@ -435,6 +435,7 @@ void *talk_playback( void *arg )
 					}
 					adpcm_state.valprev = 0;
 					adpcm_state.index = 0;
+                    speak_power_on();
 					printf("   Init OK ! Player Started !\n");
 					state = PLAYER_PLAYBACK;
 				}
