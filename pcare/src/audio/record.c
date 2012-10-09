@@ -285,6 +285,7 @@ void *audio_capture( void *arg )
                 gettimeofday(&buffer->time_stamp,NULL);
                 if( length <= 0 )
 				{
+                    close(oss_fd_record);
 					printf("   Record Ret Error ! length is %d\n",length);
 					state = RECORDER_RESET;
 				}
