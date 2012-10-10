@@ -135,12 +135,12 @@ int set_i2s_rate(unsigned int rate)
 /*
  * set oss record configuration
  */
-void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
+int set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
 {
     int status, arg;
     char volume = '5';
     if(pre_sound == cur_sound){
-        return;
+        return 1;
     }
     else{
         pre_sound = cur_sound;
@@ -156,7 +156,7 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
             printf("   SOUND_PCM_WRITE_BITS ioctl failed,status is %d\n",status);
         set_i2s_rate(rate);
         pthread_mutex_unlock(&i2c_mutex_lock);
-        return;
+        return 1;
     }
     if(ioctl(fd,SNDCTL_DSP_RESET) != 0)
         printf("   OSS Reset Failed !\n");
@@ -190,6 +190,7 @@ void set_oss_record_config(int fd, unsigned rate, u16 channels, int bit)
     start_record = 1;
     printf("   rate is %d,channels is %d,bit is %d\n",rate,channels,bit);
     pthread_mutex_unlock(&i2c_mutex_lock);
+    return 1;
 
 }
 
