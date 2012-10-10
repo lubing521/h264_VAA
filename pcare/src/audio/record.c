@@ -250,7 +250,7 @@ void *audio_capture( void *arg )
 						break;
 					}
 				}
-    				set_oss_record_config(oss_fd_record,cfg.rate,cfg.channels,cfg.bit);
+                set_oss_record_config(oss_fd_record,cfg.rate,cfg.channels,cfg.bit);
 				printf("   Recorder Start\n");
 				state = RECORDER_CAPTURE;
 				break;
@@ -264,7 +264,7 @@ void *audio_capture( void *arg )
                         usleep(100000);
                     }
                 }while(oss_fd_record < 0);
-				if( set_oss_play_config(oss_fd_record,cfg.rate,cfg.channels,cfg.bit) < 0 )
+				if( set_oss_record_config(oss_fd_record,cfg.rate,cfg.channels,cfg.bit) < 0 )
 				{
 					printf("   Err(audio_capture): set oss play config failed!\n");
 					close(oss_fd_record);
