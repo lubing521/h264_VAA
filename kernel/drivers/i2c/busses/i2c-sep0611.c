@@ -487,6 +487,20 @@ static int sep0611_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[], int
 	ret = wait_for_completion_interruptible_timeout(&i2c->cmd_complete, HZ);
 	if (ret == 0) {
 		dev_err(i2c->dev, "controller timed out,ret is %d\n",ret);
+        /* add by xuejilong */
+        writel(0, i2c->base + I2C_ENABLE);
+        sep0611_gpio_cfgpin(SEP0611_GPE21, SEP0611_GPIO_IO);
+        sep0611_gpio_dirpin(SEP0611_GPE21, SEP0611_GPIO_OUT);
+        for(;ret < 9;ret++){
+            udelay(1);
+            sep0611_gpio_setpin(SEP0611_GPE21,0);
+            udelay(1);
+            sep0611_gpio_setpin(SEP0611_GPE21,1);
+        }
+        udelay(100);
+		sep0611_gpio_cfgpin(SEP0611_GPE21, I2C1_CLK);
+        ret = 0;
+        /* add by xuejilong */
 		sep0611_i2c_init(i2c);
 		ret = -ETIMEDOUT;
 		goto done;
