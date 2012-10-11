@@ -203,7 +203,7 @@ char str_ctl[]	 = "MO_O";
 char str_data[]  = "MO_V";
 char str_camID[] = "yuanxiang7501";
 char str_SSID[16];
-char str_camVS[] = {0, 2, 0, 7};
+char str_camVS[] = {0, 2, 0, 8};
 char str_tmp[14];
 
 /* ---------------------------------------------------------- */
@@ -371,15 +371,6 @@ void BlowfishDecrption(unsigned long *szMessage,int len)
 }
 #endif
 
-int getSSID()
-{
-    FILE *pfd;
-    const char cmd[]="/sbin/iwgetid -r";
-    pfd=popen(cmd, "r");
-    fgets(str_SSID,16,pfd);
-    pclose(pfd);
-    return 0;
-}
 static void keep_alive_timeout(int signo )
 {
     printf("Err:keep alive timeout!\n");
@@ -1260,7 +1251,6 @@ void network(void)
 	text = malloc(100);						/* TODO */
 
 
-    getSSID();
 	/* create socket */
 	server_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (-1 == server_fd) {

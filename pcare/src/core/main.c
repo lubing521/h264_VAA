@@ -18,12 +18,24 @@
 #include <pthread.h>
 extern int led_flag;
 extern char str_camVS[];
+extern char str_SSID[];
 pthread_t led_flash_id;
+int getSSID()
+{
+    FILE *pfd;
+    const char cmd[]="/sbin/iwgetid -r";
+    pfd=popen(cmd, "r");
+    fgets(str_SSID,16,pfd);
+    pclose(pfd);
+    return 0;
+}
 int main()
 {
     int ret;
+    getSSID();
     printf("\n##########################################\n");
     printf("# Current Firmware Version is %c.%c.%c.%c\n",str_camVS[0]+0x30,str_camVS[1]+0x30,str_camVS[2]+0x30,str_camVS[3]+0x30);
+    printf("# Current Device's SSID is %s\n",str_SSID);
     printf("##########################################\n\n");
     led_flag=1;
 	ret = pthread_create(&led_flash_id,NULL,(void *)led_flash,NULL); 
