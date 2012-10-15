@@ -63,6 +63,7 @@ struct gpio_keys_dev {
 
 struct gpio_keys_dev *keys_dev;
 
+static bool button_first = true;
 static void gpio_check_button(unsigned long data)
 {
 	struct gpio_key_data *key_data = (struct gpio_key_data *)data;
@@ -77,23 +78,28 @@ static void gpio_check_button(unsigned long data)
 		0				0			0
 	 **********************************************/
 	down_flag = (button->active_low) ^ (sep0611_gpio_getpin(button->gpio));
-
 	if(down_flag){
-	    key_data->state = KEY_PRESSED;
+        if(button_first){
+            button_first = false;
+        }
+        key_data->state = KEY_PRESSED;
 		input_report_key(key_data->input, button->code, KEY_PRESSED);
-		
-	    mod_timer(&key_data->timer, jiffies + KEY_CONTINUE);
-
-	    key_dbg("%s key(code:%d) down\n", button->desc, button->code);
+		/*mod_timer(&key_data->timer, jiffies + KEY_CONTINUE);*//* for button */
+        key_dbg("%s key(code:%d) down\n", button->desc, button->code);
 	}
-	else if(key_data->state == KEY_PRESSED){
+    else{
+        if(button_first){
+            key_data->state = KEY_PRESSED;
+            input_report_key(key_data->input, button->code, KEY_PRESSED);
+            /*input_sync(key_data->input);*/
+            button_first = false;
+            key_dbg("%s key(code:%d) first down\n", button->desc, button->code);
+        }
 	    key_data->state = KEY_RELEASED;
 		input_report_key(key_data->input, button->code, KEY_RELEASED);
-	    
-		key_dbg("%s key(code:%d) up\n", button->desc, button->code);
+        key_dbg("%s key(code:%d) up\n", button->desc, button->code);
 	}
-	
-	input_sync(key_data->input);
+    /*input_sync(key_data->input);*/
 }
 
 static irqreturn_t gpio_keys_isr(int irq, void *dev_id)
@@ -101,6 +107,10 @@ static irqreturn_t gpio_keys_isr(int irq, void *dev_id)
 	struct gpio_key_data *key_data = dev_id;
 	struct gpio_keys_button *button = key_data->button;
 	
+    if(sep0611_gpio_getpin(button->gpio))
+        sep0611_gpio_setirq(button->gpio, LOW_TRIG);
+    else
+        sep0611_gpio_setirq(button->gpio, HIGH_TRIG);
 	sep0611_gpio_clrirq(button->gpio);
 	
 	mod_timer(&key_data->timer, jiffies + KEY_DELAY);
@@ -161,10 +171,14 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
 			goto fail2;
 		}
 		
-		if(key_data->button->active_low)
-			sep0611_gpio_setirq(key_data->button->gpio, DOWN_TRIG);
-		else
-			sep0611_gpio_setirq(key_data->button->gpio, UP_TRIG);
+		/*if(key_data->button->active_low)*/
+			/*sep0611_gpio_setirq(key_data->button->gpio, DOWN_TRIG);*/
+		/*else*/
+			/*sep0611_gpio_setirq(key_data->button->gpio, UP_TRIG);*/
+        if(sep0611_gpio_getpin(key_data->button->gpio))
+            sep0611_gpio_setirq(key_data->button->gpio, LOW_TRIG);
+        else
+            sep0611_gpio_setirq(key_data->button->gpio, HIGH_TRIG);
 
 		if (key_data->button->wakeup)
 			wakeup = 1;
