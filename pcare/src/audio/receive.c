@@ -403,6 +403,7 @@ void *talk_playback( void *arg )
 	struct AUDIO_CFG cfg;
 	Buffer *buffer;
 	adpcm_state_t adpcm_state = {0, 0};
+    FILE *file;
 
 	pthread_detach(pthread_self());
 	do
@@ -437,6 +438,9 @@ void *talk_playback( void *arg )
 					adpcm_state.index = 0;
                     speak_power_on();
 					printf("   Init OK ! Player Started !\n");
+                    file  = fopen("/playdump.adpcm","wb");
+                    if(file == NULL)
+                        printf("playdump file open failed !\n");
 					state = PLAYER_PLAYBACK;
 				}
 				else
@@ -466,6 +470,7 @@ void *talk_playback( void *arg )
 				{
 					if( buffer->len <= 0 || buffer->len > ADPCM_MAX_READ_LEN )
 						printf("   Error: buffer len %d is not equal to %d\n", buffer->len,ADPCM_MAX_READ_LEN);
+                    fwrite(buffer->data,sizeof(buffer->data),1,file);
 					adpcm_decoder( buffer->data, (short *)g_decoded_buffer[i],buffer->len, &adpcm_state);
 					if( playback_buf( oss_fd_play, g_decoded_buffer[i], buffer->len*4) < 0 )
 					{
@@ -488,6 +493,7 @@ void *talk_playback( void *arg )
 				//close(oss_fd_play);
 				//oss_fd_play = 0;
                 speak_power_off();
+                fclose(file);
 				OpenQueueOut( TALK_QUEUE );
 				state = PLAYER_INIT;
 				break;
