@@ -403,7 +403,7 @@ void *talk_playback( void *arg )
 	struct AUDIO_CFG cfg;
 	Buffer *buffer;
 	adpcm_state_t adpcm_state = {0, 0};
-    FILE *file;
+    FILE *file = NULL;
 
 	pthread_detach(pthread_self());
 	do
@@ -493,8 +493,10 @@ void *talk_playback( void *arg )
 				//close(oss_fd_play);
 				//oss_fd_play = 0;
                 speak_power_off();
-                if(file != NULL)
+                if(file != NULL){
                     fclose(file);
+                    file = NULL;
+                }
 				OpenQueueOut( TALK_QUEUE );
 				state = PLAYER_INIT;
 				break;
