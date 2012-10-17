@@ -21,6 +21,8 @@ extern u32 audio_num;
 extern unsigned long video_frameinterval;
 int pre_sound = 0; //0:init ; 1:record ; 2:play
 int cur_sound = 0; //0:init ; 1:record ; 2:play
+int sound_state = 0;
+int record_state = 0;
 //int next_op=0;
 /* prase opcode command text */
 int prase_packet(int opcode, u8 *buf)
@@ -147,6 +149,12 @@ int prase_packet(int opcode, u8 *buf)
 #ifdef ENABLE_CAPTURE_AUDIO
             audio_num = 0;
             cur_sound = 1;
+            if(record_state == 1){
+                printf("   Recorder is Working .. Stop It!\n");
+                stop_capture();
+                disable_audio_send();
+            }
+            record_state = 1;
 			start_capture();			/* !!!must be called first */
 			enable_audio_send();
 #else
@@ -155,6 +163,11 @@ int prase_packet(int opcode, u8 *buf)
 			break;
 		case 10:
 #ifdef ENABLE_CAPTURE_AUDIO
+            if(record_state == 0){
+                printf("   Recorder has been stopped !\n");
+                break;
+            }
+            record_state = 0;
             printf("   send audio packages num is %lu\n",audio_num);
 			stop_capture();
 			disable_audio_send();
@@ -165,6 +178,11 @@ int prase_packet(int opcode, u8 *buf)
 		case 11:
 			/* TODO enable talk audio */
 			//start_playback();
+            if(sound_state == 1){
+                printf("   Player Is Working .. Stop It!\n");
+                StopPlayer();
+            }
+            sound_state = 1;
             cur_sound = 2;
             StartPlayer();
 			printf("   Start playbacking ...\n");
@@ -172,6 +190,11 @@ int prase_packet(int opcode, u8 *buf)
 		case 13:
 			/* TODO disable talk audio */
 			//stop_playback();
+            if(sound_state == 0){
+                printf("   Player has been stopped ! \n");
+                break;
+            }
+            sound_state = 0;
             StopPlayer();
 			break;
 		case 251:
