@@ -203,7 +203,7 @@ char str_ctl[]	 = "MO_O";
 char str_data[]  = "MO_V";
 char str_camID[] = "yuanxiang7501";
 char str_SSID[16];
-char str_camVS[] = {0, 2, 1, 0};
+char str_camVS[] = {0, 2, 1, 1};
 char str_tmp[14];
 
 /* ---------------------------------------------------------- */
@@ -731,6 +731,7 @@ err_exit:
 /*
  * send audio data
  */
+static unsigned long pre_time_stamp = 0;
 int send_audio_data(u8 *audio_buf, u32 data_len,struct timeval t1)
 {
 	long send_len = 0;
@@ -744,6 +745,10 @@ int send_audio_data(u8 *audio_buf, u32 data_len,struct timeval t1)
 	av_command2->text_len = data_len + 20;			/* contant sample and index */
 	audio_data->ado_len = data_len;
     audio_data->time_stamp = TIME_DIFF(t1,av_start_time);
+    if(audio_data->time_stamp - pre_time_stamp > 100){
+        printf("   Audio Cost Time is %d\n",audio_data->time_stamp - pre_time_stamp);
+    }
+    pre_time_stamp = audio_data->time_stamp;
 	p = (char *)av_command2;
     //printf("audio_data time_stamp is %lu\n",audio_data->time_stamp);
 
