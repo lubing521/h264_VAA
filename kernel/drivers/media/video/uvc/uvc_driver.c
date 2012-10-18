@@ -895,6 +895,7 @@ static int uvc_parse_standard_control(struct uvc_device *dev,
 
 			if( uvc_parse_streaming(dev, intf) < 0 )
 			{
+                printk("uvc_parse_streaming error !\n");
 				kernel_restart(NULL);
 			}
 		}
