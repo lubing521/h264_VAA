@@ -50,7 +50,7 @@ struct wav_header {
 }__attribute__((packed));
 unsigned un_OSS_RATE[]={8000,11025,12000,16000,22050,24000,32000,44100,48000};
 static struct wav_header hdr;
-static int stat_play=0;
+int stat_play=0;
 
 int playback_on = 0;		/* TODO (FIX ME) now the software on cellphone may not support talk_playback opcode command, we enable first */
 
