@@ -203,7 +203,7 @@ char str_ctl[]	 = "MO_O";
 char str_data[]  = "MO_V";
 char str_camID[] = "yuanxiang7501";
 char str_SSID[16];
-char str_camVS[] = {0, 2, 1, 1};
+char str_camVS[] = {0, 2, 1, 2};
 char str_tmp[14];
 
 /* ---------------------------------------------------------- */
@@ -650,7 +650,7 @@ void send_picture(char *data, u32 length,struct timeval t1)
 {
 	long send_len = 0;
 	long total_send_len = 0;
-	struct timeval t2;
+	/*struct timeval t2;*/
 	char *p;
 	static int retry_num=0;
 
@@ -665,9 +665,9 @@ void send_picture(char *data, u32 length,struct timeval t1)
 	p = (char *)av_command1;
 	while( total_send_len < 36 )
 	{
-		gettimeofday(&t1,NULL);
+		/*gettimeofday(&t1,NULL);*/
 		send_len = send(picture_fd, (void *)&p[total_send_len], 36-total_send_len, 0);
-		gettimeofday(&t2,NULL);
+		/*gettimeofday(&t2,NULL);*/
 		if (send_len <= 0) {
 			perror("#send_header");
 			if( errno != EAGAIN || retry_num >= MAX_RETRY_NUM )
@@ -694,9 +694,9 @@ void send_picture(char *data, u32 length,struct timeval t1)
 	p = data;
 	while( total_send_len < length )
 	{
-		gettimeofday(&t1,NULL);
+		/*gettimeofday(&t1,NULL);*/
 		send_len = send(picture_fd, (void *)&p[total_send_len], length-total_send_len, 0);
-		gettimeofday(&t2,NULL);
+		/*gettimeofday(&t2,NULL);*/
 		if (send_len <= 0) {
 			perror("#send_pic");
 			if( errno != EAGAIN || retry_num >= MAX_RETRY_NUM )
@@ -757,9 +757,9 @@ int send_audio_data(u8 *audio_buf, u32 data_len,struct timeval t1)
 
 	while( total_send_len < 40 )
 	{
-		gettimeofday(&t1,NULL);
+        /*gettimeofday(&t1,NULL);*/
 		send_len = send(audio_data_fd, (void *)&p[total_send_len], 40-total_send_len, 0);
-		gettimeofday(&t2,NULL);
+		/*gettimeofday(&t2,NULL);*/
 		if (send_len <= 0) {
 			perror("#send_audio_header");
 			if( errno != EAGAIN || retry_num >= MAX_RETRY_NUM )

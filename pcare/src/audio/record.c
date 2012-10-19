@@ -257,6 +257,8 @@ void *audio_capture( void *arg )
 				break;
 			case RECORDER_RESET:
 				printf("   Recorder Reset\n");
+                pre_sound = 0;
+                start_record = 0;
                 do{
                     oss_fd_record = open(OSS_AUDIO_DEV,O_RDONLY);
                     if(oss_fd_record < 0)

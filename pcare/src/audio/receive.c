@@ -18,6 +18,9 @@ static void *talk_receive( void *arg );
 extern sem_t start_talk;
 extern oss_fd_play;
 int receiver_err_num;
+extern int stat_play;
+extern int cur_sound;
+extern int pre_sound;
 static char * receiver_err_string[]={
     "No Fileszie Received !\n",
     "No Audio Param Received !\n",
@@ -451,6 +454,8 @@ void *talk_playback( void *arg )
 				break;
 			case PLAYER_RESET:
 				printf("   Error in OSS ! Player Will Reset\n");
+                stat_play = 0;
+                pre_sound = 0;
 				oss_fd_play = open(OSS_AUDIO_DEV,O_WRONLY);
 				if(oss_fd_play < 0)
 				{
