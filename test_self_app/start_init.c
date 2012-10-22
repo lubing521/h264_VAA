@@ -104,6 +104,15 @@ int step_motor_leftright()
         }
     }
     inplace_flag = 1;
+    for(n=0;n<20 && inplace_flag >= 0;n++ )
+    {
+        for(i = 7;i>=0;i--)
+        {
+            inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_RIGHT,&i);
+            usleep(1000);
+        }
+    }
+    inplace_flag = 1;
     printf("Stepper_Motor Turn Left .....OK!!!\n");
     printf("Close Stepper_Motor LEFTRIGHT.....");
     ioctl(stepper_motor_fd,SMLEFTRIGHT_POWER,NULL);
@@ -137,6 +146,15 @@ int step_motor_updown()
         for(i = 0;i<8;i++)
         {
             inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_DOWN,&i);
+            usleep(1000);
+        }
+    }
+    inplace_flag = 1;
+    for(n=0;n<20 && inplace_flag >= 0;n++ )
+    {
+        for(i = 7;i>=0;i--)
+        {
+            inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_UP,&i);
             usleep(1000);
         }
     }
