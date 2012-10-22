@@ -85,6 +85,7 @@ int step_motor_leftright()
         return -1;
     }
     printf("OK!!!\n");
+#if 0
     for(n=0;n<STEPER_PHASE_LEFT && inplace_flag >= 0;n++ )
     {
         for(i = 7;i>=0;i--)
@@ -95,6 +96,7 @@ int step_motor_leftright()
     }
     inplace_flag = 1;
     printf("Stepper_Motor Turn Right .....OK!!!\n");
+#endif
     for(n=0;n<STEPER_PHASE_LEFT && inplace_flag >= 0;n++ )
     {
         for(i = 0;i<8;i++)
@@ -131,6 +133,7 @@ int step_motor_updown()
         return -1;
     }
     printf("OK!!!\n");
+#if 0
     for(n=0;n<STEPER_PHASE_UP && inplace_flag >= 0;n++ )
     {
         for(i = 7;i>=0;i--)
@@ -141,6 +144,7 @@ int step_motor_updown()
     }
     inplace_flag = 1;
     printf("Stepper_Motor Turn Up .....OK!!!\n");
+#endif
     for(n=0;n<STEPER_PHASE_UP && inplace_flag >= 0;n++ )
     {
         for(i = 0;i<8;i++)
