@@ -1280,6 +1280,7 @@ void network(void)
         perror("bind");
         close(server_fd);
         printf("========%s,%u==========\n",__FILE__,__LINE__);
+        system("reboot");
         exit(1);
     }
 
