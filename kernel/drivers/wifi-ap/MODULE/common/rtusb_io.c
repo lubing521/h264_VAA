@@ -819,7 +819,9 @@ NTSTATUS    RTUSB_VendorRequest(
 	
 	if(in_interrupt())
 	{
+#if 0
 		DBGPRINT(RT_DEBUG_ERROR, ("BUG: RTUSB_VendorRequest is called from invalid context\n"));
+#endif
 		return NDIS_STATUS_FAILURE;
 	}
 

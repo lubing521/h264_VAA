@@ -2838,8 +2838,10 @@ VOID APHandleRxPsPoll(
 	}
 	else
 	{
+#if 0
 		DBGPRINT(RT_DEBUG_ERROR,("rcv PS-POLL (AID=%d not match) from %02x:%02x:%02x:%02x:%02x:%02x\n", 
 			  Aid, pAddr[0], pAddr[1], pAddr[2], pAddr[3], pAddr[4], pAddr[5]));
+#endif
 
 	}
 }

@@ -561,7 +561,9 @@ static void rtusb_mgmt_dma_done_tasklet(unsigned long data)
 			(!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST)) &&
 			(!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BULKOUT_RESET)))
 		{
+#if 0
 			DBGPRINT_RAW(RT_DEBUG_ERROR, ("Bulk Out MLME Failed, Status=%d!\n", Status));
+#endif
 			// TODO: How to handle about the MLMEBulkOut failed issue. Need to resend the mgmt pkt?
 			RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_BULKOUT_RESET);
 			pAd->bulkResetPipeid = (MGMTPIPEIDX | BULKOUT_MGMT_RESET_FLAG);
