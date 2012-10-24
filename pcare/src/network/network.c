@@ -582,6 +582,38 @@ void send_talk_resp()
 	free(command12);
 	command12 = NULL;
 }
+/* when step motor to the end ,send cmd to client */
+void send_alarm_notify(u8 alarm_kind)
+{
+	int alarm_fd = AVcommand_fd;
+	
+	struct command *command25;
+	struct alarm_notify *alarm_notify_r;
+
+	command25 = malloc(sizeof(struct alarm_notify)+sizeof(struct command));
+	alarm_notify_r = &command25->text[0].alarm_notify;
+
+	memcpy(command25->protocol_head, str_ctl, 4);
+	command25->opcode = 25;
+	command25->text_len = sizeof(struct alarm_notify);
+
+	alarm_notify_r->alarm_type = alarm_kind;
+    alarm_notify_r->reserve1 = 0;
+    alarm_notify_r->reserve2 = 0;
+    alarm_notify_r->reserve3 = 0;
+    alarm_notify_r->reserve4 = 0;
+	if ((send(alarm_fd, command25, sizeof(struct command) + sizeof(struct alarm_notify), 0)) == -1) {
+		perror("send");
+		close(alarm_fd);
+        printf("========%s,%u==========\n",__FILE__,__LINE__);
+        printf("-->Send Alarm_Notify ... Failed\n");
+		exit(0);
+	}
+    printf("-->Send Alarm_Notify !\n");
+
+	free(command25);
+	command25 = NULL;
+}
 	
 
 /*
@@ -643,7 +675,6 @@ static int recv_AVcommand(u32 client_fd)
 
 	return 0;
 }
-
 #define MAX_RETRY_NUM	60
 #define TIME_DIFF(t1,t2) (((t1).tv_sec-(t2).tv_sec)*1000+((t1).tv_usec-(t2).tv_usec)/1000)
 void send_picture(char *data, u32 length,struct timeval t1)

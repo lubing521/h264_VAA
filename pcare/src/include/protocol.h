@@ -221,7 +221,7 @@ struct fetch_battery_power_resp {
 /* camera -> user */
 struct alarm_notify {
 	/* opcode = 25 */
-	u8  alarm_type;			/* 0:alarm stop 1:move detection 2:external alarm */
+	u8  alarm_type;			/* 0:alarm stop 1:move detection 2:external alarm 3:step motor stop alarm*/
 	u16 reserve1;
 	u16 reserve2;
 	u16 reserve3;
@@ -312,6 +312,7 @@ union context {
 	struct talk_start_resp talk_start_resp;
 	struct talk_end_resp talk_end_resp;
 	struct fetch_battery_power_resp fetch_battery_power_resp;
+    struct alarm_notify alarm_notify;
 	struct tem_rh_data tem_rh_data;
 	struct music_played_over music_played_over;
 	/* AVdata protocols */

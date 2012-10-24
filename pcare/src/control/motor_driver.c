@@ -21,6 +21,7 @@
 #include "motor_driver.h"
 #include "motor.h"
 #include "types.h"
+#include "network.h"
 
 #define DC_MOTOR_DEV  "/dev/pwm"
 #define STEPPER_MOTOR_DEV  "/dev/steppermotor"
@@ -68,6 +69,7 @@ void stepper_motor_updown()
                 usleep(1000);
             }
             if(inplace_flag < 0){
+                send_alarm_notify(3);
                 for(j = 19;j >= 0;j--){
                     for(i = 0;i<8;i++){
                         ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_DOWN,&i);
@@ -83,6 +85,7 @@ void stepper_motor_updown()
                 usleep(1000);
             }
             if(inplace_flag < 0){
+                send_alarm_notify(3);
                 for(j = 0;j < 20;j++){
                     for(i = 7;i >= 0;i--){
                         ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_UP,&i);
@@ -123,6 +126,7 @@ void stepper_motor_leftright()
                 usleep(1000);
             }
             if(inplace_flag < 0){
+                send_alarm_notify(3);
                 for(j = 0;j < 20;j++){
                     for(i = 0;i < 8;i++){
                         ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_LEFT,&i);
@@ -141,6 +145,7 @@ void stepper_motor_leftright()
                 usleep(1000);
             }
             if(inplace_flag < 0){
+                send_alarm_notify(3);
                 for(j = 0;j < 19;j++){
                     for(i = 7;i >= 0;i--){
                         ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_RIGHT,&i);
