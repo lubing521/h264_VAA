@@ -123,7 +123,7 @@ static int cs3700_write(struct snd_soc_codec *codec, unsigned int reg,
         }
         else
         {
-            printk("..failed\n");
+            printk("write codec reg [%x] failed\n",reg);
             return -EIO;
         }
     /*} while ( cs3700_read_reg(codec,reg) != value );				[> -----  end do-while  ----- <]*/
