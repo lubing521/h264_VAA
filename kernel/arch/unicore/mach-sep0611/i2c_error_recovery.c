@@ -36,7 +36,7 @@ unsigned long arb_lost_recovery(unsigned long scl_gpio, unsigned long sda_gpio)
 
     printk("%s\n",__func__);
 	if ((!scl_gpio) || (!sda_gpio)) {
-		pr_err("not proper input:scl_gpio 0x%08lx,"
+		printk("not proper input:scl_gpio 0x%08lx,"
 			"sda_gpio 0x%08lx\n", scl_gpio, sda_gpio);
 		return -EINVAL;;
 	}
@@ -63,6 +63,18 @@ unsigned long arb_lost_recovery(unsigned long scl_gpio, unsigned long sda_gpio)
     sep0611_gpio_dirpin(scl_gpio, SEP0611_GPIO_OUT);   /* PORT input    */
 
 	while (retry--) {
+		sep0611_gpio_setpin(scl_gpio,0);
+		udelay(5);
+		sep0611_gpio_setpin(scl_gpio,1);
+		udelay(5);
+		sep0611_gpio_setpin(scl_gpio,0);
+		udelay(5);
+		sep0611_gpio_setpin(scl_gpio,1);
+		udelay(5);
+		sep0611_gpio_setpin(scl_gpio,0);
+		udelay(5);
+		sep0611_gpio_setpin(scl_gpio,1);
+		udelay(5);
 		sep0611_gpio_setpin(scl_gpio,0);
 		udelay(5);
 		sep0611_gpio_setpin(scl_gpio,1);
@@ -96,11 +108,11 @@ unsigned long arb_lost_recovery(unsigned long scl_gpio, unsigned long sda_gpio)
 	//tegra_gpio_disable(sda_gpio);
 
 	if (likely(recovered_successfully)) {
-		pr_err("arbitration lost recovered by re-try-count 0x%08x\n",
+		printk("arbitration lost recovered by re-try-count 0x%08x\n",
 			RETRY_MAX_COUNT - retry);
 		return 0;
 	} else {
-		pr_err("Un-recovered arbitration lost.\n");
+		printk("Un-recovered arbitration lost.\n");
 		return -EINVAL;
 	}
 

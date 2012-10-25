@@ -77,7 +77,23 @@ struct sep0611_i2c {
 };
 
 struct sep0611_i2c * i2cs[3] = {NULL};
-
+/*  i2c_arb_source*/
+#define ABRT_7B_ADDR_NOACK  0
+#define ABRT_10ADDR1_NOACK 1
+#define ABRT_10ADDR2_NOACK 2
+#define ABRT_TXDATA_NOACK 3
+#define ABRT_GCALL_NOACK 4
+#define ABRT_GCALL_READ	5
+#define ABRT_HS_ACKDET 6
+#define ABRT_SBYTE_ACKDET 7
+#define ABRT_HS_NORSTRT 8
+#define ABRT_SBYTE_NORSTRT 9
+#define ABRT_10B_RD_NORSTRT 10
+#define ARB_MASTER_DIS 11
+#define ARB_LOST 12
+#define ARB_SLVFLUSH_TXFIFO 13
+#define ARB_SLV_ARBLOST 14
+#define ARB_SLVRD_INTX 15
 static char *abort_sources[] = {
 	[ABRT_7B_ADDR_NOACK]	=
 		"slave address not acknowledged (7bit mode)",
@@ -91,8 +107,12 @@ static char *abort_sources[] = {
 		"no acknowledgement for a general call",
 	[ABRT_GCALL_READ]		=
 		"read after general call",
+	[ABRT_HS_ACKDET]		=
+		"master acknowledged in high speed mode ",
 	[ABRT_SBYTE_ACKDET]		=
 		"start byte acknowledged",
+	[ABRT_HS_NORSTRT]		=
+		"abrt no start high speed mode",
 	[ABRT_SBYTE_NORSTRT]	=
 		"trying to send start byte when restart is disabled",
 	[ABRT_10B_RD_NORSTRT]	=
@@ -101,6 +121,12 @@ static char *abort_sources[] = {
 		"trying to use disabled adapter",
 	[ARB_LOST]				=
 		"lost arbitration",
+	[ARB_SLVFLUSH_TXFIFO]				=
+		"arb slv flush fifo",
+	[ARB_SLV_ARBLOST]				=
+		"arb slv arb lost",
+	[ARB_SLVRD_INTX]				=
+		"arb slvrd intx",
 };
 
 /**
@@ -436,18 +462,28 @@ static int sep0611_i2c_handle_tx_abort(struct sep0611_i2c *i2c)
 	unsigned long abort_source = i2c->abort_source;
 	int i;
 
-	if (abort_source & I2C_TX_ABRT_NOACK) {
-		for_each_bit(i, &abort_source, ARRAY_SIZE(abort_sources))
-		   dev_dbg(i2c->dev, "%s: %s\n", __func__, abort_sources[i]);
-		return -EREMOTEIO;
-	}
+	/*if (abort_source & I2C_TX_ABRT_NOACK) {*/
+		/*for_each_bit(i, &abort_source, ARRAY_SIZE(abort_sources))*/
+		   /*dev_dbg(i2c->dev, "%s: %s\n", __func__, abort_sources[i]);*/
+		/*return -EREMOTEIO;*/
+	/*}*/
 
 	for_each_bit(i, &abort_source, ARRAY_SIZE(abort_sources))
 		dev_err(i2c->dev, "%s: %s\n", __func__, abort_sources[i]);
 
-	if (abort_source & ARB_LOST)
+	if (abort_source & I2C_ARB_LOST){
+        sep0611_gpio_cfgpin(SEP0611_GPF2,SEP0611_GPIO_IO);
+        sep0611_gpio_dirpin(SEP0611_GPF2,SEP0611_GPIO_OUT);
+        sep0611_gpio_setpin(SEP0611_GPF2,0);
+        udelay(10);
+        sep0611_gpio_setpin(SEP0611_GPF2,1);
+        /*udelay(10);*/
+        /*sep0611_gpio_setpin(SEP0611_GPF2,0);*/
+        printk("######## ARB_LOST \n");
+        arb_lost_recovery(SEP0611_GPE21,SEP0611_GPE20);
 		return -EAGAIN;
-	else if (abort_source & ABRT_GCALL_READ)
+    }
+	else if (abort_source & I2C_ABRT_GCALL_READ)
 		return -EINVAL; /* wrong msgs[] data */
 	else
 		return -EIO;

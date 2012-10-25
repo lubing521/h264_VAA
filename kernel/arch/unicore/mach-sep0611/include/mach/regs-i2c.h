@@ -75,22 +75,26 @@
 
 
 #define I2C_STATUS_ACTIVITY            	(1 << 0)
-
-#define ABRT_7B_ADDR_NOACK				0
-#define ABRT_10ADDR1_NOACK				1
-#define ABRT_10ADDR2_NOACK				2
-#define ABRT_TXDATA_NOACK				3
-#define ABRT_GCALL_NOACK				4
-#define ABRT_GCALL_READ					5
-#define ABRT_SBYTE_ACKDET				7
-#define ABRT_SBYTE_NORSTRT				9
-#define ABRT_10B_RD_NORSTRT				10
-#define ARB_MASTER_DIS					11
-#define ARB_LOST						12
-
-#define I2C_TX_ABRT_NOACK				(ABRT_7B_ADDR_NOACK | \
-					    					ABRT_10ADDR1_NOACK | ABRT_10ADDR2_NOACK | \
-					    					ABRT_TXDATA_NOACK | ABRT_GCALL_NOACK)
+/* I2C TX ABRT SOURCE */
+#define I2C_ABRT_7B_ADDR_NOACK				(1 << 0)
+#define I2C_ABRT_10ADDR1_NOACK				(1 << 1)
+#define I2C_ABRT_10ADDR2_NOACK				(1 << 2)
+#define I2C_ABRT_TXDATA_NOACK				(1 << 3)
+#define I2C_ABRT_GCALL_NOACK				(1 << 4)
+#define I2C_ABRT_GCALL_READ					(1 << 5)
+#define I2C_ABRT_HS_ACKDET					(1 << 6)
+#define I2C_ABRT_SBYTE_ACKDET				(1 << 7)
+#define I2C_ABRT_HS_NORSTRT 				(1 << 8)
+#define I2C_ABRT_SBYTE_NORSTRT				(1 << 9)
+#define I2C_ABRT_10B_RD_NORSTRT				(1 << 10)
+#define I2C_ARB_MASTER_DIS					(1 << 11)
+#define I2C_ARB_LOST						(1 << 12)
+#define I2C_ARB_SLVFLUSH_TXFIFO				(1 << 13)
+#define I2C_ARB_SLV_ARBLOST					(1 << 14)
+#define I2C_ARB_SLVRD_INTX					(1 << 15)
+#define I2C_TX_ABRT_NOACK				(I2C_ABRT_7B_ADDR_NOACK | \
+					    					I2C_ABRT_10ADDR1_NOACK | I2C_ABRT_10ADDR2_NOACK | \
+					    					I2C_ABRT_TXDATA_NOACK | I2C_ABRT_GCALL_NOACK)
 
 /*I2C_INT_MASK*/
 #define I2C_INTR_RX_UNDER   			(1 << 0)
