@@ -157,8 +157,8 @@ static void sep0611_i2c_init(struct sep0611_i2c *i2c)
 	dev_dbg(i2c->dev, "Standard-mode HCNT:LCNT = %d:%d\n", hcnt, lcnt);
 
 	/* Fast-mode */
-	hcnt = input_clock_mhz *  6 / 10 + 1; /* fast speed high, 0.6us */
-	lcnt = input_clock_mhz * 13 / 10 + 1; /* fast speed low, 1.3us */
+	hcnt = input_clock_mhz *  12 / 10 + 1; /* fast speed high, 1.2us */
+	lcnt = input_clock_mhz * 26 / 10 + 1; /* fast speed low, 2.6us */
 	writew(hcnt, i2c->base + I2C_FS_SCL_HCNT);
 	writew(lcnt, i2c->base + I2C_FS_SCL_LCNT);
 	dev_dbg(i2c->dev, "Fast-mode HCNT:LCNT = %d:%d\n", hcnt, lcnt);
