@@ -103,18 +103,24 @@ static int cs3700_write(struct snd_soc_codec *codec, unsigned int reg,
 		unsigned int value)
 {
 	u8 data[3];
+    unsigned int reg_tmp;
 
 	/* data is
 	 *	 D23..D16 CS3700register offset
 	 *   D15..D8  register high data
 	 *   D8...D0  register low  data
 	 */
+    reg_tmp =cs3700_read_reg_cache(codec,reg);
+    if(reg_tmp == value){
+        return 0;
+    }
+    /*else{*/
+        /*printk("reg_tmp is %x,value is %x\n",reg_tmp,value);*/
+    /*}*/
 	data[0] = reg & 0x00ff;
 	data[1] = (value >> 8) & 0x00ff;
 	data[2] = value & 0x00ff;
-
 //    printk("cs3700 write reg %d=%x", reg, value);
-    cs3700_write_reg_cache (codec, reg, value);
     /*do {*/
         if (codec->hw_write(codec->control_data, data, 3) == 3)
         {
@@ -127,6 +133,7 @@ static int cs3700_write(struct snd_soc_codec *codec, unsigned int reg,
             return -EIO;
         }
     /*} while ( cs3700_read_reg(codec,reg) != value );				[> -----  end do-while  ----- <]*/
+    cs3700_write_reg_cache (codec, reg, value);
     return 0;
 }
 
@@ -653,15 +660,25 @@ static int cs3700_pcm_prepare(struct snd_pcm_substream *substream,
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_device *socdev = rtd->socdev;
 	struct snd_soc_codec *codec = socdev->card->codec;
+    /*static int pre_state=4,cur_state=4;*/
 
 	alsa_dbg("%s\n", __func__);
     /*sep0611_spk_out(0);*/
 	if(substream->stream == SNDRV_PCM_STREAM_PLAYBACK){
-        cs3700_set_audio_output(codec);			//Playback
+        /*cur_state = substream->stream;*/
+        /*if(pre_state != cur_state){*/
+            cs3700_set_audio_output(codec);			//Playback
+            /*pre_state = cur_state;*/
+        /*}*/
+        /*else{*/
+            /*return 0;*/
+        /*}*/
         /*sep0611_spk_out(1);*/
     }
 	else{
+        /*cur_state = substream->stream;*/
 		cs3700_set_audio_input(codec);			//Capture
+        /*pre_state = cur_state;*/
 	}
 	return 0;
 }
