@@ -429,6 +429,10 @@ static int start_transfer(struct ch37x *ch37x, struct ch37x_td *td)
 	
 	default:
 		printk("should never be here!\n");
+        printk("td dump \n%d %u %d %u %u %u %u %u\n%u %u %u %u\n %u %u %u %u %u  ",\
+                td->iso_cnt,td->maxpacket,td->nak_times,td->epnum,td->pid,td->ctrl_step,\
+                td->address,td->status,td->length,td->use_dma,td->hold,td->state,\
+                td->zero_packet,td->short_packet,td->set_address,td->again,td->tog);
 		ch37x->current_td = NULL;
 		return -1;
 	}
