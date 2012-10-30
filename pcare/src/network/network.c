@@ -446,6 +446,7 @@ void enable_t_rh_sent()
     int tem_rh_fd = AVcommand_fd;
     struct command *command21;
     struct tem_rh_data *tem_rh_data;
+    int send_len;
 	command21 = malloc(sizeof(struct command) + 4);
     memcpy(command21->protocol_head, str_ctl, 4);
     tem_rh_data = &command21->text[0].tem_rh_data;
@@ -455,12 +456,16 @@ void enable_t_rh_sent()
     command21->opcode = 21; 
     command21->text_len = 3;
     //printf("tem_integer is %d,tem_decimal is %d,rh is %d\n",tem_integer,tem_decimal,rh);
-    if (send(tem_rh_fd, command21, 26, 0) == -1){ 
+    send_len = send(tem_rh_fd, command21, 26, 0); 
+    if (send_len == -1){ 
 	perror("send");
         close(tem_rh_fd);
 		printf("========%s,%u========\n",__FILE__,__LINE__);
         exit(0);
-    }   
+    }
+    else if(send_len < 26){
+        printf("-->temperature and relative send short");
+    }
 	free(command21);
 	command21 = NULL;
     return;
@@ -475,6 +480,7 @@ void enable_audio_send()
 	
 	struct command *command9;
 	struct audio_start_resp *audio_start_resp;
+    int send_len;
 
 	command9 = malloc(sizeof(struct command) + 6);
 	audio_start_resp = &command9->text[0].audio_start_resp;
@@ -486,14 +492,20 @@ void enable_audio_send()
 	audio_start_resp->result = 0;				/* 0 : agree */
 	audio_start_resp->data_con_ID = 0;			/* TODO (FIX ME) must be 0 */
 
-	if ((send(audio_fd, command9, 29, 0)) == -1) {
+	send_len = send(audio_fd, command9, 29, 0);
+	if (send_len == -1) {
 		perror("send");
 		close(audio_fd);
         printf("========%s,%u==========\n",__FILE__,__LINE__);
         printf("-->Send Audio Resp ... Failed !!\n");
 		exit(0);
 	}
-    printf("-->Send Audio Resp !\n");
+    else if(send_len < 29){
+        printf("-->Send Audio Resp ... Short\n");
+    }
+    else {
+        printf("-->Send Audio Resp !\n");
+    }
 
 	free(command9);
 	command9 = NULL;
@@ -508,20 +520,26 @@ void send_music_played_over()
     int music_played_over_fd = AVcommand_fd;
     struct command *command15;
     struct music_played_over *music_played_over;
+    int send_len;
     command15 = malloc(sizeof(struct command));
     memcpy(command15->protocol_head, str_ctl, 4);
     music_played_over = &command15->text[0].music_played_over;
     command15->opcode = 15; 
     command15->text_len = 0;
-    if (send(music_played_over_fd, command15, 23, 0) == -1){ 
+    send_len = send(music_played_over_fd, command15, 23, 0);
+    if (send_len == -1){ 
         perror("send");
         close(music_played_over_fd);
         printf("========%s,%u========\n",__FILE__,__LINE__);
         printf("-->Send Music Is Played Over ... Failed \n");
         exit(0);
-    }   
-    printf("-->Send Music Is Played Over !\n");
-    
+    }
+    else if(send_len < 23){
+        printf("-->Send Music Is Player Over ... Short \n");
+    }
+    else{
+        printf("-->Send Music Is Played Over !\n");
+    }
     free(command15);
     command15 = NULL;
     return;
@@ -534,20 +552,26 @@ void send_talk_end_resp()
     int talk_end_fd = AVcommand_fd;
     struct command *command22;
     struct talk_end_resp *talk_end_resp;
+    int send_len;
     command22 = malloc(sizeof(struct command));
     memcpy(command22->protocol_head, str_ctl, 4);
     talk_end_resp = &command22->text[0].talk_end_resp;
     command22->opcode = 22; 
     command22->text_len = 0;
-    if (send(talk_end_fd, command22, 23, 0) == -1){ 
+    send_len = send(talk_end_fd, command22, 23, 0); 
+    if (send_len == -1){ 
         perror("send");
         close(talk_end_fd);
         printf("========%s,%u========\n",__FILE__,__LINE__);
         printf("-->Send Talk Stop Resp ... Failed \n");
         exit(0);
-    }   
-    printf("-->Send Talk Stop Resp !\n");
-    
+    }
+    else if(send_len < 23){
+        printf("-->Send Talk Stop Resp ... Short\n");
+    }
+    else{
+        printf("-->Send Talk Stop Resp !\n");
+    }
     free(command22);
     command22 = NULL;
     return;
@@ -559,6 +583,7 @@ void send_talk_resp()
 	
 	struct command *command12;
 	struct talk_start_resp *talk_start_resp;
+    int send_len;
 
 	command12 = malloc(sizeof(struct command) + 6);
 	talk_start_resp = &command12->text[0].talk_start_resp;
@@ -570,14 +595,20 @@ void send_talk_resp()
 	talk_start_resp->result = 0;				/* 0 : agree */
 	talk_start_resp->data_con_ID = 0;			/* TODO (FIX ME) must be 0 */
 
-	if ((send(talk_fd, command12, 29, 0)) == -1) {
+	send_len = send(talk_fd, command12, 29, 0);
+	if (send_len == -1) {
 		perror("send");
 		close(talk_fd);
         printf("========%s,%u==========\n",__FILE__,__LINE__);
         printf("-->Send Talk Start Resp ... Failed\n");
 		exit(0);
 	}
-    printf("-->Send Talk Start Resp !\n");
+    else if(send_len < 29){
+        printf("-->Send Talk Start Resp ... Short\n");
+    }
+    else{
+        printf("-->Send Talk Start Resp !\n");
+    }
 
 	free(command12);
 	command12 = NULL;
@@ -589,6 +620,7 @@ void send_alarm_notify(u8 alarm_kind)
 	
 	struct command *command25;
 	struct alarm_notify *alarm_notify_r;
+    int send_len;
 
 	command25 = malloc(sizeof(struct alarm_notify)+sizeof(struct command));
 	alarm_notify_r = &command25->text[0].alarm_notify;
@@ -602,14 +634,20 @@ void send_alarm_notify(u8 alarm_kind)
     alarm_notify_r->reserve2 = 0;
     alarm_notify_r->reserve3 = 0;
     alarm_notify_r->reserve4 = 0;
-	if ((send(alarm_fd, command25, sizeof(struct command) + sizeof(struct alarm_notify), 0)) == -1) {
+	send_len = send(alarm_fd, command25, sizeof(struct command) + sizeof(struct alarm_notify), 0);
+	if (send_len == -1) {
 		perror("send");
 		close(alarm_fd);
         printf("========%s,%u==========\n",__FILE__,__LINE__);
         printf("-->Send Alarm_Notify ... Failed\n");
 		exit(0);
 	}
-    printf("-->Send Alarm_Notify !\n");
+    else if(send_len < (sizeof(struct command) + sizeof(struct alarm_notify))){
+        printf("-->Send Alarm_Notify ... Short\n");
+    }
+    else{
+        printf("-->Send Alarm_Notify !\n");
+    }
 
 	free(command25);
 	command25 = NULL;
