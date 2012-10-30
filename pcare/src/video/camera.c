@@ -26,7 +26,7 @@ static pthread_t camera_ntid;
 static pthread_t send_ntid;
 static int camera_fd;
 static int camera_stop = 0;
-unsigned long video_frameinterval = 0;
+extern unsigned long video_frameinterval = 0;
 sem_t start_camera;
 
 sem_t new_pict;

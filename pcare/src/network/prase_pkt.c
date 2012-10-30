@@ -18,7 +18,7 @@ motor_ctrl_t opt;
 extern int start_measure();
 extern void enable_t_rh_sent();
 extern u32 audio_num;
-extern unsigned long video_frameinterval;
+unsigned long video_frameinterval;
 int pre_sound = 0; //0:init ; 1:record ; 2:play
 int cur_sound = 0; //0:init ; 1:record ; 2:play
 int sound_state = 0;
