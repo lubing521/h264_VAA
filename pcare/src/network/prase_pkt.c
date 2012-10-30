@@ -154,6 +154,11 @@ int prase_packet(int opcode, u8 *buf)
                 stop_capture();
                 disable_audio_send();
             }
+            if(sound_state == 1){
+                printf("   Player Is Working .. Stop It!\n");
+                StopPlayer();
+                sound_state = 0;
+            }
             record_state = 1;
 			start_capture();			/* !!!must be called first */
 			enable_audio_send();
@@ -182,6 +187,12 @@ int prase_packet(int opcode, u8 *buf)
                 printf("   Player Is Working .. Stop It!\n");
                 StopPlayer();
             }
+            if(record_state == 1){
+                printf("   Recorder is Working .. Stop It!\n");
+                stop_capture();
+                disable_audio_send();
+                record_state = 0;
+            }
             sound_state = 1;
             cur_sound = 2;
             StartPlayer();
@@ -192,10 +203,12 @@ int prase_packet(int opcode, u8 *buf)
 			//stop_playback();
             if(sound_state == 0){
                 printf("   Player has been stopped ! \n");
+                send_talk_end_resp();
                 break;
             }
             sound_state = 0;
             StopPlayer();
+            send_talk_end_resp();
 			break;
 		case 251:
 			deal_bat_info();

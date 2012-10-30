@@ -681,7 +681,6 @@ void StopPlayer()
 		close(music_data_fd);
 		music_data_fd =-1;
 	}
-    send_talk_end_resp();
 	pthread_mutex_unlock(&g_player.lock);
 	return;
 }
