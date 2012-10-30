@@ -95,7 +95,7 @@ static size_t speak_power_store(struct device *dev, struct device_attribute *att
     }
     else if(sysfs_streq(buf,"on")){
         /*printk("\n#####On Speaker!\n");*/
-        sep0611_spk_out(1);
+        /*sep0611_spk_out(1);*/
     }
 #ifdef SEP0611_AUDIO_EN
     else if(sysfs_streq (buf,"coff")){
@@ -120,7 +120,7 @@ static DEVICE_ATTR(speak_power, 0666, speak_power_show, speak_power_store);
 static int sep0611_board_startup(struct snd_pcm_substream *substream)
 {
 	alsa_dbg("%s\n", __func__);
-	sep0611_gpio_setpin(SEP0611_SPK_CTL, GPIO_HIGH);	/* speaker power on */
+	/*sep0611_gpio_setpin(SEP0611_SPK_CTL, GPIO_HIGH);	[> speaker power on <]*/
 
 	return 0;
 }
