@@ -673,7 +673,7 @@ static int cs3700_pcm_prepare(struct snd_pcm_substream *substream,
         /*else{*/
             /*return 0;*/
         /*}*/
-        mdelay(500);
+        /*mdelay(500);*/
         sep0611_spk_out(1);
     }
 	else{
