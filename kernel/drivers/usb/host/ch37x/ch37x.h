@@ -53,6 +53,7 @@
 struct ch37x_td {
 	struct urb *urb;
 	struct list_head queue;
+    u32 magic_num;
 	
 	int iso_cnt;
 	
