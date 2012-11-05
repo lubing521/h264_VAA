@@ -518,6 +518,8 @@ void *talk_receive( void *arg )
 	int error_flag, read_left,file_size,error_num=0;
 	unsigned rate,channels,bit,ispk;
 	u8 buf[12];
+    int volume_fd;
+    char volume_org,volume_talk = '3',volume_music = '7';
 
 	pthread_detach(pthread_self());
 	do
@@ -573,10 +575,18 @@ void *talk_receive( void *arg )
 							cfg->bit=bit;
 							cfg->ispk=ispk;
 							buffer->flag = START_TALK;
-                            if(ispk)
+                            if(ispk){
+                                volume_fd = open("/sys/devices/platform/soc-audio/speak_power",O_RDONLY);
+                                read(volume_fd,&volume_org,1);
+                                close(volume_fd);
+                                if(volume_org != '1'){
+                                    volume_set(volume_talk);
+                                }
                                 printf("   Start Talk Receiver\n");
-                            else
+                            }
+                            else{
                                 printf("   Start Music Receiver\n");
+                            }
 							FillBuffer( TALK_QUEUE );
 							state = TALK_RECEIVE;
 						}
@@ -632,8 +642,15 @@ void *talk_receive( void *arg )
 				}
 				break;
 			case TALK_STOPPED:
-                if(ispk)
+                if(ispk){
+                    volume_fd = open("/sys/devices/platform/soc-audio/speak_power",O_RDONLY);
+                    read(volume_fd,&volume_org,1);
+                    close(volume_fd);
+                    if(volume_org != '1'){
+                        volume_set(volume_music);
+                    }
                     printf("   Stop Talk Receiver\n");
+                }
                 else
                     printf("   Stop Music Receiver\n");
 				EndPlayer();
