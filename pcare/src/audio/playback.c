@@ -153,7 +153,7 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
     if(pre_sound == cur_sound && pre_rate == rate){
         return 0;
     }
-    else{
+    else if(pre_sound != cur_sound){
         pre_sound = cur_sound;
     }
     pthread_mutex_lock(&i2c_mutex_lock);
