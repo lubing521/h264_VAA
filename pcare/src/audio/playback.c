@@ -148,8 +148,9 @@ int volume_set(char volume)
 int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
 {
     int status, arg;
+    static int pre_rate=0;
     /*char volume = '5';*/
-    if(pre_sound == cur_sound){
+    if(pre_sound == cur_sound && pre_rate == rate){
         return 0;
     }
     else{
@@ -158,7 +159,7 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
     pthread_mutex_lock(&i2c_mutex_lock);
     /*if(volume_set(volume))*/
         /*printf("   volume set failed !\n");*/
-    if(stat_play == 1)
+    if(stat_play == 1 && pre_rate == rate)
     {
         set_i2s_rate(rate);
         pthread_mutex_unlock(&i2c_mutex_lock);
@@ -170,6 +171,7 @@ int set_oss_play_config(int fd, unsigned rate, u16 channels, int bit)
     //rate =8000;
     arg	= rate;
     status = ioctl(fd, SNDCTL_DSP_SPEED, &arg);
+    pre_rate = rate;
     //	printf("status is %d   arg is %d\n",status,arg);
     if (status == -1)
     {
