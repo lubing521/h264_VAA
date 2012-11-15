@@ -475,12 +475,16 @@ static int sep0611_i2c_handle_tx_abort(struct sep0611_i2c *i2c)
         sep0611_gpio_cfgpin(SEP0611_GPF2,SEP0611_GPIO_IO);
         sep0611_gpio_dirpin(SEP0611_GPF2,SEP0611_GPIO_OUT);
         sep0611_gpio_setpin(SEP0611_GPF2,0);
+        sep0611_gpio_cfgpin(SEP0611_GPE20,SEP0611_GPIO_IO);
+        sep0611_gpio_dirpin(SEP0611_GPE20,SEP0611_GPIO_OUT);
+        sep0611_gpio_setpin(SEP0611_GPE20,1);
         udelay(10);
         sep0611_gpio_setpin(SEP0611_GPF2,1);
+		sep0611_gpio_cfgpin(SEP0611_GPE20, I2C1_DAT);
         /*udelay(10);*/
         /*sep0611_gpio_setpin(SEP0611_GPF2,0);*/
         printk("######## ARB_LOST \n");
-        arb_lost_recovery(SEP0611_GPE21,SEP0611_GPE20);
+        /*arb_lost_recovery(SEP0611_GPE21,SEP0611_GPE20);*/
 		return -EAGAIN;
     }
 	else if (abort_source & I2C_ABRT_GCALL_READ)
