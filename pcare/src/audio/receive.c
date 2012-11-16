@@ -519,7 +519,7 @@ void *talk_receive( void *arg )
 	unsigned rate,channels,bit,ispk;
 	u8 buf[12];
     int volume_fd;
-    char volume_org,volume_talk = '3',volume_music = '7';
+    char volume_org,volume_talk = '3',volume_music = '6';
 
 	pthread_detach(pthread_self());
 	do

@@ -26,7 +26,7 @@
 #define VOLUME_DEV_NAME "/dev/cs3700_volume" 
 #define ORG_VOLUME_DEV_NAME "/sys/devices/platform/soc-audio/speak_power" 
 #define KBD_DEV_NAME "/dev/event0"
-#define MAX_VOLUME '7'
+#define MAX_VOLUME '6'
 #define MIN_VOLUME '3'
 
 int main()
