@@ -203,7 +203,7 @@ char str_ctl[]	 = "MO_O";
 char str_data[]  = "MO_V";
 char str_camID[] = "yuanxiang7501";
 char str_SSID[16];
-char str_camVS[] = {0, 2, 2, 3};
+char str_camVS[] = {0, 2, 2, 4};
 char str_tmp[14];
 
 /* ---------------------------------------------------------- */
