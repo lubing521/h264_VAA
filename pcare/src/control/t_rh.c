@@ -35,6 +35,13 @@ int get_tem()
         return -1;
     }
     tem0 = atoi(buf);
+    if(tem0 < 0){
+        printf("get_tem err \n");
+        tem_integer = 0xDD;
+        tem_decimal = 0xDD;
+        pthread_mutex_unlock(&i2c_mutex_lock);
+        return -1;
+    }
     tem1 = ((float)tem0)/65536*175.72-46.85;
     tem1 += (float)tem_fix;/* tem_fix */
     tem_integer = ((int)tem1);
@@ -63,6 +70,12 @@ int get_rh()
         return -1;
     }
     rh0 = atoi(buf);
+    if(rh0 < 0){
+        printf("get_rh err \n");
+        rh = 0xDD;
+        pthread_mutex_unlock(&i2c_mutex_lock);
+        return -1;
+    }
     rh1 = ((float)rh0)/65536*125-6;
     //printf("rh1 is %f\n",rh1);
     rh1 = rh1 * exp2(4283.78 * (-tem_fix)/(243.12 + tem1 - tem_fix)/(243.12 + tem1));
