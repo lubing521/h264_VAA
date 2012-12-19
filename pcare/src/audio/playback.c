@@ -130,6 +130,7 @@ int speak_power_on()
 }
 int volume_set(char volume)
 {
+#if 0
     int volume_fd;
     volume_fd=open(CS3700_VOLUME,O_WRONLY);
     if(volume_fd<0)
@@ -140,6 +141,7 @@ int volume_set(char volume)
     write(volume_fd,&volume);//0~7
     /*printf("set volume to %c\n",volume);*/
     close(volume_fd);
+#endif
     return 0;
 }
 /*

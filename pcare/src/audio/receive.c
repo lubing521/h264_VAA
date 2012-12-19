@@ -576,12 +576,14 @@ void *talk_receive( void *arg )
 							cfg->ispk=ispk;
 							buffer->flag = START_TALK;
                             if(ispk){
+#if 0
                                 volume_fd = open("/sys/devices/platform/soc-audio/speak_power",O_RDONLY);
                                 read(volume_fd,&volume_org,1);
                                 close(volume_fd);
                                 if(volume_org != '1'){
                                     volume_set(volume_talk);
                                 }
+#endif
                                 printf("   Start Talk Receiver\n");
                             }
                             else{
@@ -643,12 +645,14 @@ void *talk_receive( void *arg )
 				break;
 			case TALK_STOPPED:
                 if(ispk){
+#if 0
                     volume_fd = open("/sys/devices/platform/soc-audio/speak_power",O_RDONLY);
                     read(volume_fd,&volume_org,1);
                     close(volume_fd);
                     if(volume_org != '1'){
                         volume_set(volume_music);
                     }
+#endif
                     printf("   Stop Talk Receiver\n");
                 }
                 else
