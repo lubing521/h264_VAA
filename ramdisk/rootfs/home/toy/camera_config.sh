@@ -7,4 +7,4 @@
 #/home/toy/camera_config PLF 1
 #/home/toy/camera_config WBT 5094
 #/home/toy/camera_config Sharpness 9
-#/home/toy/camera_config "Backlight Compensation" 4
+/home/toy/camera_config "Backlight Compensation" 3
