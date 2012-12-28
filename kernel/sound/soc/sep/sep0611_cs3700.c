@@ -40,6 +40,7 @@
 
 #include "alsa_debug.h"
 
+#define SEP0611_WIFI_MODE
 #ifdef SEP0611_AUDIO_EN
 
 static __inline void sep0611_codec_gpio_init(void)
@@ -116,6 +117,22 @@ static size_t speak_power_store(struct device *dev, struct device_attribute *att
 static DEVICE_ATTR(speak_power, 0666, speak_power_show, speak_power_store);
 
 #endif
+#ifdef SEP0611_WIFI_MODE
+static __inline void sep0611_wifi_mode_gpio_init(void)
+{
+	alsa_dbg("%s\n", __func__);
+
+    sep0611_gpio_cfgpin(SEP0611_TOY_WIFI_MODE, SEP0611_GPIO_IO);	/* GPIO */
+    sep0611_gpio_dirpin(SEP0611_TOY_WIFI_MODE, SEP0611_GPIO_IN);	/* output */		
+}
+
+static ssize_t wifi_mode_show(struct device *dev, struct device_attribute *attr, char *buf)   //¿char¿¿int
+{
+    return sprintf(buf,"%d\n",sep0611_gpio_getpin(SEP0611_TOY_WIFI_MODE));
+}
+static DEVICE_ATTR(wifi_mode, 0666, wifi_mode_show, NULL);
+
+#endif
 
 static int sep0611_board_startup(struct snd_pcm_substream *substream)
 {
@@ -176,11 +193,17 @@ static int sep0611_board_probe(struct platform_device *pdev)
     sep0611_spk_gpio_init();
     sep0611_spk_out(false);
 #endif
+#ifdef SEP0611_WIFI_MODE
+    sep0611_wifi_mode_gpio_init();
+#endif
 #ifdef SEP0611_AUDIO_EN
     sep0611_codec_gpio_init();
     sep0611_codec_enable(true);
 #endif
     device_create_file(&pdev->dev, &dev_attr_speak_power);
+#ifdef SEP0611_WIFI_MODE
+    device_create_file(&pdev->dev, &dev_attr_wifi_mode);
+#endif
 
    	return 0;
 }
@@ -196,6 +219,9 @@ static int sep0611_board_remove(struct platform_device *pdev)
 #endif
 
     device_remove_file(&pdev->dev, &dev_attr_speak_power);
+#ifdef SEP0611_WIFI_MODE
+    device_remove_file(&pdev->dev, &dev_attr_wifi_mode);
+#endif
 	return 0;
 }
 
