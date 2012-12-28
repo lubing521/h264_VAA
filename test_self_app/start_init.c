@@ -210,7 +210,7 @@ void main()
     }
     read(start_mod_fd,&start_mod_ch,sizeof(start_mod_ch));
     /*printf("org is %c\n",org);*/
-    if(start_mod_ch == '1'){
+    if(start_mod_ch != '1'){
         printf("=====   Test Camera Mode, Reboot ...\n");
         for(i=1;i<3;i++)
         {
