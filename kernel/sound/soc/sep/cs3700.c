@@ -104,6 +104,7 @@ static int cs3700_write(struct snd_soc_codec *codec, unsigned int reg,
 {
 	u8 data[3];
     unsigned int reg_tmp;
+    int ret, i=0;
 
 	/* data is
 	 *	 D23..D16 CS3700register offset
@@ -121,20 +122,26 @@ static int cs3700_write(struct snd_soc_codec *codec, unsigned int reg,
 	data[1] = (value >> 8) & 0x00ff;
 	data[2] = value & 0x00ff;
 //    printk("cs3700 write reg %d=%x", reg, value);
-    /*do {*/
-        if (codec->hw_write(codec->control_data, data, 3) == 3)
+    ret = codec->hw_write(codec->control_data, data, 3);
+    if (ret == 3)
+    {
+        //      printk("..ok\n");
+        udelay(100);
+    }
+    else
+    {
+        while ( ret != 3 && i < 3)
         {
-            //      printk("..ok\n");
             udelay(100);
+            printk(KERN_DEBUG, "write codec reg [%x] failed, try %d time(s)\n",reg,i+1);
+            ret = codec->hw_write(codec->control_data, data, 3);
+            i++;
         }
-        else
-        {
-            printk("write codec reg [%x] failed\n",reg);
-            return -EIO;
-        }
-    /*} while ( cs3700_read_reg(codec,reg) != value );				[> -----  end do-while  ----- <]*/
+    }
+
+    /* if i >3, value in cache will be different from value in real reg */
     cs3700_write_reg_cache (codec, reg, value);
-    return 0;
+    return ret;
 }
 
 static unsigned int cs3700_read_reg(struct snd_soc_codec *codec, unsigned char reg)
@@ -612,41 +619,35 @@ static int cs3700_change_vol(char vol)
 	/* TODO (FIX ME) */
 	switch (volume) {
 		case '7':
-			cs3700_write_reg(0x0B, 0x01C0);
+			/*cs3700_write_reg(0x0B, 0x01C0);*/
 			cs3700_write_reg(0x0C, 0x01C0);
 			break;
 		case '6':
-			cs3700_write_reg(0x0B, 0x01B8);
+			/*cs3700_write_reg(0x0B, 0x01B8);*/
 			cs3700_write_reg(0x0C, 0x01B8);
 			break;
 		case '5':
-			cs3700_write_reg(0x0B, 0x01B0);
-            while ( cs3700_read_reg(codec,0x0B) == 0x01B0 ) {
-                cs3700_write_reg(0x0B, 0x01B0);
-            }
+			/*cs3700_write_reg(0x0B, 0x01B0);*/
             cs3700_write_reg(0x0C, 0x01B0);
-            while ( cs3700_read_reg(codec,0x0C) == 0x01B0 ) {
-                cs3700_write_reg(0x0C, 0x01B0);
-            }
             break;
 		case '4':
-			cs3700_write_reg(0x0B, 0x01A8);
+			/*cs3700_write_reg(0x0B, 0x01A8);*/
 			cs3700_write_reg(0x0C, 0x01A8);
 			break;
 		case '3':
-			cs3700_write_reg(0x0B, 0x01A0);
+			/*cs3700_write_reg(0x0B, 0x01A0);*/
 			cs3700_write_reg(0x0C, 0x01A0);
 			break;
 		case '2':
-			cs3700_write_reg(0x0B, 0x0190);
+			/*cs3700_write_reg(0x0B, 0x0190);*/
 			cs3700_write_reg(0x0C, 0x0190);
 			break;
 		case '1':
-			cs3700_write_reg(0x0B, 0x0170);
+			/*cs3700_write_reg(0x0B, 0x0170);*/
 			cs3700_write_reg(0x0C, 0x0170);
 			break;
 		case '0':
-			cs3700_write_reg(0x0B, 0x0100);
+			/*cs3700_write_reg(0x0B, 0x0100);*/
 			cs3700_write_reg(0x0C, 0x0100);
 			break;
 		default:
