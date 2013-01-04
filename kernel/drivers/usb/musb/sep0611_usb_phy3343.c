@@ -427,8 +427,9 @@ int __init musb_platform_init(struct musb *musb)
     sep0611_gpio_setpin(SEP0611_PHY_RST, 1);
     //printk("###t%d:reset usbphy\n",jiffies_to_msecs(jiffies)); 
     msleep(200);  
-	ulpi_write(musb,0x4,0x45);
-	ulpi_write(musb,0xa,0x6);
+    ulpi_write(musb,0x31,0x3);
+	/*ulpi_write(musb,0x4,0x45);*/
+	/*ulpi_write(musb,0xa,0x6);*/
 	
     xceiv = kzalloc(sizeof(struct otg_transceiver), GFP_KERNEL);
     if (!xceiv)
