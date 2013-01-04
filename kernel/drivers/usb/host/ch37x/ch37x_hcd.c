@@ -865,8 +865,11 @@ static void ch37x_work(struct ch37x *_ch37x)
 				err = -EAGAIN;
 				out_again = 1;
 			}
-			else
+			else{
+				err = -EAGAIN;
+				out_again = 1;
 				printk("unkown usb out packet response!\n");
+            }
 
 			if( td->state != 1 )
 				printk("err td state %d-1!\n", td->state);
