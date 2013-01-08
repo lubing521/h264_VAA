@@ -86,18 +86,19 @@ int step_motor_leftright()
         return -1;
     }
     printf("OK!!!\n");
-#if 0
+#if 1
     for(n=0;n<STEPER_PHASE_LEFT && inplace_flag >= 0;n++ )
     {
-        for(i = 7;i>=0;i--)
+        for(i = 0;i<8;i++)
         {
-            inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_RIGHT,&i);
+            inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_LEFT,&i);
             usleep(1000);
         }
     }
     inplace_flag = 1;
-    printf("Stepper_Motor Turn Right .....OK!!!\n");
+    printf("Stepper_Motor Turn Left .....OK!!!\n");
 #endif
+#if 0
     for(n=0;n<STEPER_PHASE_LEFT && inplace_flag >= 0;n++ )
     {
         for(i = 0;i<8;i++)
@@ -117,6 +118,7 @@ int step_motor_leftright()
     }
     inplace_flag = 1;
     printf("Stepper_Motor Turn Left .....OK!!!\n");
+#endif
     printf("Close Stepper_Motor LEFTRIGHT.....");
     ioctl(stepper_motor_fd,SMLEFTRIGHT_POWER,NULL);
     close(stepper_motor_fd);
@@ -134,18 +136,19 @@ int step_motor_updown()
         return -1;
     }
     printf("OK!!!\n");
-#if 0
+#if 1
     for(n=0;n<STEPER_PHASE_UP && inplace_flag >= 0;n++ )
     {
-        for(i = 7;i>=0;i--)
+        for(i = 0;i<8;i++)
         {
-            inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_UP,&i);
+            inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_DOWN,&i);
             usleep(1000);
         }
     }
     inplace_flag = 1;
-    printf("Stepper_Motor Turn Up .....OK!!!\n");
+    printf("Stepper_Motor Turn Down .....OK!!!\n");
 #endif
+#if 0
     for(n=0;n<STEPER_PHASE_UP && inplace_flag >= 0;n++ )
     {
         for(i = 0;i<8;i++)
@@ -165,6 +168,7 @@ int step_motor_updown()
     }
     inplace_flag = 1;
     printf("Stepper_Motor Turn Down .....OK!!!\n");
+#endif
     printf("Close Stepper_Motor UPDOWN.....");
     ioctl(stepper_motor_fd,SMUPDOWN_POWER,NULL);
     close(stepper_motor_fd);

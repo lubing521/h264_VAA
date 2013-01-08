@@ -25,6 +25,8 @@
 
 #define DC_MOTOR_DEV  "/dev/pwm"
 #define STEPPER_MOTOR_DEV  "/dev/steppermotor"
+#define STEPER_PHASE_UP 225
+#define STEPER_PHASE_LEFT 620
 
 static int count_m1_up=0,count_m2_right=0,count_m1_down=0,count_m2_left=0;
 static unsigned long stepper_motor_up_flag=0,stepper_motor_down_flag=0,stepper_motor_left_flag=0,stepper_motor_right_flag=0;
@@ -54,7 +56,7 @@ int init_motor(void)
 /******************use sm_phase for up&down********************************/
 void stepper_motor_updown()
 {
-    int i,j,get_cmd,inplace_flag=0;
+    int num = 0, i, j, get_cmd, inplace_flag = 0;
     while(1)
     {
         get_cmd=GetNextOp(UPDOWN_SMID);
@@ -63,6 +65,23 @@ void stepper_motor_updown()
         switch (get_cmd)
         {
         case MOTOR_FORWARD:
+#if 1
+            if(num < STEPER_PHASE_UP) {
+                for(i = 7;i>=0;i--)
+                {
+                    inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_UP,&i);
+                    usleep(1000);
+                }
+                num++;
+            }
+            else {
+                inplace_flag = -1;
+            }
+            if(inplace_flag < 0){
+                send_alarm_notify(3);
+            }
+#endif
+#if 0
             for(i = 7;i>=0;i--)
             {
                 inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_UP,&i);
@@ -77,8 +96,26 @@ void stepper_motor_updown()
                     }
                 }
             }
+#endif
             break;
         case MOTOR_BACKWARD:
+#if 1
+            if(num < STEPER_PHASE_UP) {
+                for(i = 0;i<8;i++)
+                {
+                    inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_DOWN,&i);
+                    usleep(1000);
+                }
+                num++;
+            }
+            else {
+                inplace_flag = -1;
+            }
+            if(inplace_flag < 0){
+                send_alarm_notify(3);
+            }
+#endif
+#if 0
             for(i = 0;i<8;i++)
             {
                 inplace_flag = ioctl(stepper_motor_fd,SMUPDOWN_CONFIG_DOWN,&i);
@@ -93,9 +130,11 @@ void stepper_motor_updown()
                     }
                 }
             }
+#endif
             break;
         case MOTOR_STOP:
             ioctl(stepper_motor_fd,SMUPDOWN_POWER,NULL);
+            num = 0;
             inplace_flag = 0;
             step_is_work = 0;
             WaitNextOp(UPDOWN_SMID);
@@ -108,7 +147,7 @@ void stepper_motor_updown()
 #define TIME 0
 void stepper_motor_leftright()
 {
-    int i,j,get_cmd,inplace_flag=0;
+    int num = 0, i, j, get_cmd, inplace_flag = 0;
 #if TIME
     int n=0,cur_tim=0,pre_tim=times(NULL);
 #endif
@@ -120,6 +159,23 @@ void stepper_motor_leftright()
         switch (get_cmd)
         {
         case MOTOR_FORWARD:
+#if 1
+            if(num < STEPER_PHASE_LEFT) {
+                for(i = 7;i>=0;i--)
+                {
+                    inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_RIGHT,&i);
+                    usleep(1000);
+                }
+                num++;
+            }
+            else {
+                inplace_flag = -1;
+            }
+            if(inplace_flag < 0){
+                send_alarm_notify(3);
+            }
+#endif
+#if 0
             for(i = 7;i>=0;i--)
             {
                 inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_RIGHT,&i);
@@ -134,11 +190,29 @@ void stepper_motor_leftright()
                     }
                 }
             }
+#endif
 #if TIME
             n++;
 #endif
             break;
         case MOTOR_BACKWARD:
+#if 1
+            if(num < STEPER_PHASE_LEFT) {
+                for(i = 0;i<8;i++)
+                {
+                    inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_LEFT,&i);
+                    usleep(1000);
+                }
+                num++;
+            }
+            else {
+                inplace_flag = -1;
+            }
+            if(inplace_flag < 0){
+                send_alarm_notify(3);
+            }
+#endif
+#if 0
             for(i = 0;i<8;i++)
             {
                 inplace_flag = ioctl(stepper_motor_fd,SMLEFTRIGHT_CONFIG_LEFT,&i);
@@ -153,12 +227,14 @@ void stepper_motor_leftright()
                     }
                 }
             }
+#endif
 #if TIME
             n++;
 #endif
             break;
         case MOTOR_STOP:
             ioctl(stepper_motor_fd,SMLEFTRIGHT_POWER,NULL);
+            num = 0;
             inplace_flag = 0;
 #if TIME
             cur_tim = times(NULL);
