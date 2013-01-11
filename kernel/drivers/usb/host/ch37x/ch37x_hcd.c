@@ -953,9 +953,13 @@ static irqreturn_t ch37x_irq(struct usb_hcd *hcd)
 					printk("change to full speed\n");
 				}
 				else{
-					// low speed device
+					// low speed device_list
+#ifdef BUG_ENUMERATE_TO_LOWSPEED_SOLVED
 					ch37x->speed = LSMODE;
 					ch37x_set_lowspeed();
+#else
+                    ch37x->speed = FSMODE;
+#endif
 					printk("change to low speed\n");
 				}
 			}
