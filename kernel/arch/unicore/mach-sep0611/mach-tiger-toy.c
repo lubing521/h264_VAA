@@ -23,6 +23,7 @@
 #include <linux/spi/spi.h>
 #include <linux/spi/ad7879.h>
 #include <linux/i2c.h>
+#include <linux/i2c-gpio.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/mtd.h>
 
@@ -140,8 +141,24 @@ static struct mtd_partition __initdata sep0611_mtd_parts[] = {
                 .size   = MTDPART_SIZ_FULL,
         },
 };
-
-
+#if defined(CONFIG_I2C_GPIO)
+static struct i2c_gpio_platform_data i2c_gpio_adapter_data = {   
+    .sda_pin = SEP0611_GPE20,   
+    .scl_pin = SEP0611_GPE21,   
+    .udelay = 2, //100KHz   
+    .timeout = 100,   
+    .sda_is_open_drain = 1,   
+    .scl_is_open_drain = 1,   
+};
+static struct platform_device i2c_gpio = {   
+    .name = "i2c-gpio",   
+    .id = 0,   
+    .dev = {   
+        .platform_data = &i2c_gpio_adapter_data,   
+        /*.release = mxs_nop_release,   */
+    },   
+};   
+#endif  
 static struct i2c_board_info __initdata sep0611_i2c1_board_info[]  = {
 	[0] = {
 		I2C_BOARD_INFO("CS3700", 0x1A),
@@ -168,7 +185,11 @@ static struct platform_device sep0611_device_ch37x = {
 
 static struct platform_device *devices[] __initdata = 
 {
-	&sep0611_device_i2c1,
+#if defined(CONFIG_I2C_GPIO)
+	&i2c_gpio,
+#else
+    &sep0611_device_i2c1,
+#endif
 	&sep0611_device_rtc,
 	&sep0611_device_nand,
 	&sep0611_device_serial,
@@ -203,7 +224,7 @@ void __init sep0611_init(void)
 
  	spi_register_board_info(board_spi1_devices, ARRAY_SIZE(board_spi1_devices));	
 	/* board infomation for I2C '1' */
-	i2c_register_board_info(1, sep0611_i2c1_board_info, ARRAY_SIZE(sep0611_i2c1_board_info));
+	i2c_register_board_info(0, sep0611_i2c1_board_info, ARRAY_SIZE(sep0611_i2c1_board_info));
 
 	sep0611_partitions.table = sep0611_mtd_parts;
 	sep0611_partitions.num = ARRAY_SIZE(sep0611_mtd_parts);	

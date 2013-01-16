@@ -13,6 +13,8 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
+#include <linux/delay.h>
+#include <board/board.h>
 
 #include <asm/gpio.h>
 
@@ -21,10 +23,17 @@ static void i2c_gpio_setsda_dir(void *data, int state)
 {
 	struct i2c_gpio_platform_data *pdata = data;
 
-	if (state)
-		gpio_direction_input(pdata->sda_pin);
-	else
-		gpio_direction_output(pdata->sda_pin, 0);
+	/*if (state)*/
+		/*gpio_direction_input(pdata->sda_pin);*/
+	/*else*/
+		/*gpio_direction_output(pdata->sda_pin, 0);*/
+	if (state){
+		sep0611_gpio_cfgpin(pdata->sda_pin, SEP0611_GPIO_IN);
+    }
+	else{
+		sep0611_gpio_cfgpin(pdata->sda_pin, SEP0611_GPIO_OUT);
+        sep0611_gpio_setpin(pdata->sda_pin, 0);
+    }
 }
 
 /*
@@ -35,8 +44,13 @@ static void i2c_gpio_setsda_dir(void *data, int state)
 static void i2c_gpio_setsda_val(void *data, int state)
 {
 	struct i2c_gpio_platform_data *pdata = data;
+    /*printk("%s state:%d\n", __func__, state);*/
 
-	gpio_set_value(pdata->sda_pin, state);
+	/*gpio_set_value(pdata->sda_pin, state);*/
+    sep0611_gpio_setpin(pdata->sda_pin, state);
+    sep0611_gpio_cfgpin(pdata->sda_pin, SEP0611_GPIO_IO);
+    sep0611_gpio_dirpin(pdata->sda_pin, SEP0611_GPIO_OUT);
+    sep0611_gpio_setpin(pdata->sda_pin, state);
 }
 
 /* Toggle SCL by changing the direction of the pin. */
@@ -44,10 +58,15 @@ static void i2c_gpio_setscl_dir(void *data, int state)
 {
 	struct i2c_gpio_platform_data *pdata = data;
 
-	if (state)
-		gpio_direction_input(pdata->scl_pin);
-	else
-		gpio_direction_output(pdata->scl_pin, 0);
+	if (state){
+		/*gpio_direction_input(pdata->scl_pin);*/
+		sep0611_gpio_cfgpin(pdata->scl_pin, SEP0611_GPIO_IN);
+    }
+	else{
+		/*gpio_direction_output(pdata->scl_pin, 0);*/
+		sep0611_gpio_cfgpin(pdata->scl_pin, SEP0611_GPIO_OUT);
+        sep0611_gpio_setpin(pdata->scl_pin, 0);
+    }
 }
 
 /*
@@ -59,22 +78,35 @@ static void i2c_gpio_setscl_dir(void *data, int state)
 static void i2c_gpio_setscl_val(void *data, int state)
 {
 	struct i2c_gpio_platform_data *pdata = data;
+    /*printk("%s state:%d\n", __func__, state);*/
 
-	gpio_set_value(pdata->scl_pin, state);
+	/*gpio_set_value(pdata->scl_pin, state);*/
+    sep0611_gpio_setpin(pdata->scl_pin, state);
+    sep0611_gpio_cfgpin(pdata->scl_pin, SEP0611_GPIO_IO);
+    sep0611_gpio_dirpin(pdata->scl_pin, SEP0611_GPIO_OUT);
+    sep0611_gpio_setpin(pdata->scl_pin, state);
 }
 
 static int i2c_gpio_getsda(void *data)
 {
 	struct i2c_gpio_platform_data *pdata = data;
 
-	return gpio_get_value(pdata->sda_pin);
+	/*return gpio_get_value(pdata->sda_pin);*/
+    sep0611_gpio_cfgpin(pdata->sda_pin, SEP0611_GPIO_IO);
+    sep0611_gpio_dirpin(pdata->sda_pin, SEP0611_GPIO_IN);
+    sep0611_gpio_setirq(pdata->sda_pin, LOW_TRIG);
+    return sep0611_gpio_getpin(pdata->sda_pin);
 }
 
 static int i2c_gpio_getscl(void *data)
 {
 	struct i2c_gpio_platform_data *pdata = data;
 
-	return gpio_get_value(pdata->scl_pin);
+	/*return gpio_get_value(pdata->scl_pin);*/
+    sep0611_gpio_cfgpin(pdata->scl_pin, SEP0611_GPIO_IO);
+    sep0611_gpio_dirpin(pdata->scl_pin, SEP0611_GPIO_IN);
+    sep0611_gpio_setirq(pdata->scl_pin, LOW_TRIG);
+    return sep0611_gpio_getpin(pdata->scl_pin);
 }
 
 static int __devinit i2c_gpio_probe(struct platform_device *pdev)
@@ -95,28 +127,43 @@ static int __devinit i2c_gpio_probe(struct platform_device *pdev)
 	bit_data = kzalloc(sizeof(struct i2c_algo_bit_data), GFP_KERNEL);
 	if (!bit_data)
 		goto err_alloc_bit_data;
-
+#if 1
 	ret = gpio_request(pdata->sda_pin, "sda");
 	if (ret)
 		goto err_request_sda;
 	ret = gpio_request(pdata->scl_pin, "scl");
 	if (ret)
 		goto err_request_scl;
+#endif
 
 	if (pdata->sda_is_open_drain) {
-		gpio_direction_output(pdata->sda_pin, 1);
-		bit_data->setsda = i2c_gpio_setsda_val;
+		/*gpio_direction_output(pdata->sda_pin, 1);*/
+        printk("sda up\n");
+		sep0611_gpio_cfgpin(pdata->sda_pin, SEP0611_GPIO_IO);
+		sep0611_gpio_cfgpin(pdata->sda_pin, SEP0611_GPIO_OUT);
+        sep0611_gpio_setpin(pdata->sda_pin, 1);
+        bit_data->setsda = i2c_gpio_setsda_val;
 	} else {
-		gpio_direction_input(pdata->sda_pin);
-		bit_data->setsda = i2c_gpio_setsda_dir;
+        printk("sda down\n");
+		/*gpio_direction_input(pdata->sda_pin);*/
+		sep0611_gpio_cfgpin(pdata->sda_pin, SEP0611_GPIO_IO);
+		sep0611_gpio_cfgpin(pdata->sda_pin, SEP0611_GPIO_IN);
+        bit_data->setsda = i2c_gpio_setsda_dir;
 	}
 
 	if (pdata->scl_is_open_drain || pdata->scl_is_output_only) {
-		gpio_direction_output(pdata->scl_pin, 1);
+        printk("scl up\n");
+		/*gpio_direction_output(pdata->scl_pin, 1);*/
+		sep0611_gpio_cfgpin(pdata->scl_pin, SEP0611_GPIO_IO);
+		sep0611_gpio_cfgpin(pdata->scl_pin, SEP0611_GPIO_OUT);
+        sep0611_gpio_setpin(pdata->scl_pin, 1);
 		bit_data->setscl = i2c_gpio_setscl_val;
 	} else {
-		gpio_direction_input(pdata->scl_pin);
+        printk("scl down\n");
+		/*gpio_direction_input(pdata->scl_pin);*/
 		bit_data->setscl = i2c_gpio_setscl_dir;
+		sep0611_gpio_cfgpin(pdata->scl_pin, SEP0611_GPIO_IO);
+		sep0611_gpio_cfgpin(pdata->scl_pin, SEP0611_GPIO_IN);
 	}
 
 	if (!pdata->scl_is_output_only)

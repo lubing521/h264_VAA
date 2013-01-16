@@ -33,7 +33,6 @@
 
 
 /* ----- global defines ----------------------------------------------- */
-
 #ifdef DEBUG
 #define bit_dbg(level, dev, format, args...) \
 	do { \
@@ -83,6 +82,18 @@ static inline void scllo(struct i2c_algo_bit_data *adap)
 	udelay(adap->udelay / 2);
 }
 
+static inline void sdahold(struct i2c_algo_bit_data *adap)
+{
+	setscl(adap, 0);
+}
+static inline void sdasetup(struct i2c_algo_bit_data *adap)
+{
+	udelay(adap->udelay);
+}
+static inline void sdavalid(struct i2c_algo_bit_data *adap)
+{
+	udelay(adap->udelay);
+}
 /*
  * Raise scl line, and do checking for delays. This is necessary for slower
  * devices.
@@ -126,7 +137,8 @@ static void i2c_start(struct i2c_algo_bit_data *adap)
 	/* assert: scl, sda are high */
 	setsda(adap, 0);
 	udelay(adap->udelay);
-	scllo(adap);
+    sdahold(adap);
+	/*scllo(adap);*/
 }
 
 static void i2c_repstart(struct i2c_algo_bit_data *adap)
@@ -143,6 +155,7 @@ static void i2c_repstart(struct i2c_algo_bit_data *adap)
 static void i2c_stop(struct i2c_algo_bit_data *adap)
 {
 	/* assert: scl is low */
+	sdalo(adap);
 	sdalo(adap);
 	sclhi(adap);
 	setsda(adap, 1);
@@ -169,7 +182,7 @@ static int i2c_outb(struct i2c_adapter *i2c_adap, unsigned char c)
 	for (i = 7; i >= 0; i--) {
 		sb = (c >> i) & 1;
 		setsda(adap, sb);
-		udelay((adap->udelay + 1) / 2);
+        sdasetup(adap);
 		if (sclhi(adap) < 0) { /* timed out */
 			bit_dbg(1, &i2c_adap->dev, "i2c_outb: 0x%02x, "
 				"timeout at bit #%d\n", (int)c, i);
@@ -181,23 +194,21 @@ static int i2c_outb(struct i2c_adapter *i2c_adap, unsigned char c)
 		 * Report a unique code, so higher level code can retry
 		 * the whole (combined) message and *NOT* issue STOP.
 		 */
-		scllo(adap);
+        sdahold(adap);
 	}
-	sdahi(adap);
-	if (sclhi(adap) < 0) { /* timeout */
-		bit_dbg(1, &i2c_adap->dev, "i2c_outb: 0x%02x, "
-			"timeout at ack\n", (int)c);
-		return -ETIMEDOUT;
-	}
-
+    getsda(adap);
+    sdavalid(adap);
 	/* read ack: SDA should be pulled down by slave, or it may
 	 * NAK (usually to report problems with the data we wrote).
 	 */
-	ack = !getsda(adap);    /* ack: sda is pulled low -> success */
-	bit_dbg(2, &i2c_adap->dev, "i2c_outb: 0x%02x %s\n", (int)c,
-		ack ? "A" : "NA");
+    ack = !getsda(adap);    /* ack: sda is pulled low -> success */
+    bit_dbg(2, &i2c_adap->dev, "i2c_outb: 0x%02x ack:%d : %s\n", (int)c, ack,
+        ack ? "A" : "NA");
+    setscl(adap,1);
+    udelay((adap->udelay +1)/2);
 
-	scllo(adap);
+    setsda(adap, 0);
+    sdahold(adap);
 	return ack;
 	/* assert: scl is low (sda undef) */
 }
@@ -212,18 +223,18 @@ static int i2c_inb(struct i2c_adapter *i2c_adap)
 	struct i2c_algo_bit_data *adap = i2c_adap->algo_data;
 
 	/* assert: scl is low */
-	sdahi(adap);
+    getsda(adap);
 	for (i = 0; i < 8; i++) {
+        sdavalid(adap);
+		indata *= 2;
 		if (sclhi(adap) < 0) { /* timeout */
 			bit_dbg(1, &i2c_adap->dev, "i2c_inb: timeout at bit "
 				"#%d\n", 7 - i);
 			return -ETIMEDOUT;
 		}
-		indata *= 2;
 		if (getsda(adap))
 			indata |= 0x01;
-		setscl(adap, 0);
-		udelay(i == 7 ? adap->udelay / 2 : adap->udelay);
+        sdahold(adap);
 	}
 	/* assert: scl is low */
 	return indata;
@@ -389,12 +400,12 @@ static int acknak(struct i2c_adapter *i2c_adap, int is_ack)
 	/* assert: sda is high */
 	if (is_ack)		/* send ack */
 		setsda(adap, 0);
-	udelay((adap->udelay + 1) / 2);
+	udelay(adap->udelay);
 	if (sclhi(adap) < 0) {	/* timeout */
 		dev_err(&i2c_adap->dev, "readbytes: ack/nak timeout\n");
 		return -ETIMEDOUT;
 	}
-	scllo(adap);
+	sdahold(adap);
 	return 0;
 }
 
