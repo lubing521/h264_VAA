@@ -25,7 +25,9 @@
 
 #define STEPPER_MOTOR_DEV  "/dev/steppermotor"
 #define CAMERA_DEV "/dev/video0"
+#if 0
 #define ORG_VOLUME_DEV_NAME "/sys/devices/platform/soc-audio/wifi_mode" 
+#endif
 
 pthread_t smupdown_id,smleftright_id;
 #ifdef LED_FLASH //自检是否需要蓝灯闪烁
@@ -197,7 +199,10 @@ int camera()
 
 void main()
 {
-    int ret,err_fd,i,start_mod_fd;
+    int ret,err_fd,i;
+#if 0
+    int start_mod_fd;
+#endif
     char start_mod_ch;
     printf("\n===========================================\n");
     printf("========= Now Start Check Myself ==========\n");
@@ -208,6 +213,7 @@ void main()
     if(camera() < 0)
         goto CAMERA_ERROR;
 
+#if 0
     start_mod_fd = open(ORG_VOLUME_DEV_NAME,O_RDONLY);
     if(start_mod_fd < 0){
         printf("open start mode fd error !\n");
@@ -224,6 +230,7 @@ void main()
         system("reboot");
     }
     close(start_mod_fd);
+#endif
 
     ret = pthread_create(&smupdown_id,NULL,(void *)step_motor_updown,NULL); 
     ret = pthread_create(&smleftright_id,NULL,(void *)step_motor_leftright,NULL); 
