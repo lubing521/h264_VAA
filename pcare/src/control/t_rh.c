@@ -21,7 +21,8 @@ float exp2(float x);
 int get_tem()
 {
     unsigned char buf[10]={0};
-    char *name = "/sys/devices/platform/sep0611-i2c.1/i2c-1/1-0040/tem";
+    /*char *name = "/sys/devices/platform/sep0611-i2c.1/i2c-1/1-0040/tem";*/
+    char *name = "/sys/bus/i2c/devices/0-0040/tem";
     int fd,size;
     int tem0;
     pthread_mutex_lock(&i2c_mutex_lock);
@@ -56,7 +57,8 @@ int get_tem()
 int get_rh()
 {
     unsigned char buf[10]={0};
-    char *name = "/sys/devices/platform/sep0611-i2c.1/i2c-1/1-0040/rh";
+    /*char *name = "/sys/devices/platform/sep0611-i2c.1/i2c-1/1-0040/rh";*/
+    char *name = "/sys/bus/i2c/devices/0-0040/rh";
     int fd,size;
     int rh0;
     float rh1;
