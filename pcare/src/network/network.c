@@ -35,6 +35,7 @@
 
 #define SERVER_PORT 80
 #define BACKLOG 	10
+/*#define BLOWFISH_DEBUG*/
 
 #define MAX_LEN 	1024*10		/* 10kb */
 #ifdef BLOWFISH
@@ -215,6 +216,7 @@ u8 *AVtext;						/* TODO for AVdata command text */
 
 u32 pic_num = 1;				/* for time stamp */
 u32 audio_num = 1;
+int verify_ok = 0;
 
 int send_audio_flag = 1;
 
@@ -223,10 +225,7 @@ static int AVcommand_fd;
 static struct timeval av_start_time={0,0};
 
 /* TODO commands list */
-static struct command *command1;
-static struct command *command3;
 static struct command *command254;
-static struct command *command5;
 static struct command *av_command1;
 static struct command *av_command2;
 static struct video_data *video_data;
@@ -403,7 +402,7 @@ void deal_bat_info()
 
 	command252 = malloc(sizeof(struct command) + 1);
 	fetch_battery_power_resp = &command252->text[0].fetch_battery_power_resp;
-	memcpy(command3->protocol_head, str_ctl, 4);
+	memcpy(command252->protocol_head, str_ctl, 4);
 	command252->opcode = 252;
 	command252->text_len = 1;
 
@@ -576,6 +575,38 @@ void send_talk_end_resp()
     command22 = NULL;
     return;
 }                           
+
+/* enable vide start */
+void send_video_start_resp()
+{
+	int video_fd = AVcommand_fd;
+	
+	struct command *command5;
+	struct video_start_resp *_video_start_resp;
+    int send_len=0, text_size = 0, n = 0;
+
+	/* TODO start connect video, response to user by command 5 */
+    text_size = sizeof(struct video_start_resp);
+	command5 = malloc(sizeof(struct command) + text_size);
+	_video_start_resp = &command5->text[0].video_start_resp;
+
+	memcpy(command5->protocol_head, str_ctl, 4);
+	command5->opcode = 5;
+	command5->text_len = text_size;
+
+	_video_start_resp->result = 0;					/* agree for connection */
+	_video_start_resp->data_con_ID = data_ID;		/* TODO ID */
+
+	if ((n = send(video_fd, command5, 29, 0)) == -1) {
+		perror("send");
+		close(video_fd);
+        printf("========%s,%u==========\n",__FILE__,__LINE__);
+		exit(0);
+	}
+    printf("Video RESP Send OK !\nNEXT START PHRASING COMMANDS!\n");
+
+	free(command5);
+}
 /* enable talk data */
 void send_talk_resp()
 {
@@ -933,76 +964,113 @@ int read_client( int fd, char *buf, int len )
 }
 /* ------------------------------------------- */
 
-/* set opcode connection */
-void set_opcode_connection(u32 client_fd)
+/* deal_verify_req */
+void deal_verify_req(u8 * buf)
 {
-	int m, n, offset, text_size;
-	int i;
-	int text_len;
+    int client_fd = AVcommand_fd;
+	struct verify_req *_verify_req;
+	struct verify_resp *_verify_resp;
+    struct command *command3;
+    int text_size = 0;
+    int i = 0, n = 0;
+	_verify_req = (struct verify_req *)buf;
 
-	struct login_req *login_req;
-	struct login_resp *login_resp;
-	struct verify_req *verify_req;
-	struct verify_resp *verify_resp;
-	struct video_start_resp *video_start_resp;
-	
-	/* ------------------------------------------- */
-	battery_fd = client_fd;
+    Receive_num[0]=_verify_req->au_num1;
+    Receive_num[1]=_verify_req->au_num2;
+    Receive_num[2]=_verify_req->au_num3;
+    Receive_num[3]=_verify_req->au_num4;
+    BlowfishEncrption(Send_num,sizeof(Send_num_En)/4);
 
-#ifdef BLOWFISH
-    BlowfishKeyInit(BLOWFISH_KEY,strlen(BLOWFISH_KEY));
-	/* TODO read first command 0 from client */
-	if ((n = recv(client_fd, buffer, 100, 0)) == -1) {
-		perror("recv");
+	text_size = sizeof(struct verify_resp);
+	command3 = malloc(sizeof(struct command) + text_size);
+	_verify_resp = &command3->text[0].verify_resp;
+	memcpy(command3->protocol_head, str_ctl, 4);
+	command3->opcode = 3;
+	command3->text_len = text_size;
+	memset(_verify_resp, 0, text_size);
+
+    for(i=0;i<4;i++)
+    {
+        if(Receive_num[i]==Send_num[i])
+            continue;
+        else
+        {
+            _verify_resp->result = 1;				/* verify failed */
+            printf("ERROR!! Receive_num[%d]= %ld,Send_num[%d]=%ld\n",i,i,Receive_num[i],Send_num[i]);
+            break;
+        }
+
+    }
+	_verify_resp->result = 0;
+    if(_verify_resp->result != 0)
+    {
+        printf("Verify Failed !!!!\n");
+        exit(0);
+    }
+    else
+    {
+        printf("Verify Success !!!!\n");
+        verify_ok = 1;
+    }
+    _verify_resp->reserve = 0;				/* exist when result is 0 */
+
+	/* write command 3 to client */
+	if ((n = send(client_fd, command3, sizeof(struct command) + 3, 0)) == -1) {
+		perror("send");
 		close(client_fd);
         printf("========%s,%u==========\n",__FILE__,__LINE__);
 		exit(0);
-	}
-	
-	login_req = (struct login_req *)(buffer + 23);
+    }
 
-	buffer[n] = '\0';
-	/* we can do something here to process connection later! */
-	wifi_dbg("---------------------------------------\n");
-	wifi_dbg("data number = %d\n", n);
-	wifi_dbg("buf[protocol] = %s\n", buffer);
-	wifi_dbg("buf[4] = %d\n", buffer[4]);
-	wifi_dbg("---------------------------------------\n");
+	free(command3);
+}
+/* ------------------------------------------- */
 
-	for (i = 4; i < 23; i++) {
-		text_dbg("buf[%d] = %d\n", i, buffer[i]);
-	};
-    Receive_num[0]=login_req->ch_num1;
-    Receive_num[1]=login_req->ch_num2;
-	Receive_num[2]=login_req->ch_num3;
-    Receive_num[3]=login_req->ch_num4;
-    //for(i=0;i<4;i++)
-    //    printf("Receive_num[%d] is %ld\n",i,Receive_num[i]);
+/* deal_login_req */
+void deal_login_req(u8 * buf)
+{
+    int client_fd = AVcommand_fd;
+	struct login_req *_login_req;
+	struct login_resp *_login_resp;
+    struct command *command1;
+    int text_size = 0;
+    int i = 0, n = 0;
+
+	_login_req = (struct login_req *)buf;
+
+    Receive_num[0]=_login_req->ch_num1;
+    Receive_num[1]=_login_req->ch_num2;
+	Receive_num[2]=_login_req->ch_num3;
+    Receive_num[3]=_login_req->ch_num4;
+#ifdef BLOWFISH_DEBUG
+    for(i=0;i<4;i++)
+       printf("Receive_num[%d] is %ld\n",i,Receive_num[i]);
+#endif
     BlowfishEncrption(Receive_num,sizeof(Receive_num)/4);
-    //for(i=0;i<4;i++)
-    //    printf("Receive_num[%d] is %ld\n",i,Receive_num[i]);
-	/* ------------------------------------------- */
-	/* TODO send login response to user by command 1, contains v1, v2, v3, v4 */
+#ifdef BLOWFISH_DEBUG
+    for(i=0;i<4;i++)
+       printf("Receive_num[%d] is %ld\n",i,Receive_num[i]);
+#endif
 	text_size = sizeof(struct login_resp);
 	command1 = malloc(sizeof(struct command) + text_size);
-	login_resp = &command1->text[0].login_resp;
+	_login_resp = &command1->text[0].login_resp;
 
 	memcpy(command1->protocol_head, str_ctl, 4);
 	command1->opcode = 1;
 	command1->text_len = text_size;
 
-	memset(login_resp, 0, text_size);
-	login_resp->result = 0;
-	memcpy(login_resp->camera_ID, str_SSID, sizeof(str_SSID));
-	memcpy(login_resp->camera_version, str_camVS, sizeof(str_camVS));
-    login_resp->au_num1=Receive_num[0];
-    login_resp->au_num2=Receive_num[1];
-    login_resp->au_num3=Receive_num[2];
-    login_resp->au_num4=Receive_num[3];
-    login_resp->ch_num1=Send_num[0];
-    login_resp->ch_num2=Send_num[1];
-    login_resp->ch_num3=Send_num[2];
-    login_resp->ch_num4=Send_num[3];
+	memset(_login_resp, 0, text_size);
+	_login_resp->result = 0;
+	memcpy(_login_resp->camera_ID, str_SSID, sizeof(str_SSID));
+	memcpy(_login_resp->camera_version, str_camVS, sizeof(str_camVS));
+    _login_resp->au_num1=Receive_num[0];
+    _login_resp->au_num2=Receive_num[1];
+    _login_resp->au_num3=Receive_num[2];
+    _login_resp->au_num4=Receive_num[3];
+    _login_resp->ch_num1=Send_num[0];
+    _login_resp->ch_num2=Send_num[1];
+    _login_resp->ch_num3=Send_num[2];
+    _login_resp->ch_num4=Send_num[3];
 
 	/* write command1 to client */
 	if ((n = send(client_fd, command1, sizeof(struct command) + text_size, 0)) == -1) {
@@ -1012,6 +1080,21 @@ void set_opcode_connection(u32 client_fd)
 		exit(0);
 	}
 
+	free(command1);
+}
+/* ------------------------------------------- */
+
+/* set opcode connection */
+void set_opcode_connection(u32 client_fd)
+{
+	int n;
+	int i;
+	int text_len;
+	/* ------------------------------------------- */
+	battery_fd = client_fd;
+
+#ifdef BLOWFISH
+    BlowfishKeyInit(BLOWFISH_KEY,strlen(BLOWFISH_KEY));
 #else
 	/* TODO read first command 0 from client */
 	if ((n = recv(client_fd, buffer, 100, 0)) == -1) {
@@ -1054,35 +1137,7 @@ void set_opcode_connection(u32 client_fd)
 		exit(0);
 	}
 #endif
-	/* ------------------------------------------- */
-	/* ------------------------------------------- */
-
-	/* TODO receive verify request from user(command2), text will combine ID and PW */
-	memset(buffer, 0, 100);
-	memset(buffer2, 0, 100);
-
 #ifdef BLOWFISH
-	/* read command from client */
-	if ((n = recv(client_fd, buffer, 100, 0)) == -1) {
-		perror("recv");
-		close(client_fd);
-        printf("========%s,%u==========\n",__FILE__,__LINE__);
-		exit(0);
-	}
-
-	wifi_dbg("---------------------------------------\n");
-	wifi_dbg("data number = %d\n", n);
-	wifi_dbg("buf[protocol] = %s\n", buffer);
-	wifi_dbg("buf[4] = %d\n", buffer[4]);
-	wifi_dbg("---------------------------------------\n");
-	
-	verify_req = (struct verify_req *)(buffer + 23);
-    Receive_num[0]=verify_req->au_num1;
-    Receive_num[1]=verify_req->au_num2;
-    Receive_num[2]=verify_req->au_num3;
-    Receive_num[3]=verify_req->au_num4;
-    BlowfishEncrption(Send_num,sizeof(Send_num_En)/4);
-
 #else
 	/* read command from client */
 	if ((n = recv(client_fd, buffer, 100, 0)) == -1) {
@@ -1106,99 +1161,6 @@ void set_opcode_connection(u32 client_fd)
 	wifi_dbg("---------------------------------------\n");
     printf("Send My ID and Version OK\n");
 #endif
-	/* TODO we can do something here to process connection later! */
-	//usleep(1000);
-
-	/* ------------------------------------------- */
-
-	/* TODO verify respose for user by command 3, result = 0 means correct */
-	command3 = malloc(sizeof(struct command) + 3);
-	verify_resp = &command3->text[0].verify_resp;
-
-	memcpy(command3->protocol_head, str_ctl, 4);
-	command3->opcode = 3;
-	command3->text_len = 3;
-
-	memset(verify_resp, 0, 3);
-	verify_resp->result = 0;				/* verify success */
-#ifdef BLOWFISH
-    for(i=0;i<4;i++)
-    {
-        if(Receive_num[i]==Send_num[i])
-            continue;
-        else
-        {
-            verify_resp->result = 1;				/* verify failed */
-            printf("ERROR!! Receive_num[%d]= %ld,Send_num[%d]=%ld\n",i,i,Receive_num[i],Send_num[i]);
-            break;
-        }
-
-    }
-#endif
-	verify_resp->reserve = 0;				/* exist when result is 0 */
-
-	/* write command 3 to client */
-	if ((n = send(client_fd, command3, sizeof(struct command) + 3, 0)) == -1) {
-		perror("send");
-		close(client_fd);
-        printf("========%s,%u==========\n",__FILE__,__LINE__);
-		exit(0);
-    }
-    if(verify_resp->result != 0)
-    {
-        printf("Verify Failed !!!!\n");
-        exit(0);
-    }
-    else
-    {
-        printf("Verify Success !!!!\n");
-    }
-
-    /* ------------------------------------------- */
-
-    /* TODO if correct, user will send command 4 here, request for video connection */
-    memset(buffer, 0, 100);
-
-	/* read command from client */
-	if ((n = recv(client_fd, buffer, 100, 0)) == -1) {
-		perror("recv");
-		close(client_fd);
-        printf("========%s,%u==========\n",__FILE__,__LINE__);
-		exit(0);
-	}
-
-	wifi_dbg("data number = %d\n", n);
-	memcpy(str_tmp, buffer, 4);
-	str_tmp[4] = '\0';
-	wifi_dbg("buf[0:3] = %s\n", str_tmp);
-	/* we can do something here to process connection later! */
-	wifi_dbg("buf[4] = %d\n", buffer[4]);
-	wifi_dbg("---------------------------------------\n");
-
-	for (i = 4; i < n; i++) {
-		text_dbg("buf[%d] = %d\n", i, buffer[i]);
-	};
-
-	/* ------------------------------------------- */
-	
-	/* TODO start connect video, response to user by command 5 */
-	command5 = malloc(sizeof(struct command) + 6);
-	video_start_resp = &command5->text[0].video_start_resp;
-
-	memcpy(command5->protocol_head, str_ctl, 4);
-	command5->opcode = 5;
-	command5->text_len = 6;
-
-	video_start_resp->result = 0;					/* agree for connection */
-	video_start_resp->data_con_ID = data_ID;		/* TODO ID */
-
-	if ((n = send(client_fd, command5, 29, 0)) == -1) {
-		perror("send");
-		close(client_fd);
-        printf("========%s,%u==========\n",__FILE__,__LINE__);
-		exit(0);
-	}
-    printf("Video RESP Send OK !\nNEXT START PHRASING COMMANDS!\n");
 
 	wifi_dbg("---------------------------------------\n");
 
@@ -1243,6 +1205,7 @@ void set_opcode_connection(u32 client_fd)
             printf("phone closed command socket! restart!\n");
             exit(0);
         }
+        /*printf("opcode:%d, text_len:%d\n", opcode, text_len);*/
         if (prase_packet(opcode, buffer) == -1)
             continue;
     }
@@ -1263,8 +1226,6 @@ void *deal_opcode_request(void *arg)
 
 free_buf:
 	/* malloc in the connect() */
-	free(command1);
-	free(command3);
 	free(command254);
 	/* malloc in the main() */
 	free(arg);

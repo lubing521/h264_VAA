@@ -23,47 +23,61 @@ int pre_sound = 0; //0:init ; 1:record ; 2:play
 int cur_sound = 0; //0:init ; 1:record ; 2:play
 int sound_state = 0;
 int record_state = 0;
+extern int verify_ok;
 //int next_op=0;
 /* prase opcode command text */
 int prase_packet(int opcode, u8 *buf)
 {
-	//printf("opcode = %d\n", opcode);
-	
-	switch (opcode) {
-		case 250:
-			opt.opt_code = 250;
-			opt.param[0] = buf[0];
-			opt.param[1] = buf[1];
+    //printf("opcode = %d\n", opcode);
+    if(verify_ok == 0){
+        switch (opcode) {
+        case 0:
+            deal_login_req(buf);
+            break;
+        case 2:
+            deal_verify_req(buf);
+            break;
+        }
+    }
+    else{
+        switch (opcode) {
+        case 4:
+            send_video_start_resp();
+            break;
+        case 250:
+            opt.opt_code = 250;
+            opt.param[0] = buf[0];
+            opt.param[1] = buf[1];
             DispatchMotorOp( &opt );
-			break;
-		case 255:
-			keep_connect();
-			break;
-		case 14:
-			opt.opt_code = 14;
-			opt.param[0] = buf[0];
-			opt.param[1] = 0;
-   //         if(next_op){
-   //             if(next_op != opt.param[0]){
-   //                 printf("Last Op is runing,plese stop it and go on !\n");
-   //                 break;
-   //             }
-   //             else{
-   //                 next_op = 0;
-   //                 printf("Last Op will be stopped,you can do other op now !\n");
-   //             }
-   //         }
-   //         else{
-   //             if((opt.param[0] % 2) != 0)
-   //                 break;
-   //             next_op = opt.param[0] + 1;
-   //             printf("Next Op must be STOP or I won't go !\n");
-   //         }
+            break;
+        case 255:
+            keep_connect();
+            break;
+        case 14:
+            opt.opt_code = 14;
+            opt.param[0] = buf[0];
+            opt.param[1] = 0;
+            //         if(next_op){
+            //             if(next_op != opt.param[0]){
+            //                 printf("Last Op is runing,plese stop it and go on !\n");
+            //                 break;
+            //             }
+            //             else{
+            //                 next_op = 0;
+            //                 printf("Last Op will be stopped,you can do other op now !\n");
+            //             }
+            //         }
+            //         else{
+            //             if((opt.param[0] % 2) != 0)
+            //                 break;
+            //             next_op = opt.param[0] + 1;
+            //             printf("Next Op must be STOP or I won't go !\n");
+            //         }
             DispatchMotorOp( &opt );
             break;
         case 7:
             memcpy(&video_frameinterval,buf,sizeof(unsigned long));
-           // printf("video_frameinterval is %ld \n",video_frameinterval);
+            // printf("video_frameinterval is %ld \n",video_frameinterval);
             switch(video_frameinterval)
             {
             case  0:
@@ -160,13 +174,13 @@ int prase_packet(int opcode, u8 *buf)
                 sound_state = 0;
             }
             record_state = 1;
-			start_capture();			/* !!!must be called first */
-			enable_audio_send();
+            start_capture();			/* !!!must be called first */
+            enable_audio_send();
 #else
-			printf(">>>>If you want to use the capture audio, plese enable ENABLE_CAPTURE_AUDIO in the /wificar/src/include/audio.h\n");
+            printf(">>>>If you want to use the capture audio, plese enable ENABLE_CAPTURE_AUDIO in the /wificar/src/include/audio.h\n");
 #endif
-			break;
-		case 10:
+            break;
+        case 10:
 #ifdef ENABLE_CAPTURE_AUDIO
             if(record_state == 0){
                 printf("   Recorder has been stopped !\n");
@@ -174,15 +188,15 @@ int prase_packet(int opcode, u8 *buf)
             }
             record_state = 0;
             printf("   send audio packages num is %lu\n",audio_num);
-			stop_capture();
-			disable_audio_send();
+            stop_capture();
+            disable_audio_send();
 #else
-			printf("<<<<Disable the capture audio\n");
+            printf("<<<<Disable the capture audio\n");
 #endif
-			break;
-		case 11:
-			/* TODO enable talk audio */
-			//start_playback();
+            break;
+        case 11:
+            /* TODO enable talk audio */
+            //start_playback();
             if(sound_state == 1){
                 printf("   Player Is Working .. Stop It!\n");
                 StopPlayer();
@@ -196,11 +210,11 @@ int prase_packet(int opcode, u8 *buf)
             sound_state = 1;
             cur_sound = 2;
             StartPlayer();
-			printf("   Start playbacking ...\n");
-			break;
-		case 13:
-			/* TODO disable talk audio */
-			//stop_playback();
+            printf("   Start playbacking ...\n");
+            break;
+        case 13:
+            /* TODO disable talk audio */
+            //stop_playback();
             if(sound_state == 0){
                 printf("   Player has been stopped ! \n");
                 send_talk_end_resp();
@@ -209,21 +223,24 @@ int prase_packet(int opcode, u8 *buf)
             sound_state = 0;
             StopPlayer();
             send_talk_end_resp();
-			break;
-		case 251:
-			deal_bat_info();
-			break;
-		case 20:
-			start_measure();
-			enable_t_rh_sent();
-			break;
+            break;
+            /*case 251:*/
+            /*deal_bat_info();*/
+            /*break;*/
+        case 20:
+            start_measure();
+            enable_t_rh_sent();
+            break;
         case 22:
             volume_set(buf[0]);
-		default:
-			//printf("opcode = %d\n", opcode);
-			printf("   Unsupported opcode[ %d ] from user!\n",opcode);
-			return -1;
-	}
+        default:
+            //printf("opcode = %d\n", opcode);
+            printf("   Unsupported opcode[ %d ] from user!\n",opcode);
+            return -1;
+        }
+
+    }
+	
 	return 0;
 }
 
