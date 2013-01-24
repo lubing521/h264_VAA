@@ -290,7 +290,7 @@ int i2s_dma_prepare(struct snd_pcm_substream *substream)
     }
     
     load_first_llp(prtd->dma_info, prtd->dma_params->channel);
-    
+	mdelay(100);   
     return 0;
 }
 
