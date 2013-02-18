@@ -20,7 +20,7 @@
 #include <sys/time.h>
 #endif
 
-#define CAMERA_DEV "/dev/video0"
+#define CAMERA_DEV "/dev/video1"
 
 static pthread_t camera_ntid;
 static pthread_t send_ntid;
@@ -129,6 +129,7 @@ static void *camera_thread(void *args)
 	sem_wait(&start_camera);
 
     start_capturing (fd);
+//	sleep(1);
     r = pthread_create(&send_ntid, NULL, send_picture_thread, NULL);
     if(r < 0){
     	printf("create send picture thread failed\n");
@@ -225,6 +226,9 @@ int init_camera(void)
 {
 	int fd;
 	int ret;
+
+
+	
 	fd = open_device (CAMERA_DEV);
     
     if(fd < 0){

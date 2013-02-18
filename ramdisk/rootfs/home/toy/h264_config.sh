@@ -1,0 +1,1 @@
+/home/toy/SONiX_UVC_TestAP /dev/video1 -a && /home/toy/SONiX_UVC_TestAP /dev/video1 --satur-set 32 && /home/toy/SONiX_UVC_TestAP /dev/video1 --xuset-br 2048 && /home/toy/SONiX_UVC_TestAP /dev/video1 --xuget-fmt --xuset-fmt 2-2

@@ -38,8 +38,10 @@ echo 3 > /proc/sys/kernel/printk
 #/home/toy/leds.sh&
 /home/toy/Vol_Ap_DHCP_TFTP.sh&
 /home/toy/init.sh
-/home/toy/camera_config.sh
+#/home/toy/camera_config.sh
 #/home/toy/initok.sh
+sleep 3
+/sbin/mdev -s
 /home/toy/pcare.sh&
 
 cd /

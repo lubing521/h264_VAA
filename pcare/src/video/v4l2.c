@@ -27,6 +27,7 @@
 #include "v4l2.h"
 
 #define CLEAR(x) memset (&(x), 0, sizeof (x))
+#define V4L2_PIX_FMT_H264     v4l2_fourcc('H', '2', '6', '4') /* H.264 Annex-B NAL Units */
 
 struct buffer {
     void *	start;
@@ -45,8 +46,8 @@ enum FrameFlag
 	FRAME_IN_USE
 };
 
-#define MAX_FRAME_LEN	(30*1024)
-#define FRAME_NUM 3
+#define MAX_FRAME_LEN	(100*1024)
+#define FRAME_NUM 40
 static frame_t frame_list[FRAME_NUM];
 static frame_t *ready_list_head, *ready_list_tail;
 static frame_t *empty_list_head;
@@ -103,7 +104,7 @@ int get_frame(struct v4l2_buffer *v4l_buf)
 		empty_list_head->next = NULL;
 		ready_list_tail->next = empty_list_head;
 		ready_list_tail = empty_list_head;
-		//printf("@catchup\n");
+		/*printf("@catchup\n");*/
 		sem_trywait(&pict_ready);
 	}
 	empty_list_head->flag = FRAME_FILLING;
@@ -112,6 +113,8 @@ int get_frame(struct v4l2_buffer *v4l_buf)
 	pthread_mutex_unlock(&frame_list_lock);
 	fm->length = v4l_buf->bytesused;
     	if(fm->data) memcpy(fm->data, buffers[v4l_buf->index].start, fm->length);
+//	if(fm->length > 60*1024)
+//		printf("buffer overflow fm->length = %d\n",fm->length);
 	pthread_mutex_lock(&frame_list_lock);
     gettimeofday(&fm->time_stamp,NULL);
 	fm->flag = FRAME_READY;
@@ -167,7 +170,7 @@ int init_frame_list()
 	ready_list_head = &frame_list[0];
 	ready_list_tail = ready_list_head;
 	ready_list_head->flag = FRAME_EMPTY;
-	ready_list_head->data = malloc(MAX_FRAME_LEN);
+	ready_list_head->data = malloc(200*1024);
 	for( i = 1; i < FRAME_NUM; i++ )
 	{
 		frame_t *fm;
@@ -273,7 +276,11 @@ int init_device (int fd, int width, int height, int fps)
     unsigned int min;
 	int ret;
 	struct v4l2_fmtdesc fmtdesc;
-    
+	int camera_setting(int);
+
+	
+	camera_setting(fd);
+#if 0    
     if (-1 == ioctl (fd, VIDIOC_QUERYCAP, &cap)) {
         fprintf (stderr, "VIDIOC_QUERYCAP fail\n");
         goto err;
@@ -343,7 +350,8 @@ int init_device (int fd, int width, int height, int fps)
 	fmt.fmt.pix.height      = height;
 
 	init_mem_repo();
-    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_H264;
+//	fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
 	fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
  
 	if (-1 == ioctl (fd, VIDIOC_S_FMT, &fmt)){
@@ -382,7 +390,7 @@ int init_device (int fd, int width, int height, int fps)
 		printf("set fps fail\n");
    		return -1;
     }
-    
+#endif    
     CLEAR (req);
     req.count	= 16;
     req.type 	= V4L2_BUF_TYPE_VIDEO_CAPTURE;

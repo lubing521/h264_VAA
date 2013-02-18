@@ -10,14 +10,18 @@
  *      (at your option) any later version.
  *
  */
-
+#include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/input.h>
+#include <linux/slab.h>
 #include <linux/usb.h>
-#include <linux/usb/input.h>
-
 #include "uvcvideo.h"
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
+#include <linux/usb_input.h>
+#else
+#include <linux/usb/input.h>
+#endif
 /* --------------------------------------------------------------------------
  * Input device
  */
@@ -37,7 +41,11 @@ static int uvc_input_init(struct uvc_device *dev)
 	input->name = dev->name;
 	input->phys = dev->input_phys;
 	usb_to_input_id(dev->udev, &input->id);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
 	input->dev.parent = &dev->intf->dev;
+#else
+	input->cdev.dev = &dev->intf->dev;
+#endif
 
 	__set_bit(EV_KEY, input->evbit);
 	__set_bit(KEY_CAMERA, input->keybit);
@@ -111,7 +119,11 @@ static void uvc_event_control(struct uvc_device *dev, __u8 *data, int len)
 		data[1], data[3], attrs[data[4]], len);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
+static void uvc_status_complete(struct urb *urb, struct pt_regs *regs)
+#else
 static void uvc_status_complete(struct urb *urb)
+#endif
 {
 	struct uvc_device *dev = urb->context;
 	int len, ret;
