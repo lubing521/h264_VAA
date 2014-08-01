@@ -47,7 +47,8 @@ AR = ar
 ARFLAGS = cru
 libcontrol_a_AR = $(AR) $(ARFLAGS)
 libcontrol_a_LIBADD =
-am_libcontrol_a_OBJECTS = motor.$(OBJEXT) motor_driver.$(OBJEXT) t_rh.$(OBJEXT) led_control.$(OBJEXT)
+am_libcontrol_a_OBJECTS = motor.$(OBJEXT) motor_driver.$(OBJEXT) \
+	t_rh.$(OBJEXT) led_control.$(OBJEXT)
 libcontrol_a_OBJECTS = $(am_libcontrol_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -200,10 +201,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/led_control.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/motor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/motor_driver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t_rh.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/led_control.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

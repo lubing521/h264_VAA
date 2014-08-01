@@ -193,7 +193,8 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pcare_SOURCES = main.c utils.c rw.c
-SUBDIRS = ../video ../network ../control ../audio 
+SUBDIRS = ../audio ../video ../network ../control  #../tem_rh 
+#../leds
 INCLUDES = -I$(top_srcdir)/src/include
 LDADD = $(top_srcdir)/src/video/libvideo.a $(top_srcdir)/src/network/libnetwork.a $(top_srcdir)/src/audio/libaudio.a $(top_srcdir)/src/control/libcontrol.a $(top_srcdir)/src/lib/libjpeg.a $(top_srcdir)/src/lib/libmad.so.0.2.1
 all: all-recursive
